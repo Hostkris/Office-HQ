@@ -8,6 +8,27 @@
 
 > **Prototype, not an autonomous company.** The dashboard functions as a local, interactive demo. AI drafting only works if you start the optional private Node server with an API key. There are no live sales, account, banking, inventory, social-media or payment integrations. Closing the app stops its browser-only scheduled brief checks. See [Architecture](docs/ARCHITECTURE.md) and [Security](SECURITY.md).
 
+## Local computer browser employees (primary connection method)
+
+**No cloud browser and no developer account for each website required.** The primary **Social & business accounts → Use desktop browser** and **Desktop AI workstations** controls open a *visible local browser* when this app is running on your Windows/Mac/Linux computer through Node and Playwright. You log in manually to Gmail, TikTok, Instagram, Shopify, Chime, iCloud, and other supported websites, approve a specific employee, and assign a task. The task runs only while your own computer is running; if stopped, work resumes manually from a paused state after restarting.
+
+**Install / launch on your computer:**
+
+```sh
+cd agent-office-hq
+npm install
+npx playwright install chromium
+npm run dev
+```
+
+Open **http://127.0.0.1:3000/#/workstations** on that same computer, not the public GitHub Pages URL. Website passwords are never collected by the Office HQ forms or passed to employees; logged-in browser session data is retained in a private OS-local directory ignored by Git.
+
+Automatic AI clicking/typing needs an AI model. You can choose a **locally installed Ollama vision model (no developer API key)** or an optional OpenAI API key (account screenshots are then sent to OpenAI during the job). Both modes keep the **browser itself** on your computer. Each job is assigned to an authorized employee, has a time/step cap, shows actual progress in the avatar thought bubble, allows pause/resume, and stops before high-risk clicks for one-action CEO approval. Financial transfers and account-security actions are never automated. Results can be handed off to another authorized employee.
+
+**Read the full guide:** [Desktop workstations setup and restrictions](docs/DESKTOP_WORKSTATIONS.md).
+
+The public GitHub Pages site is a remote-accessible frontend and therefore **cannot** control the browser on your computer. On GitHub Pages the workstation tab displays installation instructions instead of pretending work is running. Browser logins can be blocked by website policies and automated site operation is not guaranteed.
+
 ## Account Connection Center and AI employee workflow plans
 
 Open **Social & business accounts** in the animated Office HQ to explore the new interactive connection catalog for Gmail, iCloud, X (Twitter), Instagram, Shopify, Etsy, TikTok, Lemon8, Chime, Facebook, ChatGPT, YouTube, Google Calendar and Google Drive. Select **Connection setup** to see the proper external authorization approach and official provider documentation. You can also save a public account label, request role-specific CEO permission, and assign an inactive, predefined automation plan to one worker in the correct department. Plans include Gmail inbox replies, Shopify orders, Etsy inventory, Instagram/TikTok content and read-only finance reports.

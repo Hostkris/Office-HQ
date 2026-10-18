@@ -50,11 +50,11 @@ function html(){
   return `<div class="office-integration-center">
     <section class="card">
       <div class="section-top"><h2>Account Connection Center</h2><span class="ops-tag">Secure OAuth gateway deployed</span></div>
-      <p class="notice"><strong>Setup phase — no accounts connected.</strong> These buttons can now take you to the secure, signed-in Cloud HQ account authorization screen. Developer credentials and platform approval are still needed before provider sign-in will work. Local labels do not grant API access.</p>
+      <p class="notice"><strong>Setup phase — no accounts connected.</strong> The primary option now opens the visible browser on your own computer; sign in yourself and assign an employee. No platform developer account is required for manual browser login. The optional OAuth path remains available for future official API integrations. Browser automation may be restricted by the website.</p>
       <div class="office-connector-grid">${catalog.map(p=>`<article class="office-connector">
         <div class="office-connector-heading"><span class="office-connector-icon" aria-hidden="true">${esc(p.icon)}</span><strong>${esc(p.name)}</strong></div>
-        <p>${esc(p.desc)}</p><span class="ops-tag">Setup required</span>
-        <div class="office-connector-controls"><a class="btn btn-sm btn-primary" href="./cloud.html#connections&provider=${encodeURIComponent(({Gmail:'gmail',iCloud:'icloud','X (Twitter)':'x',Instagram:'instagram',Shopify:'shopify',Etsy:'etsy',TikTok:'tiktok',Lemon8:'lemon8',Lemonade:'lemonade',Chime:'chime',Facebook:'facebook',ChatGPT:'chatgpt',YouTube:'youtube','Google Calendar':'calendar','Google Drive':'drive'})[p.name]||'')}">Open secure connection ↗</a><button type="button" class="btn btn-sm" data-connect-guide="${esc(p.name)}">Setup details</button>
+        <p>${esc(p.desc)}</p><span class="ops-tag">Manual desktop login available · local runner required</span>
+        <div class="office-connector-controls"><button class="btn btn-sm btn-primary" type="button" data-desktop-site="${esc(({Gmail:'gmail',iCloud:'icloud','X (Twitter)':'x',Instagram:'instagram',Shopify:'shopify',Etsy:'etsy',TikTok:'tiktok',Lemon8:'lemon8',Lemonade:'lemonade',Chime:'chime',Facebook:'facebook',ChatGPT:'chatgpt',YouTube:'youtube','Google Calendar':'calendar','Google Drive':'drive'})[p.name]||'gmail')}">Use desktop browser</button><a class="btn btn-sm" href="./cloud.html#connections&provider=${encodeURIComponent(({Gmail:'gmail',iCloud:'icloud','X (Twitter)':'x',Instagram:'instagram',Shopify:'shopify',Etsy:'etsy',TikTok:'tiktok',Lemon8:'lemon8',Lemonade:'lemonade',Chime:'chime',Facebook:'facebook',ChatGPT:'chatgpt',YouTube:'youtube','Google Calendar':'calendar','Google Drive':'drive'})[p.name]||'')}">Optional OAuth ↗</a><button type="button" class="btn btn-sm" data-connect-guide="${esc(p.name)}">Setup details</button>
           <a class="btn btn-sm" href="${esc(p.docs)}" target="_blank" rel="noopener noreferrer" aria-label="Official ${esc(p.name)} integration documentation">Docs ↗</a></div>
       </article>`).join('')}</div>
       <div id="officeIntegrationGuide" class="office-guide" role="status" aria-live="polite">Choose a platform above for its connection checklist.</div>
@@ -94,12 +94,14 @@ function showGuide(provider){
   if(!p||!box)return;
   box.innerHTML=`<h3>${esc(p.name)} — ${esc(p.method)}</h3>
     <p>${esc(p.desc)}</p>
-    <p><strong>Required:</strong> configure a registered developer app or supported authorization process; obtain approved scopes and a callback; install a private server-side exchange/token vault; verify the account; enforce per-company, per-worker permissions on every request; add a worker task runner and audit trail.</p>
+    <p><strong>Recommended: on-computer browser.</strong> Open Desktop AI Workstations from the card, launch the visible browser on your computer, sign in manually on the actual website, and authorize a specific employee. No separate platform developer account is needed for this login. This process runs only while your desktop service is running.</p><p><strong>Optional: official API/OAuth.</strong> If you later prefer API integrations, developer app registration, authorized scopes and server-side credentials may be required.</p>
     <p class="notice">${esc(p.warning)}</p><a href="${esc(p.docs)}" class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Open official setup ↗</a>
     <p class="tiny muted">Select Open secure connection to sign in to Cloud HQ and attempt the official provider OAuth flow. Some services have no supported OAuth API. Login credentials and tokens are never entered here.</p>`;
   box.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 document.addEventListener('click',event=>{
+  const desktop=event.target.closest('[data-desktop-site]');
+  if(desktop){sessionStorage.setItem('officehq_desktop_preferred_site',desktop.dataset.desktopSite||'gmail');B.setView('workstations');return;}
   const setup=event.target.closest('[data-connect-guide]');
   if(setup){showGuide(setup.dataset.connectGuide);return;}
   const del=event.target.closest('[data-delete-plan]');

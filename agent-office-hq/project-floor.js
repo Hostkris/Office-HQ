@@ -232,7 +232,6 @@ function start(){
  let frameAt=0;
  function frame(now){if(!canvas.isConnected){stop();return;}if(now-frameAt>70){renderFloor(c,now);frameAt=now;}if(!reduced)raf=requestAnimationFrame(frame);}
  frame(performance.now());
- if(!reduced)raf=requestAnimationFrame(frame);
  canvas.onclick=event=>{
   const rect=canvas.getBoundingClientRect(),cx=(event.clientX-rect.left)*960/rect.width,cy=(event.clientY-rect.top)*436/rect.height;
   const {floor,project}=visible();if(!floor)return;

@@ -39,4 +39,8 @@ For a secure production build, enforce all rules **server-side**, never just in 
 | Netlify static deploy | Same frontend + source-connected continuous deploy | Run `server.mjs` automatically |
 | `npm run dev` on your computer | Serve frontend and optional AI drafting through a private Node service | Run a production multi-tenant system or third-party operations |
 
+## Future verified external services
+
+The provider planning UI, draft owner-scoped SQL, platform limitations, OAuth and worker event-to-action contract are described in [Automated workforce connections](AUTOMATED_WORKFORCE_CONNECTIONS.md). Nothing in this branch grants live OAuth access or runs worker tools. The future runner must enforce company tenancy, real connected-account status, precise role-action grants and per-operation human confirmation on a private server. A read-only dashboard record is not an authorization token.
+
 Start with a small number of real data integrations and robust approval checkpoints before broadening the workforce.

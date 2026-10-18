@@ -8,11 +8,14 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const source=await readFile(path.join(root,'app.js'),'utf8');
 const rolesLiteral=source.match(/const ROLES=\[([\s\S]*?)\]\.map\(/)?.[1];
 assert.ok(rolesLiteral,'Roles should remain a declarative job matrix');
-const roles=vm.runInNewContext(`[${rolesLiteral}]`);
+const extendedLiteral=source.match(/const EXTENDED_ROLES=(\[[^\n]*\]);/)?.[1];
+assert.ok(extendedLiteral,'Expanded roles should have a declarative job matrix');
+const extendedRoles=JSON.parse(extendedLiteral);
+const roles=vm.runInNewContext(`[${rolesLiteral}]`,{EXTENDED_ROLES:extendedRoles});
 const columns={key:0,title:1,department:2,level:3,reportsTo:4,scope:5,description:6};
 const col=(r,k)=>r[columns[k]];
 test('company has an extensive workforce with a project manager',()=>{
-  assert.ok(roles.length>=50);
+  assert.ok(roles.length>=150);
   assert.ok(roles.some(r=>col(r,'key')==='project_mgr'));
   assert.ok(roles.some(r=>col(r,'key')==='internal_auditor'));
   assert.ok(roles.some(r=>col(r,'key')==='budget_officer'));

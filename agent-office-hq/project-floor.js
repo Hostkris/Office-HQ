@@ -238,7 +238,7 @@ function start(){
  const c=canvas.getContext('2d');if(!c)return;ctx=toCtx(c);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  let frameAt=0;
- function frame(now){if(!canvas.isConnected){stop();return;}if(now-frameAt>70){renderFloor(c,now);frameAt=now;}if(!reduced&&document.visibilityState!=='hidden')raf=requestAnimationFrame(frame);}
+ function frame(now){if(!canvas.isConnected){stop();return;}if(now-frameAt>70){renderFloor(c,now);frameAt=now;}if(!reduced)raf=requestAnimationFrame(frame);}
  frame(performance.now());
  canvas.onclick=event=>{
   const rect=canvas.getBoundingClientRect(),cx=(event.clientX-rect.left)*canvas.width/rect.width,cy=(event.clientY-rect.top)*canvas.height/rect.height;

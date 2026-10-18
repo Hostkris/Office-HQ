@@ -22,25 +22,41 @@
         <button data-view="office" class="nav-btn"><span class="nav-icon">▦</span> Live RPG office <span class="nav-pill">LIVE</span></button>
         <button data-view="tasks" class="nav-btn"><span class="nav-icon">☷</span> Task board</button>
         <button data-view="workforce" class="nav-btn"><span class="nav-icon">♟</span> AI workforce</button>
+        <button data-view="jobs" class="nav-btn"><span class="nav-icon">▣</span> All company jobs</button>
+        <button data-view="workflows" class="nav-btn"><span class="nav-icon">⇥</span> Task handoffs</button>
+        <button data-view="health" class="nav-btn"><span class="nav-icon">♡</span> Agent health</button>
         <button data-view="org" class="nav-btn"><span class="nav-icon">◇</span> Org & authority</button>
         <button data-view="approvals" class="nav-btn"><span class="nav-icon">✓</span> Approvals <span id="approvalNavCount" class="nav-count" hidden></span></button>
+        <button data-view="thread" class="nav-btn"><span class="nav-icon">▣</span> CEO message thread <span id="opsNavThreadCount" class="nav-count" hidden></span></button>
+        <button data-view="meetings" class="nav-btn"><span class="nav-icon">♧</span> Executive meetings</button>
         <div class="nav-label">BUSINESS SYSTEMS</div>
         <button data-view="finance" class="nav-btn"><span class="nav-icon">＄</span> Finance & budget</button>
         <button data-view="inventory" class="nav-btn"><span class="nav-icon">▤</span> Inventory</button>
         <button data-view="audit" class="nav-btn"><span class="nav-icon">⌕</span> Audit trail</button>
         <button data-view="reports" class="nav-btn"><span class="nav-icon">▥</span> Reports & briefs</button>
         <div class="nav-label">SYSTEM</div>
-        <button data-view="settings" class="nav-btn"><span class="nav-icon">⚙</span> Settings & connections</button>
+        <button data-view="connections" class="nav-btn"><span class="nav-icon">◈</span> Social & business accounts</button>
+        <button data-view="settings" class="nav-btn"><span class="nav-icon">⚙</span> Settings</button>
       </nav>
       <div class="sidebar-bottom"><span class="connected-dot"></span><span id="modeLabel">Local workspace active</span><div class="side-foot">Your data stays on this device until connected.</div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><button id="menuToggle" class="icon-button mobile-menu" aria-label="Toggle navigation">☰</button><div class="breadcrumb" id="breadcrumb">WORKSPACE / COMMAND CENTER</div><div class="top-actions"><span id="liveClock" class="clock"></span><button id="helpButton" class="top-help" title="About this app">ⓘ Help</button><button class="avatar-you" id="userAvatar" title="Owner account">YOU</button></div></header>
+      <header class="topbar"><button id="menuToggle" class="icon-button mobile-menu" aria-label="Toggle navigation">☰</button><div class="breadcrumb" id="breadcrumb">WORKSPACE / COMMAND CENTER</div><div class="top-actions"><span id="liveClock" class="clock"></span>
+        <button type="button" id="officePhoneBtn" class="office-phone-btn" data-ops="phone-open" aria-label="Open company messages" aria-controls="officePhoneDrawer" title="CEO messages and approval requests">📱<span id="officePhoneCount" class="office-phone-count" hidden></span></button>
+        <button id="helpButton" class="top-help" title="About this app">ⓘ Help</button><button class="avatar-you" id="userAvatar" title="Owner account">YOU</button></div></header>
       <div id="view" class="view" aria-live="polite"></div>
       <div id="toastArea" class="toast-area" aria-live="polite"></div>
     </main>
   </div>
   <div id="modalRoot"></div>
+  <div id="officePhoneShade" class="office-phone-shade" hidden></div>
+  <aside id="officePhoneDrawer" class="office-phone-drawer" role="dialog" aria-modal="true" aria-label="CEO company messages" aria-hidden="true" hidden>
+    <div class="office-phone-header"><div><div class="eyebrow">CEO SECURE DESK · LOCAL</div><h2>Company messages <span id="officePhoneDrawerCount" class="office-phone-count-in" hidden></span></h2></div><button id="officePhoneClose" type="button" class="btn btn-sm" data-ops="phone-close" aria-label="Close company messages">✕</button></div>
+    <p class="office-phone-disclaimer">In-app text thread, not cellular SMS. Approvals do not execute external purchases or grant OAuth access.</p>
+    <div id="opsDrawerContent" class="office-phone-body"></div>
+    <div class="office-phone-footer"><button type="button" class="btn btn-primary" data-ops="phone-thread">Open full company thread</button></div>
+  </aside>
   <script src="app.js" defer></script>
+  <script src="office-features.js" defer></script>
 </body>
 </html>

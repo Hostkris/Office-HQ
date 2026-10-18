@@ -50,6 +50,9 @@ const required=obj=>obj&&typeof obj==='object'&&!Array.isArray(obj);
 function payloadError(message,status=400){const err=new Error(message);err.status=status;return err;}
 
 export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
+  const useOllama=process.env.OFFICE_HQ_AI_BACKEND==='ollama';
+  const ollamaModel=process.env.OLLAMA_MODEL||'qwen2.5vl:7b';
+  const aiConfigured=!!apiKey||useOllama;
   const folder=resolve(process.env.OFFICE_HQ_DATA_DIR||join(root,'.office-hq-private'));
   const stateFile=join(folder,'workstation.json'),profiles=join(folder,'profiles');
   const contexts=new Map();
@@ -78,7 +81,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
   function snapshot(companyId){
     const visible=companyId?grants.filter(g=>g.companyId===companyId):grants;
     const recent=companyId?jobs.filter(j=>j.companyId===companyId):jobs;
-    return {local:true,browserReady:runnerLoaded,aiReady:!!apiKey,mode:'desktop-only',connectedBrowsers:[...contexts.keys()].length,
+    return {local:true,browserReady:runnerLoaded,aiReady:aiConfigured,aiBackend:useOllama?'local-ollama':apiKey?'openai':'none',mode:'desktop-only',connectedBrowsers:[...contexts.keys()].length,
       sites:Object.entries(SITES).map(([id,s])=>({id,name:s.name,departments:s.departments,mode:s.mode})),
       grants:visible.map(g=>({...g,sessionOpen:contexts.has(keyFor(g.companyId,g.site))})),
       jobs:recent.slice(-45).reverse().map(j=>({...j,abort:undefined}))};
@@ -148,6 +151,22 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
     const desc='Assigned site: '+SITES[job.site].name+'. Worker: '+job.employeeName+'. Task: '+job.prompt+
       '. Mode: '+job.mode+'. Page: '+new URL(page.url()).origin+'. Step: '+(job.steps+1)+
       '. Recent verified actions: '+JSON.stringify((job.log||[]).slice(-4).map(x=>x.note));
+    if(useOllama){
+      let resp;
+      try{resp=await fetch('http://127.0.0.1:11434/api/chat',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:ollamaModel,stream:false,format:'json',messages:[
+          {role:'system',content:instructions},
+          {role:'user',content:desc,images:[screenshot.toString('base64')]}
+        ],options:{num_predict:250}}),signal:AbortSignal.timeout(85000)});}
+      catch{throw new Error('Local AI model is not running. Install Ollama, run ollama pull '+ollamaModel+', and start Ollama on this computer.');}
+      if(!resp.ok)throw new Error('Local AI returned HTTP '+resp.status+'. Is '+ollamaModel+' installed?');
+      const body=await resp.json();
+      let choice;try{choice=JSON.parse(body.message?.content||'');}catch{throw new Error('Local AI produced an invalid browser action.');}
+      if(!required(choice)||!['click','type','scroll','wait','finish','ask_owner'].includes(choice.action))
+        throw new Error('Local AI requested an unsupported action.');
+      return choice;
+    }
     const resp=await fetch('https://api.openai.com/v1/responses',{
       method:'POST',headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},
       body:JSON.stringify({model,instructions,
@@ -204,7 +223,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
     }
     activeSessions.add(key);job.executing=true;job.abort=false;
     try{
-      if(!apiKey)throw payloadError('Configure an AI model key in your local .env before automatic browser tasks.',503);
+      if(!aiConfigured)throw payloadError('Configure a model key locally or enable an on-computer Ollama vision model before automatic browser tasks.',503);
       const grant=getGrant(job.grantId);
       if(!grant||grant.employeeId!==job.employeeId||grant.companyId!==job.companyId||grant.site!==job.site)throw new Error('Worker authorization was revoked.');
       const {page}=await browserFor(job.companyId,job.site);
@@ -285,7 +304,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
       await rm(join(profiles,key),{recursive:true,force:true});await persist();return {forgotten:true};
     }
     if(cmd==='run'||cmd==='handoff'){
-      if(!apiKey)throw payloadError('AI browser operation needs a model key in a local .env file. You can still open the browser and authorize employees.',503);
+      if(!aiConfigured)throw payloadError('AI jobs need an AI model. Configure OpenAI privately or a local Ollama vision model, or continue manual browser login.',503);
       const grant=getGrant(body.grantId);
       if(!grant)throw payloadError('Authorize this AI employee for the website first.',403);
       if(activeSessions.has(keyFor(grant.companyId,grant.site))||jobs.some(j=>j.companyId===grant.companyId&&j.employeeId===grant.employeeId&&j.executing))throw payloadError('This site or employee already has a running job. Wait or pause before assigning another.',409);

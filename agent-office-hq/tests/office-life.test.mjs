@@ -26,7 +26,7 @@ function run(){
 test('RPG life scene includes named workers, job titles, thought bubbles and CEO room',()=>{
  const o=run();assert.equal(o.life.DESKS.length,10);
  o.draw();
- assert.ok(o.labels.includes('CEO OFFICE'));assert.ok(o.labels.includes('APPROVAL DESK'));
+ assert.ok(o.labels.includes('CEO OFFICE'));assert.ok(o.labels.includes('CEO APPROVAL'));
  assert.ok(o.labels.includes('Employee 0'));
  assert.ok(o.labels.includes('Customer Relations Specialist'));
  assert.ok(o.labels.some(l=>/Just checking|Stretching|Ready for|schedule|Standing|break/i.test(l)));

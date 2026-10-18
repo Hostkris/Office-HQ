@@ -94,7 +94,7 @@ function showGuide(provider){
   if(!p||!box)return;
   box.innerHTML=`<h3>${esc(p.name)} — ${esc(p.method)}</h3>
     <p>${esc(p.desc)}</p>
-    <p><strong>Required:</strong> configure a registered developer app or supported authorization process; obtain approved scopes and a callback; install a private server-side exchange/token vault; verify the account; enforce per-company, per-worker permissions on every request; add a worker task runner and audit trail.</p>
+    <p><strong>Recommended: on-computer browser.</strong> Open Desktop AI Workstations from the card, launch the visible browser on your computer, sign in manually on the actual website, and authorize a specific employee. No separate platform developer account is needed for this login. This process runs only while your desktop service is running.</p><p><strong>Optional: official API/OAuth.</strong> If you later prefer API integrations, developer app registration, authorized scopes and server-side credentials may be required.</p>
     <p class="notice">${esc(p.warning)}</p><a href="${esc(p.docs)}" class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Open official setup ↗</a>
     <p class="tiny muted">Select Open secure connection to sign in to Cloud HQ and attempt the official provider OAuth flow. Some services have no supported OAuth API. Login credentials and tokens are never entered here.</p>`;
   box.scrollIntoView({block:'nearest',behavior:'smooth'});

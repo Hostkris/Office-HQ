@@ -8,6 +8,20 @@
 
 > **Prototype, not an autonomous company.** The dashboard functions as a local, interactive demo. AI drafting only works if you start the optional private Node server with an API key. There are no live sales, account, banking, inventory, social-media or payment integrations. Closing the app stops its browser-only scheduled brief checks. See [Architecture](docs/ARCHITECTURE.md) and [Security](SECURITY.md).
 
+## Secure Cloud HQ (Supabase-backed, separate from demo)
+
+The sidebar now includes **Secure Cloud HQ** at `cloud.html`. This page connects to the Office-HQ Supabase project `wvadoqncgrmfsftefuoy` using a **public publishable key** (safe in browser code), while the database enforces owner-only Row Level Security. It supports email/password sign-in, private companies, tasks, owner approval records, and in-app company messages. **No service-role or third-party credentials are in the public frontend.**
+
+**Required owner setup before sign-up:** In [Supabase Auth URL Configuration](https://supabase.com/dashboard/project/wvadoqncgrmfsftefuoy/auth/url-configuration), set your Site URL and allowed Redirect URLs to the GitHub Pages Cloud HQ address:
+
+`https://hostkris.github.io/Office-HQ/agent-office-hq/cloud.html`
+
+After saving, open that Cloud HQ address and register/sign in with your own email. You may have to confirm your email. The original animated office and seeded sample records remain in the **local browser workspace**. Cloud HQ is a distinct real-data workspace; local example data are **not** silently uploaded or migrated.
+
+**Not yet implemented:** autonomous agents, external OAuth account links, Gmail inbox actions, Shopify/social posting, ad purchases, real SMS, and a shared task backend for the animated dashboard. The Cloud HQ "Service signup links" page only opens legitimate provider developer portals. A stored approval is not a purchase. Session credentials are held in the current tab's session storage.
+
+More details: [Cloud setup and limitations](docs/CLOUD_SETUP.md).
+
 ## Quick start — GitHub Pages (no API key)
 
 1. Download the GitHub-ready ZIP and **extract it**. Create a new **GitHub repository** (for example `agent-office-hq`) and upload the **contents** of the extracted folder into the repository root, including the hidden `.github` folder. Or use `git clone`/`git push` commands shown below.

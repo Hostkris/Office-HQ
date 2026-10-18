@@ -21,7 +21,7 @@ function rect(c,x,y,w,h,color){c.fillStyle=color;c.fillRect(x,y,w,h);}
 function rounded(c,x,y,w,h,r,color){c.fillStyle=color;c.beginPath();c.roundRect(x,y,w,h,r);c.fill();}
 function text(c,v,x,y,size=11,color='#f0f4ea',align='center',weight=650){c.fillStyle=color;c.font=weight+' '+size+'px system-ui';c.textAlign=align;c.fillText(String(v),x,y);c.textAlign='left';}
 function shorten(s,n){s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s;}
-function backdrop(c,name,projectName){
+function backdrop(c,name,projectName,department,head){
  rect(c,0,0,W,H,'#243c4a');
  for(let y=0;y<H;y+=27)for(let x=0;x<W;x+=27)rect(c,x+1,y+1,25,25,((x/27+y/27)|0)%2?'#2a4553':'#2d4b59');
  rounded(c,8,7,944,50,9,'#102c3b');
@@ -40,9 +40,10 @@ function backdrop(c,name,projectName){
  text(c,'RESTROOM',704,90,11,'#f6dfab','center',740);
  rect(c,664,111,77,43,'#3c6070');text(c,'🚻',702,138,22,'#d2e8e6');
  rounded(c,786,70,166,111,9,'#244957');
- text(c,'CEO OFFICE',869,91,13,'#f4dc96','center',850);
+ text(c,department==='Leadership'?'CEO OFFICE':'DEPARTMENT HEAD',869,91,department==='Leadership'?13:11,'#f4dc96','center',850);
  rect(c,808,119,108,28,'#936f52');rect(c,821,122,60,17,'#192e3c');
- text(c,'APPROVAL DESK',868,161,10,'#c3d9d3');
+ text(c,department==='Leadership'?'CEO APPROVAL':'HEAD OFFICE',868,159,10,'#c3d9d3');
+ text(c,shorten(head?.name||'Head office',24),869,174,10,'#f1dba3');
  // The CEO's own office is permanent, separate from the ten employee desk seats.
  sprite(c,{skin:'#b78360',hair:'#24313c',outfit:'#c8ae72'},855,119,0,'work');
  text(c,'CEO',885,113,10,'#f1dfb0','center',850);
@@ -58,7 +59,7 @@ function backdrop(c,name,projectName){
   rounded(c,d.x-26,d.y+30,56,20,6,'#436572');
   text(c,'DESK '+(d.seat+1),d.x,d.y+61,11,'#c1d7d8');
  }
- lastHit.push({kind:'approvals',x:786,y:70,w:166,h:111});
+ lastHit.push({kind:department==='Leadership'?'approvals':'department-head',id:head?.id||null,x:786,y:70,w:166,h:111});
 }
 function sprite(c,e,x,y,t,mode){
  const actor=String(e.id||e.name||e.outfit||'worker');
@@ -174,7 +175,8 @@ function activityThought(a,p,placed,now){
 function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}){
  if(!floor)return;
  lastHit=[];
- backdrop(c,floor.name,project?.name||'All placed workers');
+ const head=window.OfficeHQDepartments?.headFor(cid,floor.department);
+ backdrop(c,floor.name,project?.name||'All placed workers',floor.department,head);
  const visible=(floor.placements||[]).filter(p=>show(p,project)&&staff.some(e=>e.id===p.employeeId));
  const mapped=visible.map(p=>({...p,companyId:cid}));
  const group=ensurePlan(cid+':'+floor.id+':'+(project?.id||'all'),mapped);
@@ -188,7 +190,7 @@ function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}
   // A real task in progress overrides all leisure activity. CEO visit only represents a pending request.
   const status=work?{kind:'desk',since:nowMs(),duration:1}:a;
   const pos=activityPoint(p,status,group,mapped,nowMs());
-  const thought=thoughts?.[p.employeeId]|| (work?'🖥 Working: '+(work.title||'assigned task'):approval&&a.kind==='ceo'?'📋 CEO approval requested':activityThought(status,p,mapped,now));
+  const thought=(work?thoughts?.[p.employeeId]:null)|| (work?'🖥 Working: '+(work.title||'assigned task'):approval&&a.kind==='ceo'?'📋 CEO approval requested':activityThought(status,p,mapped,now));
   const carrying=handoff?.cid===cid&&handoff.floorId===floor.id&&handoff.from===p.seat&&handoff.until&&nowMs()<handoff.until;
   if(!carrying)sprite(c,e,pos.x,pos.y,now,work?'work':pos.motion);
   speech(c,{...pos,name:e.name},carrying?'📁 Delivering paperwork':thought,role(B,e));
@@ -217,8 +219,16 @@ function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}
    }
   }
  }
+ const documentVisit=window.OfficeHQDepartments?.visitFor(floor.id);
+ if(documentVisit){
+  const elapsed=Date.now()-documentVisit.at;
+  const source=mapped.find(p=>p.employeeId===documentVisit.employeeId),from=source?point(source):{x:800,y:535};
+  const amt=Math.min(1,Math.max(0,elapsed/2800));
+  const x=lerp(from.x,854,ease(amt)),y=lerp(from.y,145,ease(amt));
+  rect(c,x-8,y-10,17,20,'#f0e1c2');text(c,'📁 Department handoff',x,y-22,10,'#f8e7b5');
+ }
  if(!mapped.length){text(c,'Empty project floor — assign a worker to appear.',480,543,16,'#d9ece4','center',750);}
- lastHit.push({kind:'approvals',x:786,y:70,w:166,h:111});
+ lastHit.push({kind:floor.department==='Leadership'?'approvals':'department-head',id:head?.id||null,x:786,y:70,w:166,h:111});
 }
 function hitTest(x,y){return [...lastHit].reverse().find(h=>x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h)||null;}
 window.OfficeHQOfficeLife={draw,hitTest,DESKS,activityTypes:['desk','stretch','stand','coffee','restroom','lunch','chat','ceo'],activitySnapshot:key=>[...(stateByFloor.get(key)?.activities||new Map())].map(([id,a])=>({id,kind:a.kind,since:a.since}))};

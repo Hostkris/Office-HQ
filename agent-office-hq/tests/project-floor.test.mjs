@@ -60,7 +60,7 @@ test('each RPG level cannot exceed 10 employees even when assigning eleven real 
  assert.equal(s.engine.data().floors[0].placements.length,10);
  assert.equal(new Set(s.engine.data().floors[0].placements.map(p=>p.seat)).size,10);
  assert.equal(s.state.tasks.length,0,'the visualization must not manipulate the actual task records');
- assert.ok(s.errors.some(x=>/All floors have 10 workers/.test(x.msg)));
+ assert.ok(s.errors.some(x=>/department office is full/.test(x.msg)));
 });
 test('one optional janitor per level does not consume any employee desk',()=>{
  const s=sandbox();s.engine.render();

@@ -67,7 +67,7 @@ function sprite(c,e,x,y,t,mode){
  const bob=mode==='work'?Math.sin(t/200+phase)*.8:Math.sin(t/185+phase)*2.3;
  c.save();c.translate(x,y+bob);
  // bigger than previous 16px torso, with an animated step/arm.
- const step=mode==='walk'?Math.sin(t/105)*4:mode==='stretch'?4*Math.sin(t/260):0;
+ const step=mode==='walk'?Math.sin(t/105+phase)*4:mode==='stretch'?4*Math.sin(t/260+phase):mode==='work'?Math.sin(t/310+phase)*1.2:0;
  rounded(c,-16,24,33,6,3,'#142d3970');
  rect(c,-11,5,9,17+step,'#263d49');rect(c,3,5,9,17-step,'#263d49');
  rect(c,-15,-25,30,34,e.outfit||'#78bdb2');

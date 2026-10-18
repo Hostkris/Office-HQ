@@ -4,7 +4,7 @@
 
 - Supabase project: `wvadoqncgrmfsftefuoy` (US East / Ohio)
 - Dashboard: https://supabase.com/dashboard/project/wvadoqncgrmfsftefuoy
-- Frontend: https://hostkris.github.io/Office-HQ/agent-office-hq/cloud.html
+- Frontend: https://hostkris.github.io/Office-HQ/cloud.html
 - Static site is published by GitHub Actions. This file contains no secrets.
 
 ## One required dashboard step: confirm-email redirect

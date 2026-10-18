@@ -13,14 +13,14 @@
   const ensure=()=>{const s=S(); if(!s.enterprise||typeof s.enterprise!=='object')s.enterprise={};for(const k of ['accounts','grants','messages','meetings','workflows'])if(!Array.isArray(s.enterprise[k]))s.enterprise[k]=[];return s.enterprise;};
   const ent=()=>ensure();
   const fmt=date=>{try{return new Date(date).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}catch{return 'Recently'}};
-  const providers=['Gmail','iCloud','X (Twitter)','Instagram','Shopify','Etsy','TikTok','Lemon8','Chime','Facebook','ChatGPT','YouTube','Google Calendar','Google Drive','Gmail / Email','Other'];
+  const providers=['Gmail','iCloud','X (Twitter)','Instagram','Shopify','Etsy','TikTok','Lemon8','Lemonade','Chime','Facebook','ChatGPT','YouTube','Google Calendar','Google Drive','Gmail / Email','Other'];
   const roles=()=>B.getRoles();
   const staff=cid=>S().employees.filter(e=>e.companyId===cid&&e.active);
   const prettyScope=r=>r?.scope?.replaceAll('_',' ')||'';
   const serviceAllowed=(employee,provider)=>{
     if(!employee)return false;
     const dept=B.roleFor(employee)?.dept;
-    const a={'Shopify':['Sales','Product','Marketing','Customer','Operations','Finance'],'Etsy':['Sales','Product','Marketing','Customer','Operations','Finance'],'YouTube':['Marketing'],'Instagram':['Marketing'],'TikTok':['Marketing'],'Lemon8':['Marketing'],'Facebook':['Marketing'],'X (Twitter)':['Marketing'],'Gmail':['Customer','Leadership','Marketing','Sales','PMO'],'Gmail / Email':['Customer','Leadership','Marketing','Sales','PMO'],'iCloud':['Customer','Leadership','PMO'],'Google Calendar':['Leadership','PMO','People'],'Google Drive':['Leadership','PMO','Technology'],'Chime':['Finance','Audit'],'ChatGPT':['Technology'],'Other':['Technology']};
+    const a={'Shopify':['Sales','Product','Marketing','Customer','Operations','Finance'],'Etsy':['Sales','Product','Marketing','Customer','Operations','Finance'],'YouTube':['Marketing'],'Instagram':['Marketing'],'TikTok':['Marketing'],'Lemon8':['Marketing'],'Facebook':['Marketing'],'X (Twitter)':['Marketing'],'Gmail':['Customer','Leadership','Marketing','Sales','PMO'],'Gmail / Email':['Customer','Leadership','Marketing','Sales','PMO'],'iCloud':['Customer','Leadership','PMO'],'Google Calendar':['Leadership','PMO','People'],'Google Drive':['Leadership','PMO','Technology'],'Chime':['Finance','Audit'],'Lemonade':['Finance','Audit'],'ChatGPT':['Technology'],'Other':['Technology']};
     return (a[provider]||[]).includes(dept);
   };
   const message=(author,body,companyId,kind='update')=>{
@@ -267,6 +267,7 @@
       if(!account||!emp||emp.companyId!==cid||!emp.active){B.toast('Choose a valid account and active worker.','error');return;}
       if(!serviceAllowed(emp,account.provider)){B.toast('That worker’s department cannot access this provider. Choose a role with the right specialty.','error');return;}
       if(!p.purpose?.trim()){B.toast('Explain the business purpose.','error');return;}
+      if(['Chime','Lemonade','iCloud'].includes(account.provider)&&p.permission==='publish'){B.toast('Sensitive account changes are unavailable: read-only planning only.','error');return;}
       makeApproval({companyId:cid,kind:'access',title:`Access: ${emp.name} → ${account.provider}`,requester:emp.name,employeeId:emp.id,provider:account.provider,accountId:account.id,permission:p.permission,note:`${account.label} · Permission: ${p.permission} · Purpose: ${p.purpose.trim().slice(0,450)}. Internal authorization only; service not connected.`});
       refreshCurrent();B.toast('Worker access request sent to your phone inbox.');
     }else if(form.id==='opsCampaignForm'){

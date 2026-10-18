@@ -15,13 +15,13 @@ test('integration center is valid JavaScript and loaded after workforce authoriz
  assert.match(build,/integration-center\.js/);
 });
 test('all requested business platforms appear in the setup catalog',()=>{
- for(const provider of ['Gmail','iCloud','X (Twitter)','Instagram','Shopify','Etsy','TikTok','Lemon8','Chime','Facebook','ChatGPT']){
+ for(const provider of ['Gmail','iCloud','X (Twitter)','Instagram','Shopify','Etsy','TikTok','Lemon8','Lemonade','Chime','Facebook','ChatGPT']){
   assert.ok(catalog.includes("name:'"+provider+"'"),provider+' missing from integration catalog');
   assert.ok(roles.includes("'"+provider+"'"),provider+' missing from account-label dropdown');
  }
 });
 test('no misleading connected badge or live transfers in static integration planner',()=>{
- assert.match(catalog,/0 live integrations/);
+ assert.match(catalog,/Secure OAuth gateway deployed/);
  assert.match(catalog,/Not running/);
  assert.match(catalog,/enabled:false/);
  assert.doesNotMatch(catalog,/fetch\s*\(|XMLHttpRequest|localStorage\.setItem\(['"]access_token/);

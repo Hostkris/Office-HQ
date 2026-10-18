@@ -79,16 +79,29 @@ function sprite(c,e,x,y,t,mode){
  rect(c,-8,-38,3,3,'#18313c');rect(c,5,-38,3,3,'#18313c');
  c.restore();
 }
+function wrapWords(value,max=25){
+ // Keep full employee names and role titles readable, not abbreviated.
+ const tokens=String(value||'').split(/\s+/).filter(Boolean),lines=[];let row='';
+ for(let token of tokens){
+  while(token.length>max){if(row){lines.push(row);row='';}lines.push(token.slice(0,max));token=token.slice(max);}
+  if(!token)continue;
+  if(row&&(row.length+1+token.length)>max){lines.push(row);row=token;}
+  else row=row?row+' '+token:token;
+ }
+ if(row)lines.push(row);
+ return lines.length?lines:[''];
+}
 function speech(c,p,one,two){
- // Thought + name/title remain continuously visible for all placed workers.
- const x=Math.max(73,Math.min(887,p.x));
+ const x=Math.max(87,Math.min(873,p.x));
  const y=Math.max(197,Math.min(500,p.y));
- const bubble=shorten(one,24);
- rounded(c,x-78,y-110,156,27,7,'#122d3dea');
- text(c,bubble,x,y-92,11,'#f1dc9d');
- rounded(c,x-76,y+30,152,31,5,'#122d3df0');
- text(c,shorten(p.name,23),x,y+42,11,'#e8f5ec','center',820);
- text(c,shorten(two,25),x,y+54,10,'#b3d8d2','center',560);
+ const thoughtLines=wrapWords(one,26).slice(0,3);
+ const thoughtHeight=13*thoughtLines.length+13;
+ rounded(c,x-85,y-78-thoughtHeight,170,thoughtHeight,7,'#122d3dea');
+ thoughtLines.forEach((line,i)=>text(c,line,x,y-76-thoughtHeight+15+i*13,10,'#f1dc9d'));
+ const name=wrapWords(p.name,23),title=wrapWords(two,24);
+ const rows=[...name.map(x=>({label:x,size:11,color:'#e8f5ec',weight:800})),...title.map(x=>({label:x,size:10,color:'#b3d8d2',weight:560}))];
+ rounded(c,x-80,y+30,160,8+rows.length*13,5,'#122d3df0');
+ rows.forEach((row,i)=>text(c,row.label,x,y+44+i*13,row.size,row.color,'center',row.weight));
 }
 function deskFor(seat){return DESKS[seat]||DESKS[0];}
 function point(p){const d=deskFor(p.seat);return {x:d.x+24,y:d.y+23};}

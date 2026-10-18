@@ -195,6 +195,7 @@
     B.decideApproval(id,decision);updateDrawer();badge();
   }
   window.OfficeHQOnApprovalDecision=(a,decision)=>{
+    window.OfficeHQDepartments?.onApproval(a,decision);
     if(a.kind==='access'&&decision==='approved'){
       const e=B.getEmployee(a.employeeId),account=ent().accounts.find(x=>x.id===a.accountId);
       if(e?.active&&account&&serviceAllowed(e,account.provider)){

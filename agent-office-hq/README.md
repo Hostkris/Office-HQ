@@ -18,7 +18,13 @@ The sidebar now includes **Secure Cloud HQ** at `cloud.html`. This page connects
 
 After saving, open that Cloud HQ address and register/sign in with your own email. You may have to confirm your email. The original animated office and seeded sample records remain in the **local browser workspace**. Cloud HQ is a distinct real-data workspace; local example data are **not** silently uploaded or migrated.
 
-**Not yet implemented:** autonomous agents, external OAuth account links, Gmail inbox actions, Shopify/social posting, ad purchases, real SMS, and a shared task backend for the animated dashboard. The Cloud HQ "Service signup links" page only opens legitimate provider developer portals. A stored approval is not a purchase. Session credentials are held in the current tab's session storage.
+**Not yet implemented:** autonomous agents, external OAuth account links, Gmail inbox actions, Shopify/social posting, ad purchases, real SMS, and a shared task backend for the animated dashboard.
+
+### Account Connection Center — provider planning, not authorization
+
+The **Social & business accounts** page now lists Gmail, iCloud, X (Twitter), Instagram, Shopify, Etsy, TikTok, Lemonade, Chime, Facebook and YouTube, with a clickable setup guide and an account-label form. All cards deliberately display **Not connected**. They do not request passwords, store tokens, sign in to services or grant AI employees outside access. The CEO access form still saves **internal policy requests only**.
+
+The requested automatic workflow (new order/email → the correct worker → approved external action → manager report) is specified in [Autonomous integrations](docs/AUTOMATED_WORKFORCE_CONNECTIONS.md). A draft, **not applied**, owner-scoped database schema is in [supabase/office_hq_agent_pipeline.sql](supabase/office_hq_agent_pipeline.sql). Real execution requires provider developer credentials, secure server-side OAuth, verified events, an authorized backend worker queue and tested CEO approval policies. Do not deploy an autonomous action runner with this static frontend alone. The Cloud HQ "Service signup links" page only opens legitimate provider developer portals. A stored approval is not a purchase. Session credentials are held in the current tab's session storage.
 
 More details: [Cloud setup and limitations](docs/CLOUD_SETUP.md).
 

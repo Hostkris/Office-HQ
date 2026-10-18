@@ -53,6 +53,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
   const folder=resolve(process.env.OFFICE_HQ_DATA_DIR||join(root,'.office-hq-private'));
   const stateFile=join(folder,'workstation.json'),profiles=join(folder,'profiles');
   const contexts=new Map();
+  const activeSessions=new Set();
   let grants=[],jobs=[],boot=null,writing=Promise.resolve(),runnerLoaded=false;
   async function init(){
     if(boot)return boot;
@@ -61,7 +62,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
       try{const data=JSON.parse(await readFile(stateFile,'utf8'));
         grants=Array.isArray(data.grants)?data.grants.filter(g=>validScope(g.companyId)&&validScope(g.employeeId)&&SITES[g.site]).slice(0,300):[];
         jobs=Array.isArray(data.jobs)?data.jobs.filter(j=>validScope(j.companyId)&&validScope(j.employeeId)&&SITES[j.site]).slice(-150):[];
-        for(const j of jobs)if(['running','queued','awaiting_approval'].includes(j.status)){j.status='paused';j.thought='Computer stopped; resume when you are ready.';j.approval=null;}
+        for(const j of jobs){j.executing=false;j.abort=false;if(['running','queued','awaiting_approval'].includes(j.status)){j.status='paused';j.thought='Computer stopped; resume when you are ready.';j.approval=null;}}
       }catch(e){if(e.code!=='ENOENT')console.error('Workstation state could not be read; starting with empty state.');}
       await persist();
     })();return boot;
@@ -197,7 +198,11 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
   }
   async function runLoop(job){
     if(job.executing)return;
-    job.executing=true;job.abort=false;
+    const key=keyFor(job.companyId,job.site);
+    if(activeSessions.has(key)||jobs.some(j=>j!==job&&j.companyId===job.companyId&&j.employeeId===job.employeeId&&j.executing)){
+      await note(job,'Another assigned employee task is using this browser or worker. Resume when it finishes.','paused');return;
+    }
+    activeSessions.add(key);job.executing=true;job.abort=false;
     try{
       if(!apiKey)throw payloadError('Configure an AI model key in your local .env before automatic browser tasks.',503);
       const grant=getGrant(job.grantId);
@@ -214,10 +219,10 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
         if(!again)break;
         await delay(350);
       }
-      if(job.abort)await note(job,'Paused by CEO. Resume when ready.','paused');
+      if(job.abort&&job.status!=='cancelled')await note(job,'Paused by CEO. Resume when ready.','paused');
       else if(job.steps>=16&&job.status==='running')await note(job,'Step limit reached. Review the browser and resume if necessary.','paused');
-    }catch(e){await note(job,'Paused: '+short(e.message||'Browser error',150),'paused');}
-    finally{job.executing=false;await persist();}
+    }catch(e){if(job.status!=='cancelled')await note(job,'Paused: '+short(e.message||'Browser error',150),'paused');}
+    finally{activeSessions.delete(key);job.executing=false;await persist();}
   }
   async function performAction(job){
     const p=job.approval;
@@ -283,6 +288,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
       if(!apiKey)throw payloadError('AI browser operation needs a model key in a local .env file. You can still open the browser and authorize employees.',503);
       const grant=getGrant(body.grantId);
       if(!grant)throw payloadError('Authorize this AI employee for the website first.',403);
+      if(activeSessions.has(keyFor(grant.companyId,grant.site))||jobs.some(j=>j.companyId===grant.companyId&&j.employeeId===grant.employeeId&&j.executing))throw payloadError('This site or employee already has a running job. Wait or pause before assigning another.',409);
       if(body.companyId!==grant.companyId)throw payloadError('This worker belongs to a different company.',403);
       const prompt=String(body.prompt||'').trim();
       if(prompt.length<10||prompt.length>1600)throw payloadError('Enter a specific job description (10–1600 characters).');

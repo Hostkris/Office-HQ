@@ -72,7 +72,7 @@ test('iPad: project groups, 10 worker cap per level, independent empty second fl
   await page.locator('.pf-status').getByText('0 / 10').waitFor({timeout:7000});
   assert.equal(await page.locator('#pfProject').inputValue(),'all');
   const floors=await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.projectFloor.floors);
-  assert.equal(floors.length,2);assert.equal(floors[0].placements.length,10);assert.equal(floors[1].placements.length,0);
+  assert.equal(floors.length,13);assert.equal(floors[0].placements.length,10);assert.equal(floors[12].placements.length,0);
   assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });

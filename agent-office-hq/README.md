@@ -8,6 +8,12 @@
 
 > **Prototype, not an autonomous company.** The dashboard functions as a local, interactive demo. AI drafting only works if you start the optional private Node server with an API key. There are no live sales, account, banking, inventory, social-media or payment integrations. Closing the app stops its browser-only scheduled brief checks. See [Architecture](docs/ARCHITECTURE.md) and [Security](SECURITY.md).
 
+## Account Connection Center and AI employee workflow plans
+
+Open **Social & business accounts** in the animated Office HQ to explore the new interactive connection catalog for Gmail, iCloud, X (Twitter), Instagram, Shopify, Etsy, TikTok, Lemon8, Chime, Facebook, ChatGPT, YouTube, Google Calendar and Google Drive. Select **Connection setup** to see the proper external authorization approach and official provider documentation. You can also save a public account label, request role-specific CEO permission, and assign an inactive, predefined automation plan to one worker in the correct department. Plans include Gmail inbox replies, Shopify orders, Etsy inventory, Instagram/TikTok content and read-only finance reports.
+
+**This is integration planning, not live OAuth or automatic execution.** Buttons do not sign in, request tokens, start jobs, publish content or move money. Workflow plans remain **Disabled · Not running** and there are **zero live platform connections**. Actual automation requires approved provider developer credentials, OAuth/authorization, a secure backend and vault, verified event intake, server-enforced worker permissions, human approval gates, and a durable job runner. See [External automation setup and limits](docs/EXTERNAL_AUTOMATION_SETUP.md).
+
 ## Secure Cloud HQ (Supabase-backed, separate from demo)
 
 The sidebar now includes **Secure Cloud HQ** at `cloud.html`. This page connects to the Office-HQ Supabase project `wvadoqncgrmfsftefuoy` using a **public publishable key** (safe in browser code), while the database enforces owner-only Row Level Security. It supports email/password sign-in, private companies, tasks, owner approval records, and in-app company messages. **No service-role or third-party credentials are in the public frontend.**

@@ -40,7 +40,7 @@ const floorsFor=cid=>data().floors.filter(f=>f.companyId===cid);
 const projectsFor=cid=>data().projects.filter(p=>p.companyId===cid);
 function selected(cid){const x=setup(cid);return x.d.selected[cid]||{};}
 function seatList(floor){return Array.from({length:LIMIT},(_,i)=>({seat:i,placement:floor?.placements.find(p=>p.seat===i)}));}
-function coords(seat){return {x:118+(seat%5)*181,y:166+Math.floor(seat/5)*153};}
+function coords(seat){return {x:112+(seat%5)*175,y:222+Math.floor(seat/5)*182};}
 function currentFor(cid){const {floor,project}=setup(cid);return {floor,project,select:selected(cid)};}
 function display(placement,proj){return !proj||placement.projectId===proj.id;}
 function count(cid){return floorsFor(cid).reduce((n,f)=>n+f.placements.length,0);}

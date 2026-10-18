@@ -8,7 +8,7 @@ const E=B.E, $=s=>document.querySelector(s);
 const isDesktop=['localhost','127.0.0.1'].includes(location.hostname);
 const fallback=[
   ['google','Google Search'],['gmail','Gmail'],['instagram','Instagram'],['facebook','Facebook'],
-  ['tiktok','TikTok'],['x','X (Twitter)'],['shopify','Shopify'],['etsy','Etsy'],
+  ['tiktok','TikTok'],['lemon8','Lemon8'],['chatgpt','ChatGPT website'],['x','X (Twitter)'],['shopify','Shopify'],['etsy','Etsy'],
   ['youtube','YouTube'],['calendar','Google Calendar'],['drive','Google Drive'],
   ['icloud','iCloud'],['chime','Chime (view only)'],['lemonade','Lemonade (view only)']
 ];
@@ -30,14 +30,15 @@ function render(){
     '<p>Install Node.js 22+, download or clone your Office HQ GitHub repository, then open a terminal in its <code>agent-office-hq</code> folder. Run:</p>'+
     '<pre>npm install\nnpx playwright install chromium\nnpm run dev</pre>'+
     '<p>Next, on that same computer, open <strong>http://127.0.0.1:3000/#/workstations</strong>. Sign into a website manually in the desktop browser window, then authorize a worker.</p>'+
-    '<p>For optional AI-operated tasks, put an OpenAI API key in a private <code>.env</code> file and use <code>npm run dev:env</code>. Model screenshots are sent to the AI provider only while the job is running. Your browser and login session stay on your computer.</p>'+
+    '<p>For optional AI-operated tasks, configure a local Ollama vision model (no API key), or put an OpenAI API key in a private <code>.env</code> file, then use <code>npm run dev:env</code>. Model screenshots are sent to the AI provider only while the job is running. Your browser and login session stay on your computer.</p>'+
     '<p class="notice">The website cannot run computer automation from an iPad alone. When the computer is closed, tasks pause; saved plans can be resumed after restarting.</p></section>';
   const sites=(latest.sites.length?latest.sites.map(s=>[s.id,s.name]):fallback);
+  const preferred=sessionStorage.getItem('officehq_desktop_preferred_site')||'gmail';
   return header+'<section class="card desktop-intro"><h2>Local workstation connection</h2>'+
     '<p><span class="desktop-dot"></span> Browser runner: <strong id="deskConnection">Checking this computer…</strong> · AI decisions: <strong id="deskAi">Checking…</strong></p>'+
     '<p class="tiny muted">Your passwords are typed directly into the website, never Office HQ. Browser sessions remain on this computer. Chrome/Chromium may still require occasional login verification.</p></section>'+
     '<div class="desktop-grid"><section class="card"><h2>① Open a website and sign in</h2>'+
-    controlLabel('<select id="deskSite">'+sites.map(p=>'<option value="'+E(p[0])+'">'+E(p[1])+'</option>').join('')+'</select>','Website')+
+    controlLabel('<select id="deskSite">'+sites.map(p=>'<option value="'+E(p[0])+'"'+(preferred===p[0]?' selected':'')+'>'+E(p[1])+'</option>').join('')+'</select>','Website')+
     '<button class="btn btn-primary" type="button" data-desk="open">🌐 Open website in desktop browser</button>'+
     '<p class="small muted">Sign in normally in the browser window. If asked for a password or verification code, enter it yourself. The bot never needs it.</p>'+
     controlLabel('<select id="deskWorker"></select>','Which employee may use this website?')+
@@ -49,7 +50,7 @@ function render(){
     controlLabel('<select id="deskMode"><option value="observe">Review / gather information</option><option value="draft">Prepare draft text (no automatic submission)</option></select>','Type of assignment')+
     controlLabel('<textarea id="deskPrompt" maxlength="1600" placeholder="Example: Open my Etsy shop dashboard, check the visible order list, and summarize which orders need my attention. Do not purchase, refund or change account settings."></textarea>','Job instructions')+
     '<button class="btn btn-primary" type="button" data-desk="run">▶ Start employee task</button>'+
-    '<p class="small muted">AI jobs require a privately configured model key. Each job has a step limit. Sending, posting and other risky clicks stop for CEO approval. Banking and insurance remain read-only.</p></section></div>'+
+    '<p class="small muted">AI jobs require a private AI model key or an on-computer Ollama vision model. Each job has a step limit. Sending, posting and other risky clicks stop for CEO approval. Banking and insurance remain read-only.</p></section></div>'+
     '<section class="card" style="margin-top:18px"><div class="section-top"><h2>③ Live employee activity and approvals</h2><button class="btn btn-sm" data-desk="refresh">↻ Refresh</button></div>'+
     '<div id="deskJobs" class="desktop-jobs"><p class="muted">No active browser tasks.</p></div></section>'+
     '<section class="card" style="margin-top:18px"><h2>④ Session access and privacy</h2>'+
@@ -129,7 +130,11 @@ function jobCard(job){
    '</article>';
 }
 function renderJobs(){
-  const host=$('#deskJobs');if(host)host.innerHTML=latest.jobs.length?latest.jobs.slice(0,15).map(jobCard).join(''):'<p class="muted">No browser tasks yet.</p>';
+  const host=$('#deskJobs');if(!host)return;
+  const draftValues=new Map();
+  host.querySelectorAll('[data-handoff-prompt]').forEach(input=>{const id=input.dataset.handoffPrompt;draftValues.set(id,{prompt:input.value,grant:host.querySelector('[data-handoff-grant="'+CSS.escape(id)+'"]')?.value});});
+  host.innerHTML=latest.jobs.length?latest.jobs.slice(0,15).map(jobCard).join(''):'<p class="muted">No browser tasks yet.</p>';
+  for(const [id,data] of draftValues){const p=host.querySelector('[data-handoff-prompt="'+CSS.escape(id)+'"]'),g=host.querySelector('[data-handoff-grant="'+CSS.escape(id)+'"]');if(p)p.value=data.prompt;if(g)g.value=data.grant||'';}
 }
 function thoughtsAndTasks(){
   const thoughts={};for(const j of latest.jobs){
@@ -209,7 +214,7 @@ document.addEventListener('click',ev=>{
   ev.preventDefault();void click(b.dataset.desk,b).catch(e=>notice(e.message||'Action could not be completed.',true));
 });
 document.addEventListener('change',ev=>{
-  if(ev.target.id==='deskSite')syncWorkers();
+  if(ev.target.id==='deskSite'){sessionStorage.setItem('officehq_desktop_preferred_site',ev.target.value);syncWorkers();}
   if(ev.target.id==='deskGrant'&&['chime','icloud','lemonade'].includes(grantFor(ev.target.value)?.site||'')){$('#deskMode').value='observe';}
   if(ev.target.id==='companyPicker')setTimeout(()=>{syncWorkers();void refresh();},30);
 });

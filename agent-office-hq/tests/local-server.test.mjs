@@ -25,6 +25,8 @@ test('local server serves dashboard, reports draft-only status, and refuses AI c
     const res=await fetch(base+'/');
     assert.equal(res.status,200);
     assert.match(await res.text(),/Agent Office HQ/);
+    assert.equal((await fetch(base+'/ios-workstations.js')).status,200);
+    assert.equal((await fetch(base+'/desktop-workstations.js')).status,200);
     const status=await (await fetch(base+'/api/status')).json();
     assert.equal(status.aiReady,false);
     assert.equal(status.externalActions,false);

@@ -43,6 +43,9 @@ function backdrop(c,name,projectName){
  text(c,'CEO OFFICE',869,91,13,'#f4dc96','center',850);
  rect(c,808,119,108,28,'#936f52');rect(c,821,122,60,17,'#192e3c');
  text(c,'APPROVAL DESK',868,161,10,'#c3d9d3');
+ // The CEO's own office is permanent, separate from the ten employee desk seats.
+ sprite(c,{skin:'#b78360',hair:'#24313c',outfit:'#c8ae72'},855,119,0,'work');
+ text(c,'CEO',885,113,10,'#f1dfb0','center',850);
  rounded(c,12,565,936,12,4,'#193440');
  // Ten reserved workstations remain present even when no agents are placed.
  for(const d of DESKS){
@@ -109,7 +112,7 @@ function planNext(group,placements,tasks,approvals,now){
  const eligible=placements.filter(p=>!busyTask(tasks,p));
  // Every visible worker has staggered individual idle actions.
  for(const p of eligible){const a=group.activities.get(p.employeeId);if(!a)continue;
-  if(a.kind!=='desk'&&now<a.since+a.duration)continue;
+  if(a.kind==='desk'||now<a.since+a.duration)continue;
   group.activities.set(p.employeeId,{kind:'desk',since:now,duration:5500+rand()*3500,target:null});
  }
  const moving=[...group.activities.values()].filter(a=>!['desk','stretch'].includes(a.kind)&&now<a.since+a.duration);
@@ -184,8 +187,9 @@ function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}
   const status=work?{kind:'desk',since:nowMs(),duration:1}:a;
   const pos=activityPoint(p,status,group,mapped,nowMs());
   const thought=thoughts?.[p.employeeId]|| (work?'🖥 Working: '+(work.title||'assigned task'):approval&&a.kind==='ceo'?'📋 CEO approval requested':activityThought(status,p,mapped,now));
-  sprite(c,e,pos.x,pos.y,now,work?'work':pos.motion);
-  speech(c,{...pos,name:e.name},thought,role(B,e));
+  const carrying=handoff?.cid===cid&&handoff.floorId===floor.id&&handoff.from===p.seat&&handoff.until&&nowMs()<handoff.until;
+  if(!carrying)sprite(c,e,pos.x,pos.y,now,work?'work':pos.motion);
+  speech(c,{...pos,name:e.name},carrying?'📁 Delivering paperwork':thought,role(B,e));
   lastHit.push({kind:'worker',id:p.employeeId,x:pos.x-40,y:pos.y-65,w:82,h:102});
  }
  if(floor.janitor){

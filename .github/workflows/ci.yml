@@ -18,3 +18,21 @@ jobs:
       - name: Build public assets without secrets
         working-directory: agent-office-hq
         run: npm run build
+
+  ios-safari-emulation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test dependencies
+        working-directory: agent-office-hq
+        run: npm install --no-audit --no-fund
+      - name: Install Safari WebKit test engine and Linux dependencies
+        working-directory: agent-office-hq
+        run: npx playwright install --with-deps webkit
+      - name: Exercise iPhone and iPad browser UI (WebKit emulation)
+        working-directory: agent-office-hq
+        run: node --test tests/ios-browser.e2e.mjs

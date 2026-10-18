@@ -72,7 +72,7 @@ window.OfficeHQExtraViews.workstations=()=>{
  '<label class="desktop-label">Website<select id="iosSite">'+SITES.map(s=>'<option value="'+E(s[0])+'"'+(current===s[0]?' selected':'')+'>'+E(s[1])+'</option>').join('')+'</select></label>'+
  '<p id="iosSiteHint" class="muted small">Sign in yourself. Office HQ never asks for your website password.</p>'+
  '<a class="btn btn-primary ios-go" id="iosOpenSite" href="'+E(site(current)[2])+'" target="_blank" rel="noopener noreferrer">🌐 Open '+E(site(current)[1])+' in Safari ↗</a>'+
- '<label class="desktop-label">AI employee<select id="iosWorker"></select></label>'+
+ '<label class="desktop-label">AI employee<select id="iosWorker"><option value="">Choose eligible employee</option>'+workers(current).map(w=>'<option value="'+E(w.id)+'">'+E(w.name)+' · '+E(B.roleFor(w)?.dept||'')+'</option>').join('')+'</select></label>'+
  '<label class="desktop-check"><input type="checkbox" id="iosConsent"> I have signed into this website myself and permit this employee to assist with assigned work.</label>'+
  '<button class="btn" type="button" data-ios="authorize">✓ Authorize Safari extension worker</button>'+
  '<p class="tiny muted">This button requires the Safari extension to be installed and permitted by iOS. Guided task planning works without it.</p></section>'+
@@ -210,4 +210,5 @@ document.addEventListener('click',event=>{
  event.preventDefault();if(state.busy)return;state.busy=true;
  void doAction(node.dataset.ios,node).catch(e=>feedback(e.message||'This action could not be completed.',true)).finally(()=>{state.busy=false;});
 });
+if(location.hash.replace('#/','')==='workstations')B.setView('workstations');
 })();

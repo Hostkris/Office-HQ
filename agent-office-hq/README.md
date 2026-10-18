@@ -24,7 +24,7 @@ The sidebar now includes **Secure Cloud HQ** at `cloud.html`. This page connects
 
 After saving, open that Cloud HQ address and register/sign in with your own email. You may have to confirm your email. The original animated office and seeded sample records remain in the **local browser workspace**. Cloud HQ is a distinct real-data workspace; local example data are **not** silently uploaded or migrated.
 
-**Not yet implemented:** autonomous agents, external OAuth account links, Gmail inbox actions, Shopify/social posting, ad purchases, real SMS, and a shared task backend for the animated dashboard. The Cloud HQ "Service signup links" page only opens legitimate provider developer portals. A stored approval is not a purchase. Session credentials are held in the current tab's session storage.
+**Not yet implemented:** autonomous agents, Gmail inbox actions, Shopify/social posting, ad purchases, real SMS and a shared task backend for the animated dashboard. The new `office-oauth` authorization gateway is deployed, but every provider still requires developer credentials, provider approval, and your consent before a real account can authorize. The Cloud HQ **Connect accounts** page can start official authorization-code flows after provider secrets and an encryption key are configured; its developer links only open legitimate provider portals. A stored approval is not a purchase. Session credentials are held in the current tab's session storage.
 
 More details: [Cloud setup and limitations](docs/CLOUD_SETUP.md).
 

@@ -139,6 +139,15 @@ function deleteTask(id){const task=state.tasks.find(t=>t.id===id);if(!task)retur
  for(const next of dependents){next.dependsOn=null;if(next.status!=='done'){next.status='blocked';next.updatedAt=iso();next.description+='\n[PREVIOUS WORKFLOW STEP REMOVED — REVIEW BEFORE CONTINUING]';}}
  for(const a of state.approvals.filter(a=>a.taskId===id&&a.status==='pending')){a.status='rejected';a.reviewedAt=iso();a.note=(a.note||'')+' [Cancelled when the related assignment was deleted.]';}
  if(state.enterprise?.workflows)for(const w of state.enterprise.workflows){w.taskIds=w.taskIds.filter(tid=>tid!==id);}
+ const routes=state.enterprise?.projectFloor?.departmentRoutes;
+ if(Array.isArray(routes))for(const route of routes.filter(r=>r.taskId===id)){
+  route.taskId=null;
+  if(['at_department','awaiting_ceo'].includes(route.status)){
+   route.status='returned';route.updatedAt=iso();
+   if(route.steps?.[route.cursor])route.steps[route.cursor].status='returned';
+   route.log??=[];route.log.push({at:iso(),department:route.departments?.[route.cursor],event:'Linked task was deleted; packet returned for review'});
+  }
+ }
  const projects=state.enterprise?.projectFloor?.projects;if(Array.isArray(projects))for(const p of projects){p.taskIds=Array.isArray(p.taskIds)?p.taskIds.filter(tid=>tid!==id):[];}
  const floors=state.enterprise?.projectFloor?.floors;if(Array.isArray(floors))for(const floor of floors){for(const p of floor.placements||[])if(p.taskId===id)p.taskId=null;}
  state.tasks=state.tasks.filter(t=>t.id!==id);addActivity('You · CEO','Deleted assignment: '+task.title+' (task record removed; audit retained)','task',task.companyId);

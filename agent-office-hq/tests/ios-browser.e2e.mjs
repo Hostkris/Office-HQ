@@ -47,7 +47,7 @@ test('iPhone Safari emulation: page loads, website deep links use Safari and sta
   const open=page.locator('#iosOpenSite');
   assert.equal(await open.getAttribute('href'),'https://www.instagram.com/');
   assert.equal(await open.getAttribute('target'),'_blank');
-  await page.locator('#iosWorker option').first().waitFor();
+  await page.locator('#iosWorker option').first().waitFor({state:'attached'});
   const available=await page.locator('#iosWorker option').evaluateAll(nodes=>
     nodes.map(n=>({value:n.value,label:n.textContent})).filter(n=>n.value));
   assert.ok(available.length>0,'Instagram must have at least one marketing department employee');

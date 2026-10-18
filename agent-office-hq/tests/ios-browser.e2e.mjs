@@ -59,6 +59,9 @@ test('iPhone Safari emulation: page loads, website deep links use Safari and sta
   await page.reload();
   await page.locator('h1').filter({hasText:'iOS browser workstations'}).waitFor();
   await page.locator('#iosJobs').getByText('Review the Instagram profile and summarize proposed changes. Do not publish.').waitFor();
+  page.on('dialog',d=>d.accept());
+  await page.locator('[data-ios="delete"]').first().click();
+  assert.equal(await page.locator('#iosJobs article').count(),0,'deleted iOS guided job should leave the active list');
   assert.equal(errors.length,0,'page errors: '+errors.join('; '));
  }finally{await context.close();}
 });

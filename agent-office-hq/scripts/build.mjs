@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
-const assets = ['index.html', 'app.js', 'office-features.js', 'styles.css', 'sw.js', 'icon.svg', 'manifest.webmanifest'];
+const assets = ['index.html', 'app.js', 'office-features.js', 'refresh.js', 'styles.css', 'sw.js', 'icon.svg', 'manifest.webmanifest'];
 await rm(dist, {recursive:true, force:true});
 await mkdir(dist, {recursive:true});
 for(const file of assets) await cp(path.join(root, file), path.join(dist, file));

@@ -8,6 +8,14 @@
 
 > **Prototype, not an autonomous company.** The dashboard functions as a local, interactive demo. AI drafting only works if you start the optional private Node server with an API key. There are no live sales, account, banking, inventory, social-media or payment integrations. Closing the app stops its browser-only scheduled brief checks. See [Architecture](docs/ARCHITECTURE.md) and [Security](SECURITY.md).
 
+## Live RPG Office floors — 10 workers and optional janitor
+
+The **Live RPG Office** now starts with **10 empty desk-and-computer stations on Level 1**. Employees remain in their existing roles/roster but none appear in the RPG unless the owner places them or assigns new work. Owners can select individual active workers, choose a desk, create named project teams, view one project's staff at a time, and add more levels when needed. **Exactly 10 business workers maximum per level.** Each level has an independent optional janitor, which is visual support and does not use a worker seat.
+
+Creating a standard new Office HQ task (or sequential workflow stage) automatically puts its single assigned specialist at an available desk if that worker was not already placed; historical/sample tasks do not auto-populate the floor. If all levels are full, the task remains assigned but the user is prompted to add another level. A person cannot occupy multiple desks. Completing a genuinely linked and approved internal task animates a brief paper-folder handoff to the next selected worker on that same level, without simulating or implying external website actions. Characters are small and do not wander randomly.
+
+**iPhone/iPad Safari:** All visible floor/project/seat/janitor controls are touch-friendly and the Command Center office preview follows the same placements. See [Live RPG Floor requirements and tests](docs/LIVE_RPG_FLOOR_SPEC.md). No other management, account connection or automation feature was redesigned.
+
 ## iPhone and iPad Safari workstations (now included)
 
 **The regular Office HQ website now runs an iOS-specific browser workstation view.** On your iPhone or iPad, open [Office HQ workstations](https://hostkris.github.io/Office-HQ/#/workstations) in Safari. No Mac or cloud browser is needed for **guided work**: select a website, sign into your own account in Safari, assign tasks to existing workers, pause or mark work complete, and explicitly hand off jobs to another employee. The mobile page saves job records in the iOS browser and shows assignment status/thought bubbles.

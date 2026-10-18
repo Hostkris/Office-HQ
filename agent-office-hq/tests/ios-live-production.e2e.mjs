@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {webkit, devices} from 'playwright';
 
-const site=process.env.OFFICE_HQ_SITE||'https://hostkris.github.io/Office-HQ/';
+const site=process.env.OFFICE_HQ_SITE||'https://hostkris.github.io/Office-HQ/agent-office-hq/';
 let browser;
 test.before(async()=>{browser=await webkit.launch({headless:true});});
 test.after(async()=>{await browser?.close();});

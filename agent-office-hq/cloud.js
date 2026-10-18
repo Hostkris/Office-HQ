@@ -207,10 +207,10 @@ document.addEventListener('click',e=>{
   const item=CONNECTORS.find(x=>x.key===provider);
   if(!item||!state.company)throw Error('Choose a company and service.');
   const shop=provider==='shopify'?document.getElementById('shopifyDomain')?.value.trim()||'':undefined;
-  if(provider==='shopify'&&!/^[a-z0-9][a-z0-9-]*\\.myshopify\\.com$/i.test(shop))throw Error('Enter your store domain, such as example.myshopify.com.');
+  if(provider==='shopify'&&!new RegExp('^[a-z0-9][a-z0-9-]*[.]myshopify[.]com$','i').test(shop))throw Error('Enter your store domain, such as example.myshopify.com.');
   msg('Checking secure authorization for '+item.name+'…');
   const data=await oauthRequest({action:'start',provider,companyId:state.company,shop});
-  if(!data.authorization_url||!/^https:\\/\\//.test(data.authorization_url))throw Error('Provider did not return a secure authorization link.');
+  if(!data.authorization_url||new URL(data.authorization_url).protocol!=='https:')throw Error('Provider did not return a secure authorization link.');
   location.assign(data.authorization_url);
  });
  const disconnect=e.target.closest('[data-disconnect]');

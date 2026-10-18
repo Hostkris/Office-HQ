@@ -45,7 +45,8 @@ create table if not exists public.hq_worker_account_grants (
     references public.hq_provider_accounts(owner_id,company_id,id) on delete cascade,
   constraint worker_grant_company_fk foreign key (owner_id,company_id)
     references public.hq_companies(owner_id,id) on delete cascade,
-  unique (owner_id,company_id,provider_account_id,worker_role_key)
+  unique (owner_id,company_id,provider_account_id,worker_role_key),
+  unique (owner_id,company_id,provider_account_id,id)
 );
 create index if not exists hq_worker_grants_by_company
   on public.hq_worker_account_grants(owner_id,company_id,active);
@@ -55,7 +56,7 @@ create table if not exists public.hq_agent_jobs (
   owner_id uuid not null references auth.users(id) on delete cascade,
   company_id uuid not null,
   provider_account_id uuid not null,
-  grant_id uuid not null references public.hq_worker_account_grants(id) on delete restrict,
+  grant_id uuid not null,
   worker_role_key text not null check (char_length(worker_role_key) between 1 and 110),
   action text not null check (char_length(action) between 1 and 100),
   request_reference text not null check (char_length(request_reference) between 1 and 180),
@@ -76,6 +77,8 @@ create table if not exists public.hq_agent_jobs (
   updated_at timestamptz not null default now(),
   constraint hq_agent_jobs_company_fk foreign key (owner_id,company_id,provider_account_id)
     references public.hq_provider_accounts(owner_id,company_id,id) on delete restrict,
+  constraint hq_agent_jobs_grant_company_fk foreign key (owner_id,company_id,provider_account_id,grant_id)
+    references public.hq_worker_account_grants(owner_id,company_id,provider_account_id,id) on delete restrict,
   constraint hq_agent_jobs_company_owner_fk foreign key (owner_id,company_id)
     references public.hq_companies(owner_id,id) on delete cascade,
   constraint hq_agent_jobs_idempotency unique (owner_id,company_id,request_reference),

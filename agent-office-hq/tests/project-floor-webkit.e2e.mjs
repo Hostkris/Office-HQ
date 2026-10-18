@@ -144,3 +144,44 @@ test('iPad: remove single phone and full-thread messages, approve and reject in 
   assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
+
+test('iPad: all 12 department offices exist, a head forwards a packet and CEO approves it in company text',async()=>{
+ const {page,context,errors}=await pageFor('iPad Pro 11');
+ try{
+  assert.equal(await page.locator('.pf-dept-tile').count(),12);
+  const departments=await page.evaluate(()=>{
+   const s=window.OfficeHQBridge.getState(),cid=s.companies[0].id;
+   return s.enterprise.projectFloor.floors.filter(f=>f.companyId===cid&&f.department).map(f=>f.department);
+  });
+  assert.equal(new Set(departments).size,12);
+  await page.locator('.pf-route-builder summary').click();
+  await page.locator('#pfRouteTitle').fill('Marketing campaign clearance');
+  await page.locator('input[name="department"]').evaluateAll(nodes=>{
+   nodes.forEach(n=>{n.checked=n.value==='Marketing';});
+  });
+  await page.locator('#pfDepartmentRouteForm button[type="submit"]').click();
+  await page.locator('[data-dept-action="forward"]').first().waitFor();
+  const before=await page.evaluate(()=>{
+   const routes=window.OfficeHQBridge.getState().enterprise.projectFloor.departmentRoutes;return routes[0];
+  });
+  assert.equal(before.cursor,0);
+  assert.equal(before.departments.join(','),'Marketing,Leadership');
+  await page.locator('[data-dept-action="forward"]').first().click();
+  const approval=await page.evaluate(()=>{
+   const s=window.OfficeHQBridge.getState(),route=s.enterprise.projectFloor.departmentRoutes[0];
+   return {routeStatus:route.status,id:route.approvalId,approval:s.approvals.find(a=>a.id===route.approvalId)};
+  });
+  assert.equal(approval.routeStatus,'awaiting_ceo');
+  assert.equal(approval.approval.kind,'department_route');
+  assert.equal(approval.approval.status,'pending');
+  await page.evaluate(()=>window.OfficeHQBridge.setView('thread'));
+  await page.locator('[data-ops="approve-request"][data-id="'+approval.id+'"]').click();
+  const final=await page.evaluate(()=>{
+   const s=window.OfficeHQBridge.getState(),route=s.enterprise.projectFloor.departmentRoutes[0];
+   return {status:route.status,approval:s.approvals.find(a=>a.id===route.approvalId)?.status};
+  });
+  assert.equal(final.status,'completed');
+  assert.equal(final.approval,'approved');
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});

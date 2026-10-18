@@ -14,7 +14,7 @@ The sidebar now includes **Secure Cloud HQ** at `cloud.html`. This page connects
 
 **Required owner setup before sign-up:** In [Supabase Auth URL Configuration](https://supabase.com/dashboard/project/wvadoqncgrmfsftefuoy/auth/url-configuration), set your Site URL and allowed Redirect URLs to the GitHub Pages Cloud HQ address:
 
-`https://hostkris.github.io/Office-HQ/agent-office-hq/cloud.html`
+`https://hostkris.github.io/Office-HQ/cloud.html`
 
 After saving, open that Cloud HQ address and register/sign in with your own email. You may have to confirm your email. The original animated office and seeded sample records remain in the **local browser workspace**. Cloud HQ is a distinct real-data workspace; local example data are **not** silently uploaded or migrated.
 

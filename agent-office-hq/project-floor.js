@@ -25,6 +25,8 @@ function setup(cid){
   const f={id:B.uid('floor'),companyId:cid,name:'Level 1',placements:[],janitor:false,createdAt:time()};
   d.floors.push(f);floors=[f];B.save();
  }
+ window.OfficeHQDepartments?.ensure(cid,d);
+ floors=d.floors.filter(f=>f.companyId===cid);
  const chosen=d.selected[cid]||{};
  const floor=floors.find(f=>f.id===chosen.floorId)||floors[0];
  d.selected[cid]={floorId:floor.id,projectId:chosen.projectId||'all'};
@@ -68,9 +70,9 @@ function onTaskAssigned(task){
   const p=floorsFor(cid).flatMap(f=>f.placements).find(p=>p.employeeId===task.ownerId);
   if(p&&!p.taskId)p.taskId=task.id;save();return;
  }
- let floor=loc.floor;
- if(!floor||floor.placements.length>=LIMIT)floor=floorsFor(cid).find(f=>f.placements.length<LIMIT);
- if(!floor){popup('Task assigned; no RPG worker added. All floors have 10 workers. Create a new level.',true);return;}
+ const dept=role(state().employees.find(e=>e.id===task.ownerId)).dept;
+ let floor=window.OfficeHQDepartments?.deptFloor(cid,dept)||loc.floor;
+ if(!floor||floor.placements.length>=LIMIT){popup('Task saved, but the '+(dept||'selected')+' department office is full. Add an overflow level or free a desk.',true);return;}
  const chosen=d.selected[cid]?.projectId,project=projectsFor(cid).find(p=>p.id===chosen);
  let auto=project;
  if(!auto){
@@ -104,7 +106,7 @@ function render(){
  return '<div class="page-head"><div><div class="eyebrow">LIVE RPG OFFICE · ASSIGNED STAFF ONLY</div><h1>Project Floor</h1><p class="subtitle">A small, professional office with desks and computers. Nobody appears until you place a worker or assign a new task.</p></div>'+
  '<div class="head-actions"><button class="btn" data-view="approvals">🏛 CEO approvals ('+state().approvals.filter(a=>a.companyId===cid&&a.status==='pending').length+')</button><button class="btn btn-primary" data-action="newTask">＋ Assign task</button></div></div>'+
  '<section class="card pf-toolbar"><div class="pf-tools">'+
- '<label>Level<select id="pfFloor">'+floors.map((f,i)=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+'</option>').join('')+'</select></label>'+
+ '<label>Level<select id="pfFloor">'+floors.map((f,i)=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+(f.department?' · Department':' · Extra level')+'</option>').join('')+'</select></label>'+
  '<label>Project / group<select id="pfProject">'+projOptions+'</select></label>'+
  '<button class="btn btn-sm" data-pf="new-floor">＋ Add level</button>'+
  '<button class="btn btn-sm" data-pf="new-project">＋ New project</button></div>'+
@@ -136,7 +138,8 @@ function render(){
  '<label>Next task<select id="pfNextTask" required><option value="">Choose next task</option>'+
  allTasks(cid).filter(t=>t.ownerId).slice(0,100).map(t=>'<option value="'+E(t.id)+'">'+E(String(t.title||'Untitled task').slice(0,60))+'</option>').join('')+'</select></label>'+
  '<button class="btn" type="submit">⇥ Link handoff</button></form>'+
- '<div class="pf-footnote">Janitors are optional visual support staff on each level. They do not consume a worker desk, own business tasks, or alter your existing roster.</div></section></div>';
+ '<div class="pf-footnote">Janitors are optional visual support staff on each level. They do not consume a worker desk, own business tasks, or alter your existing roster.</div></section></div>'+
+ (window.OfficeHQDepartments?.flowMarkup(cid)||'');
 }
 function toCtx(c){ctx=c;return c;}
 function background(c){c.clearRect(0,0,960,436);c.fillStyle='#1b3544';c.fillRect(0,0,960,436);
@@ -245,6 +248,7 @@ function start(){
   const hit=window.OfficeHQOfficeLife?.hitTest(cx,cy);
   if(hit?.kind==='worker'&&B.workerModal){B.workerModal(hit.id);return;}
   if(hit?.kind==='approvals'){B.setView('approvals');return;}
+ if(hit?.kind==='department-head'){if(hit.id&&B.workerModal)B.workerModal(hit.id);else B.setView('workforce');return;}
   const {floor,project}=visible();if(!floor)return;
   const seat=seatList(floor).find(item=>{
    const {x,y}=coords(item.seat);return cx>=x-75&&cx<=x+75&&cy>=y-58&&cy<=y+76;

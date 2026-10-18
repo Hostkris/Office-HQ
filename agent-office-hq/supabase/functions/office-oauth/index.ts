@@ -196,7 +196,21 @@ async function callback(req:Request,u:URL){
  if(!code||code.length>3000||!ready(provider))return webRedirect("setup_required",provider);
  try{
   await assertCompany(pending.owner_id,pending.company_id);
-  const raw=await exchangeToken(provider,pending,code,u);
+  let raw=await exchangeToken(provider,pending,code,u);
+  if(provider==="instagram"&&raw.access_token){
+   const q=new URLSearchParams({grant_type:"ig_exchange_token",client_secret:secret("INSTAGRAM_APP_SECRET"),access_token:String(raw.access_token)});
+   try{
+    const long=await bodyOrThrow(await fetch("https://graph.instagram.com/access_token?"+q,{signal:AbortSignal.timeout(12000)}));
+    if(long.access_token)raw={...raw,...long,user_id:raw.user_id};
+   }catch{console.error("Instagram long-lived exchange unavailable; store initial grant only.");}
+  }
+  if(provider==="facebook"&&raw.access_token){
+   const q=new URLSearchParams({grant_type:"fb_exchange_token",client_id:secret("META_APP_ID"),client_secret:secret("META_APP_SECRET"),fb_exchange_token:String(raw.access_token)});
+   try{
+    const long=await bodyOrThrow(await fetch("https://graph.facebook.com/v26.0/oauth/access_token?"+q,{signal:AbortSignal.timeout(12000)}));
+    if(long.access_token)raw={...raw,...long};
+   }catch{console.error("Facebook long-lived exchange unavailable; store initial grant only.");}
+  }
   const token=String(raw.access_token||"");
   if(!token)throw Error("Missing access token.");
   const identity=await profile(provider,token,raw,pending.shop||"");

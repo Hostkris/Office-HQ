@@ -13,7 +13,7 @@ function run(){
  vm.runInNewContext(source,context,{filename:'office-life.js'});
  const life=context.window.OfficeHQOfficeLife;
  const staff=Array.from({length:10},(_,i)=>({id:'agent'+i,name:'Employee '+i,skin:'#b87957',hair:'#32303a',outfit:'#52baba'}));
- const floor={id:'level1',name:'Level 1',janitor:true,placements:staff.map((e,i)=>({employeeId:e.id,seat:i,projectId:null}))};
+ const floor={id:'level1',name:'Executive Leadership',department:'Leadership',janitor:true,placements:staff.map((e,i)=>({employeeId:e.id,seat:i,projectId:null}))};
  const c={
   save(){},restore(){},translate(){},fillRect(){},beginPath(){},roundRect(){},fill(){},
   setLineDash(){},strokeRect(){},clearRect(){},fillText(s){labels.push(String(s));},

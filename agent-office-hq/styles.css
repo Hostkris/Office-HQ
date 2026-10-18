@@ -102,3 +102,33 @@
 /* iPhone and iPad Safari guided workstations. Extension-driven actions are opt-in. */
 .ios-guide{border-color:#4e9386;background:linear-gradient(130deg,#17313a,#1a3340);margin-bottom:16px}.ios-guide p{line-height:1.6}.ios-guide .ops-tag{max-width:100%;white-space:normal;overflow-wrap:anywhere}.ios-grid .ios-go{display:inline-flex;align-self:flex-start;justify-content:center;align-items:center;text-align:center;white-space:normal;min-height:42px;padding:10px 14px;border-radius:9px}.ios-grid .desktop-label textarea{min-height:130px}.ios-results{min-width:0}.ios-insert{display:grid;gap:9px;border-top:1px dashed #43616b;padding-top:12px}.ios-insert textarea{min-height:75px;width:100%;background:#122938;border:1px solid #54767a;color:var(--text);border-radius:9px;padding:12px}.ios-insert button{justify-self:start}.ios-guide em{color:var(--gold)}.ios-guide .section-top{flex-wrap:wrap;align-items:flex-start;gap:8px}
 @media(max-width:720px){.ios-grid{grid-template-columns:1fr}.ios-grid .ios-go{align-self:stretch}.ios-grid .card{padding:16px}.ios-guide{padding:17px}.ios-results .desktop-actions .btn{min-height:42px;flex:1}.ios-results .desktop-job{padding:13px}.ios-insert button{justify-self:stretch}}
+
+/* Live RPG project-floor controls: narrow, opt-in, max ten employee desks per level. */
+.pf-toolbar{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding:14px}
+.pf-toolbar>label{display:grid;gap:6px;flex:1 1 190px;min-width:0;font-size:12px;color:#bed8d7;font-weight:750}
+.pf-toolbar>label>input,.pf-toolbar>label>select{width:100%;min-width:0;background:#162f3c;border:1px solid #476975;border-radius:9px;color:var(--text);padding:11px;font:inherit;min-height:43px}
+.pf-toolbar>button{min-height:42px}
+.pf-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr);gap:17px;align-items:start}
+.pf-layout .card{min-width:0}.pf-layout .section-top{gap:8px;flex-wrap:wrap;align-items:center}.pf-layout .section-top h2{margin:0}
+.pf-layout .section-top p{margin:5px 0 0}.pf-layout .inline-actions{display:flex;flex-wrap:wrap;gap:6px}
+.pf-floor-panel{padding:16px}.pf-canvas-wrap{width:100%;max-width:100%;overflow:hidden}.pf-canvas-wrap canvas{display:block;max-width:100%;width:100%;height:auto;touch-action:manipulation}
+.pf-floor-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid #3c5864}
+.pf-floor-meta>span{font-size:12px;font-weight:800;color:#a9dad1}
+.pf-janitor{display:inline-flex;gap:8px;align-items:center;line-height:1.45;cursor:pointer;font-size:12px;color:#d4ded6;min-height:43px}
+.pf-janitor input{width:19px;height:19px;accent-color:var(--turq)}
+.pf-worker-list{margin-top:12px;display:grid;gap:7px}
+.pf-worker-row{display:flex;align-items:stretch;gap:7px;min-width:0}
+.pf-worker-row .btn:first-child{flex:1;text-align:left;justify-content:flex-start;min-width:0;white-space:normal;overflow-wrap:anywhere}
+.pf-worker-row .btn:last-child{flex-shrink:0}
+.pf-control-panel{display:grid;gap:10px;padding:17px}
+.pf-control-panel h2,.pf-control-panel h3,.pf-control-panel p{margin:0}
+.pf-control-panel h3{font-size:14px;color:#e3eddc}
+.pf-control-panel>label{display:grid;gap:6px;color:#bfd5d3;font-size:12px;font-weight:750;min-width:0}
+.pf-control-panel>label input,.pf-control-panel>label textarea,.pf-control-panel>label select{width:100%;min-width:0;background:#142c38;color:var(--text);border:1px solid #416775;border-radius:9px;padding:11px;min-height:43px;font:inherit;font-size:15px}
+.pf-control-panel>label textarea{min-height:88px;resize:vertical}
+.pf-control-panel>button{min-height:43px;white-space:normal}
+.pf-control-panel .pf-divider{height:1px;background:#3f5d65;margin:6px 0}
+.pf-control-panel option:disabled{color:#93a7ab}
+@media(max-width:1000px){.pf-layout{grid-template-columns:1fr}.pf-control-panel{grid-template-columns:repeat(2,minmax(0,1fr))}.pf-control-panel h2,.pf-control-panel h3,.pf-control-panel p,.pf-control-panel .pf-divider,.pf-control-panel>button{grid-column:1/-1}}
+@media(max-width:600px){.pf-toolbar{padding:12px}.pf-layout{gap:12px}.pf-floor-panel{padding:12px}.pf-control-panel{grid-template-columns:1fr;padding:14px}.pf-control-panel>*{grid-column:1/-1}.pf-layout .inline-actions .btn{min-height:40px}.pf-worker-row .btn{min-height:43px}.pf-canvas-wrap{margin:0 -3px;width:calc(100% + 6px)}}
+@media(prefers-reduced-motion:reduce){.pf-canvas-wrap canvas{scroll-behavior:auto}}

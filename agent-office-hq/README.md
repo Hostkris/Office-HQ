@@ -8,6 +8,16 @@
 
 > **Prototype, not an autonomous company.** The dashboard functions as a local, interactive demo. AI drafting only works if you start the optional private Node server with an API key. There are no live sales, account, banking, inventory, social-media or payment integrations. Closing the app stops its browser-only scheduled brief checks. See [Architecture](docs/ARCHITECTURE.md) and [Security](SECURITY.md).
 
+### Living RPG office actions and cleanable CEO threads
+
+The 10 assigned RPG workers per level are drawn slightly larger and always display a **thought bubble, full employee name (shortened on canvas as needed) and job title**. Assigned-but-idle employees animate with different staggered activities: desk movement, standing/stretching, coffee, restroom, lunch and colleague conversations. Up to two workers are away from desks at once; coffee/restroom/lunch stations cannot be crowded by multiple workers simultaneously. **Only manually placed or newly task-assigned workers** take part in this simulation, not the entire 168-person directory at once. Every eligible employee can be placed on a floor over time; the 10-seat cap remains.
+
+Each Live RPG floor includes a distinct **CEO office and approval desk**, with an always-visible CEO avatar outside the 10-seat business-worker count. A worker with a matching pending CEO request can walk to that office; tapping the CEO office or its Approvals button takes the owner to real internal approval controls. Thought bubbles that say coffee, chatting or reviewing are **simulation states**, not evidence of external task execution. Handoffs still require existing internal task completion, and connected AI thought updates take precedence while working.
+
+Every **task card and task detail modal** now has a visible × delete action with confirmation. Deleting a task keeps its activity/audit record, rejects any outstanding internal approval tied specifically to that deleted task, and blocks dependent workflow tasks so nothing advances without review. This deletes only locally stored task records, not external activity.
+
+Each in-app **phone message and full company thread message** has a separate × delete action; the full thread also has a **Clear messages** action. Pending CEO request cards retain Approve/Deny buttons directly in both phone and full thread. Removing a pending request through its × requires confirmation and records a **rejection**, not a silent approval or disappearance. This does not send texts or enact real payments.
+
 ## Live RPG Office floors — 10 workers and optional janitor
 
 The **Live RPG Office** now starts with **10 empty desk-and-computer stations on Level 1**. Employees remain in their existing roles/roster but none appear in the RPG unless the owner places them or assigns new work. Owners can select individual active workers, choose a desk, create named project teams, view one project's staff at a time, and add more levels when needed. **Exactly 10 business workers maximum per level.** Each level has an independent optional janitor, which is visual support and does not use a worker seat.

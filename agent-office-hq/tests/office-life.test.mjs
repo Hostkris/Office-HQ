@@ -28,7 +28,7 @@ test('RPG life scene includes named workers, job titles, thought bubbles and CEO
  o.draw();
  assert.ok(o.labels.includes('CEO OFFICE'));assert.ok(o.labels.includes('CEO APPROVAL'));
  assert.ok(o.labels.includes('Employee 0'));
- assert.ok(o.labels.includes('Customer Relations Specialist'));
+ assert.ok(o.labels.includes('Customer Relations'));assert.ok(o.labels.includes('Specialist'));
  assert.ok(o.labels.some(l=>/Just checking|Stretching|Ready for|schedule|Standing|break/i.test(l)));
  assert.equal(o.life.activitySnapshot('company1:level1:all').length,10);
  assert.equal(o.life.activityTypes.includes('restroom'),true);

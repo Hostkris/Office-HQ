@@ -61,7 +61,9 @@ function backdrop(c,name,projectName){
  lastHit.push({kind:'approvals',x:786,y:70,w:166,h:111});
 }
 function sprite(c,e,x,y,t,mode){
- const bob=mode==='work'?Math.sin(t/200)*.8:Math.sin(t/185)*2.3;
+ const actor=String(e.id||e.name||e.outfit||'worker');
+ const phase=[...actor].reduce((sum,ch)=>sum+ch.charCodeAt(0),0)%17;
+ const bob=mode==='work'?Math.sin(t/200+phase)*.8:Math.sin(t/185+phase)*2.3;
  c.save();c.translate(x,y+bob);
  // bigger than previous 16px torso, with an animated step/arm.
  const step=mode==='walk'?Math.sin(t/105)*4:mode==='stretch'?4*Math.sin(t/260):0;
@@ -219,5 +221,5 @@ function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}
  lastHit.push({kind:'approvals',x:786,y:70,w:166,h:111});
 }
 function hitTest(x,y){return [...lastHit].reverse().find(h=>x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h)||null;}
-window.OfficeHQOfficeLife={draw,hitTest,DESKS,activityTypes:['desk','stretch','stand','coffee','restroom','lunch','chat','ceo']};
+window.OfficeHQOfficeLife={draw,hitTest,DESKS,activityTypes:['desk','stretch','stand','coffee','restroom','lunch','chat','ceo'],activitySnapshot:key=>[...(stateByFloor.get(key)?.activities||new Map())].map(([id,a])=>({id,kind:a.kind,since:a.since}))};
 })();

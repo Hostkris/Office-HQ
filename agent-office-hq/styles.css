@@ -63,3 +63,12 @@
 .ops-health-number{font-size:35px;color:var(--turq);display:block}
 @media(max-width:800px){.ops-grid{grid-template-columns:1fr}.ops-grid .card{min-width:0}.office-phone-header{padding:15px}.office-phone-body{padding:6px 12px 18px}.office-phone-btn{padding:5px 10px;min-width:42px;min-height:40px}}
 @media(max-width:520px){.top-actions{gap:6px}.office-phone-btn{font-size:20px;padding:5px 8px}.ops-msg-top{flex-wrap:wrap}.ops-toolbar input{max-width:100%}.ops-job-grid{grid-template-columns:1fr}}
+
+/* Stay-visible PWA refresh control; includes iPhone Home Screen safe-area inset. */
+.app-refresh-dock{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom, 0px));right:14px;z-index:45;display:flex;align-items:flex-end;flex-direction:column;gap:5px;max-width:min(300px,calc(100vw - 28px))}
+.app-refresh-button{min-height:46px;display:inline-flex;align-items:center;gap:8px;justify-content:center;border:1px solid #a9d2c6;border-radius:999px;padding:10px 17px;box-shadow:0 6px 20px #0009;background:var(--turq);color:#0e2530;font-size:14px;line-height:1;font-weight:850;cursor:pointer}
+.app-refresh-button:hover{background:#a5f3e8}
+.app-refresh-button:disabled{opacity:.72;cursor:progress}
+.app-refresh-status:not(:empty){font:650 11px/1.4 system-ui,sans-serif;color:#e7fbf7;background:#102936;border:1px solid var(--border);box-shadow:0 2px 10px #0007;padding:6px 10px;border-radius:8px;text-align:right}
+.main{padding-bottom:74px}
+@media(max-width:520px){.app-refresh-dock{bottom:calc(10px + env(safe-area-inset-bottom,0px));right:12px}.app-refresh-button{min-height:45px;padding:10px 14px;font-size:13px}}

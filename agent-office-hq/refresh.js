@@ -27,7 +27,7 @@
       if(navigator.onLine===false)throw Error('No network connection');
       // Fetch actual production assets. This triggers our network-first
       // service worker to update cached copies when internet is available.
-      await Promise.all(['./index.html','./app.js','./office-features.js','./styles.css'].map(fetchLatest));
+      await Promise.all(['./index.html','./cloud.html','./cloud.js','./app.js','./office-features.js','./styles.css'].map(fetchLatest));
       if('serviceWorker' in navigator){
         try{
           const registration=await navigator.serviceWorker.getRegistration();

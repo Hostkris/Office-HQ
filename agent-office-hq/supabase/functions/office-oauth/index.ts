@@ -50,6 +50,38 @@ async function encrypt(payload:unknown){
  const enc=await crypto.subtle.encrypt({name:"AES-GCM",iv},await aesKey(),new TextEncoder().encode(JSON.stringify(payload)));
  return "v1."+b64(iv)+"."+b64(new Uint8Array(enc));
 }
+async function decrypt(ciphertext:string){
+ const [version,iv,data]=ciphertext.split(".");
+ if(version!=="v1"||!iv||!data)throw Error("Unexpected vault payload.");
+ const raw=await crypto.subtle.decrypt({name:"AES-GCM",iv:bytes(iv)},await aesKey(),bytes(data));
+ return JSON.parse(new TextDecoder().decode(raw));
+}
+async function refreshConnection(req:Request,userId:string,id:string){
+ if(!/^[0-9a-f-]{36}$/.test(id))return json(req,{error:"Invalid connection ID"},422);
+ const {data:conn,error}=await admin.from("hq_connections").select("id,provider,owner_id").eq("id",id).eq("owner_id",userId).single();
+ if(error||!conn)return json(req,{error:"Connection not found"},404);
+ const {data:row,error:se}=await admin.from("hq_connection_secrets").select("ciphertext").eq("connection_id",id).single();
+ if(se||!row)return json(req,{error:"No credential available. Reconnect this account."},409);
+ const stored=await decrypt(row.ciphertext),provider=String(conn.provider);
+ if(provider==="shopify")return json(req,{status:"shopify_offline",note:"Shopify offline installation tokens have no standard refresh endpoint; reinstall if revoked."});
+ if(provider==="facebook")return json(req,{error:"Facebook requires explicit reauthorization or the separate long-lived Page-token flow. Reconnect the account."},409);
+ if(provider==="instagram")return json(req,{error:"Instagram requires the approved long-lived token refresh flow; please reconnect until that is configured."},409);
+ if(!stored.refresh_token)return json(req,{error:"No refresh token is stored. Reconnect and grant offline access."},409);
+ const cfg=providers[provider];if(!cfg||!ready(provider))return json(req,{error:"Provider setup is missing."},409);
+ const params=new URLSearchParams({grant_type:"refresh_token",refresh_token:stored.refresh_token});
+ if(cfg.kind==="google"){params.set("client_id",secret(cfg.id));params.set("client_secret",secret(cfg.secret));}
+ if(cfg.kind==="tiktok"){params.set("client_key",secret(cfg.id));params.set("client_secret",secret(cfg.secret));}
+ if(cfg.kind==="etsy")params.set("client_id",secret(cfg.id));
+ if(cfg.kind==="x")params.set("client_id",secret(cfg.id));
+ const headers:Record<string,string>={};
+ if(cfg.kind==="x")headers.Authorization="Basic "+btoa(secret(cfg.id)+":"+secret(cfg.secret));
+ const raw=await postToken(cfg.token,params,headers);
+ if(!raw.access_token)throw Error("Provider did not renew access.");
+ const payload={...stored,access_token:String(raw.access_token),refresh_token:raw.refresh_token||stored.refresh_token,expires_at:raw.expires_in?Date.now()+Number(raw.expires_in)*1000:stored.expires_at};
+ const {error:save}=await admin.from("hq_connection_secrets").update({ciphertext:await encrypt(payload),updated_at:new Date().toISOString()}).eq("connection_id",id);
+ if(save)throw Error("Could not save renewed authorization.");
+ return json(req,{refreshed:true,provider});
+}
 async function getUser(req:Request){
  const auth=req.headers.get("Authorization")||"";
  if(!auth.startsWith("Bearer "))throw Error("Sign in to Secure Cloud HQ first.");
@@ -225,6 +257,7 @@ Deno.serve(async(req:Request)=>{
    return json(req,{configured,unsupported,callback_url:CALLBACK,mode:"oauth-authorization-only",external_actions:false});
   }
   if(body.action==="start")return start(req,user.id,body);
+  if(body.action==="refresh")return refreshConnection(req,user.id,String(body.connectionId||""));
   if(body.action==="disconnect"){
    const id=String(body.connectionId||"");
    if(!/^[0-9a-f-]{36}$/.test(id))return json(req,{error:"Invalid connection id"},422);

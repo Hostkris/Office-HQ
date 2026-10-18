@@ -1,0 +1,69 @@
+{
+  "manifest_version": 3,
+  "name": "Office HQ — Safari Workstations",
+  "description": "Locally controlled Office HQ worker permissions and owner-approved website actions in iPhone and iPad Safari.",
+  "version": "0.1.0",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://hostkris.github.io/Office-HQ/*",
+    "https://*.google.com/*",
+    "https://*.youtube.com/*",
+    "https://*.instagram.com/*",
+    "https://*.facebook.com/*",
+    "https://*.tiktok.com/*",
+    "https://*.x.com/*",
+    "https://*.twitter.com/*",
+    "https://*.shopify.com/*",
+    "https://*.myshopify.com/*",
+    "https://*.etsy.com/*",
+    "https://*.icloud.com/*",
+    "https://*.chime.com/*",
+    "https://*.lemonade.com/*",
+    "https://*.lemon8-app.com/*",
+    "https://chatgpt.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://hostkris.github.io/Office-HQ/*"
+      ],
+      "js": [
+        "office-bridge.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://*.google.com/*",
+        "https://*.youtube.com/*",
+        "https://*.instagram.com/*",
+        "https://*.facebook.com/*",
+        "https://*.tiktok.com/*",
+        "https://*.x.com/*",
+        "https://*.twitter.com/*",
+        "https://*.shopify.com/*",
+        "https://*.myshopify.com/*",
+        "https://*.etsy.com/*",
+        "https://*.icloud.com/*",
+        "https://*.chime.com/*",
+        "https://*.lemonade.com/*",
+        "https://*.lemon8-app.com/*",
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "website-agent.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Office HQ Safari helper",
+    "default_popup": "popup.html"
+  }
+}

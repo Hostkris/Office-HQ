@@ -152,7 +152,7 @@ function scanCompany(companyId){
     // Show the specifically assigned employee, not the entire roster.
     const p=data.projects.find(p=>p.id===t.projectId)||project(data);
     const old=placed(p.id,e.id,data);
-    if(!old){try{place(p,e,null,null,true);}catch{}}
+    if(!old){try{const spot=place(p,e,null,null,true);p.currentLevel=spot.level;}catch{}}
    }
   }
   if(t.status==='done'&&previous&&previous.split('|')[1]!=='done'){
@@ -273,7 +273,8 @@ function drawFloor(canvas,{view,companyId}){
  fl.workers.forEach((id,desk)=>{
   const e=employee(id);if(!e)return;
   const at=point(desk),x=at.x,y=at.y;
-  drawTinyPerson(ctx,x-23,y+5,e,false,false);
+  const traveling=handoffs.some(h=>h.projectId===p.id&&h.level===p.currentLevel&&h.from===id&&now-h.started<h.duration);
+  if(!traveling)drawTinyPerson(ctx,x-23,y+5,e,false,false);
   const state=B.getState(),work=state.tasks.filter(t=>t.ownerId===id&&t.status!=='done');
   const inProgress=work.find(t=>t.status==='in_progress')||work[0];
   const live=window.OfficeHQDesktopThoughts?.[id];
@@ -397,7 +398,7 @@ document.addEventListener('change',event=>{
   persist(event.target.checked?'Janitor placed on this level.':'Janitor removed from this level.');
  }
 });
-window.OfficeHQProjectFloor={startOffice,renderOffice,ensure,scanAll,limit:LIMIT};
+window.OfficeHQProjectFloor={startOffice,renderOffice,ensure,scanAll,place,unplace,addProject,taskFrom,recordHandoff,limit:LIMIT};
 window.OfficeHQExtraViews.office=renderOffice;
 // Establish baseline for existing sample tasks, without populating the office.
 for(const c of B.getState().companies)ensure(c.id);

@@ -7,7 +7,7 @@ const E=B.E,$=s=>document.querySelector(s),state=()=>B.getState();
 const LIMIT=10;
 let raf=0,scene=null,lastProject='',handoff=null,delay=0,ctx=null;
 const clamp=(v,n=130)=>String(v??'').slice(0,n);
-const role=e=>B.roleFor(e)||{};
+const role=e=>e?(B.roleFor(e)||{}):{};
 const inCompany=()=>{const v=$('#companyPicker')?.value;return v&&v!=='all'?v:state().companies[0]?.id};
 const companyStaff=cid=>state().employees.filter(e=>e.companyId===cid&&e.active);
 const allTasks=cid=>state().tasks.filter(t=>t.companyId===cid);

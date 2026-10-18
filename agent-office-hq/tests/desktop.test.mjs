@@ -29,7 +29,7 @@ test('CEO approval gates block payments and uncertain external writes',()=>{
  assert.equal(decideClick({label:'Inbox',tag:'A',href:'https://mail.google.com/mail/u/0'},'gmail').type,'allow');
  assert.equal(decideClick({label:'Security code',tag:'INPUT',sensitive:true},'gmail').type,'blocked');
  assert.equal(decideClick({label:'External link',tag:'A',href:'https://www.example.com'},'gmail').type,'approval');
- assert.equal(decideClick({label:'Settings',tag:'BUTTON'},'chime').type,'approval');
+ assert.equal(decideClick({label:'Settings',tag:'BUTTON'},'chime').type,'blocked');
 });
 test('frontend browser workstation script is valid and includes explicit localhost gate',async()=>{
  const frontend=await readFile(join(root,'desktop-workstations.js'),'utf8');

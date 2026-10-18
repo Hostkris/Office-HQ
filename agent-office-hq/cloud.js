@@ -9,7 +9,13 @@ const root=document.getElementById('cloudRoot'),notice=document.getElementById('
 const state={session:null,user:null,companies:[],tasks:[],approvals:[],messages:[],company:null,tab:'companies',busy:false};
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=s=>new Date(s).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-const msg=(text,bad=false)=>{notice.textContent=text;notice.className=bad?'notice error':'notice';};
+let activeFeedback='';
+const msg=(text,bad=false)=>{
+  notice.textContent=text;
+  notice.className=bad?'notice error':'notice';
+  const inline=activeFeedback&&document.getElementById(activeFeedback);
+  if(inline){inline.textContent=text;inline.className=bad?'notice small error':'notice small';}
+};
 function storeSession(s){
   state.session=s?.access_token?{access_token:s.access_token,refresh_token:s.refresh_token,expires_at:Date.now()+Math.max(30,Number(s.expires_in||3600))*1000}:null;
   if(state.session)sessionStorage.setItem(STORE,JSON.stringify(state.session));
@@ -47,7 +53,7 @@ async function rest(table,method='GET',body=null,query=''){
 const companyOptions=()=>state.companies.map(c=>'<option value="'+escape(c.id)+'" '+(state.company===c.id?'selected':'')+'>'+escape(c.name)+'</option>').join('');
 const activeCompany=()=>state.companies.find(c=>c.id===state.company);
 function authView(){
-  root.innerHTML='<div class="cards auth"><section class="card"><h2>Sign in</h2><p class="muted small">Use your Office-HQ cloud email and password. Supabase securely authenticates you.</p><form id="cloudLogin" class="stack"><div><label>Email</label><input name="email" type="email" required autocomplete="email"></div><div><label>Password</label><input name="password" type="password" required autocomplete="current-password" minlength="6"></div><button type="submit">Sign in</button></form></section><section class="card"><h2>Create an account</h2><p class="muted small">This creates a Supabase Auth account. You may need to confirm your email before signing in.</p><form id="cloudSignUp" class="stack"><div><label>Email</label><input name="email" type="email" required autocomplete="email"></div><div><label>Password (8+ characters)</label><input name="password" type="password" required autocomplete="new-password" minlength="8"></div><button type="submit" class="secondary">Create account</button></form><hr><p class="small muted">Site owner: before email sign-up, allow this Cloud HQ URL in Supabase <a target="_blank" rel="noopener noreferrer" href="https://supabase.com/dashboard/project/wvadoqncgrmfsftefuoy/auth/url-configuration">Auth → URL Configuration</a>, including its redirect URL. Otherwise confirmation may lead to the default localhost address.</p></section></div>';
+  root.innerHTML='<div class="cards auth"><section class="card"><h2>Sign in</h2><p class="muted small">Use your Office-HQ cloud email and password. Supabase securely authenticates you.</p><form id="cloudLogin" class="stack"><div><label>Email</label><input name="email" type="email" required autocomplete="email"></div><div><label>Password</label><input name="password" type="password" required autocomplete="current-password" minlength="6"></div><button type="submit">Sign in</button><p class="notice small" id="cloudLoginFeedback" role="status" aria-live="polite"></p></form></section><section class="card"><h2>Create an account</h2><p class="muted small">This creates a Supabase Auth account. You may need to confirm your email before signing in.</p><form id="cloudSignUp" class="stack"><div><label>Email</label><input name="email" type="email" required autocomplete="email"></div><div><label>Password (8+ characters)</label><input name="password" type="password" required autocomplete="new-password" minlength="8"></div><button type="submit" class="secondary">Create account</button><p class="notice small" id="cloudSignUpFeedback" role="status" aria-live="polite"></p></form><hr><p class="small muted">Site owner: before email sign-up, allow this Cloud HQ URL in Supabase <a target="_blank" rel="noopener noreferrer" href="https://supabase.com/dashboard/project/wvadoqncgrmfsftefuoy/auth/url-configuration">Auth → URL Configuration</a>, including its redirect URL. Otherwise confirmation may lead to the default localhost address.</p></section></div>';
 }
 function homeView(){
  const c=activeCompany(),tab=state.tab;
@@ -103,6 +109,9 @@ async function guard(fn){
 document.addEventListener('submit',e=>{
  const f=e.target;if(!/^cloud(Login|SignUp|CompanyForm|TaskForm|ApprovalForm|MessageForm)$/.test(f.id))return;
  e.preventDefault();const p=Object.fromEntries(new FormData(f));
+ activeFeedback=f.id==='cloudLogin'?'cloudLoginFeedback':f.id==='cloudSignUp'?'cloudSignUpFeedback':'';
+ if(f.id==='cloudSignUp')msg('Sending your account request…');
+ if(f.id==='cloudLogin')msg('Checking your sign-in…');
  guard(async()=>{
   if(f.id==='cloudLogin'){
    const s=await authRequest('token?grant_type=password',{email:p.email,password:p.password});
@@ -123,6 +132,13 @@ document.addEventListener('submit',e=>{
   await reload();
  });
 });
+document.addEventListener('invalid',e=>{
+  const form=e.target?.closest?.('form');
+  if(form?.id!=='cloudSignUp'&&form?.id!=='cloudLogin')return;
+  activeFeedback=form.id==='cloudSignUp'?'cloudSignUpFeedback':'cloudLoginFeedback';
+  const v=e.target.validity;
+  msg(v.valueMissing?'Fill in your email and password before tapping the button.':v.typeMismatch?'Enter a valid email address.':v.tooShort?'Your password is too short; use at least 8 characters for a new account.':'Check the highlighted field and try again.',true);
+},true);
 document.addEventListener('click',e=>{
  const tab=e.target.closest('[data-tab]'),c=e.target.closest('[data-company]'),op=e.target.closest('[data-cloud]'),decision=e.target.closest('[data-decision]');
  if(tab){state.tab=tab.dataset.tab;homeView();}

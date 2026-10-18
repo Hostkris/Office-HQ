@@ -192,7 +192,11 @@
   function approve(id,decision){
     const a=S().approvals.find(x=>x.id===id&&x.status==='pending');
     if(!a)return;
-    B.decideApproval(id,decision);updateDrawer();badge();
+    const initialView=location.hash.replace('#/','');
+    B.decideApproval(id,decision);
+    // CEO decisions made inside the phone or company thread should remain there.
+    if(initialView&&initialView!=='approvals')B.setView(initialView);
+    updateDrawer();badge();
   }
   window.OfficeHQOnApprovalDecision=(a,decision)=>{
     if(a.kind==='access'&&decision==='approved'){

@@ -13,8 +13,11 @@ browser.runtime.onMessage.addListener(async msg=>{
     const parent=node.parentElement;
     if(!parent||['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT','OPTION'].includes(parent.tagName))return NodeFilter.FILTER_REJECT;
     if(parent.closest('input,textarea,select,[contenteditable],[type=password]'))return NodeFilter.FILTER_REJECT;
+    // Elements inside a display:none ancestor often report display:block themselves.
+    // Reject anything without a rendered box, plus explicitly hidden/aria-hidden subtrees.
+    if(parent.closest('[hidden],[aria-hidden="true"],[inert]')||parent.getClientRects().length===0)return NodeFilter.FILTER_REJECT;
     const css=getComputedStyle(parent);
-    if(css.display==='none'||css.visibility==='hidden')return NodeFilter.FILTER_REJECT;
+    if(css.display==='none'||css.visibility==='hidden'||css.visibility==='collapse')return NodeFilter.FILTER_REJECT;
     return NodeFilter.FILTER_ACCEPT;
   }});
   let t='',node;

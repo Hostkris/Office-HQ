@@ -132,14 +132,14 @@ test('iPad: remove single phone and full-thread messages, approve and reject in 
   });
   assert.deepEqual(decisions,['approved','rejected']);
   await page.locator('#officePhoneClose').click();
-  await page.locator('[data-ops="delete-message"][data-id="clear-thread"]').first().click();
+  await page.locator('#view [data-ops="delete-message"][data-id="clear-thread"]').click();
   assert.equal(await page.locator('[data-message-id="clear-thread"]').count(),0);
   // Individual cleanup does not delete unrelated company data or approval outcomes.
   const still=await page.evaluate(()=>{
    const s=window.OfficeHQBridge.getState();return {tasks:s.tasks.length,approvals:s.approvals.length};
   });
   assert.ok(still.tasks>0);assert.ok(still.approvals>=2);
-  await page.locator('[data-ops="clear-messages"]').click();
+  await page.locator('#view [data-ops="clear-messages"]').click();
   assert.equal((await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.messages.length)),0);
   assert.deepEqual(errors,[]);
  }finally{await context.close();}

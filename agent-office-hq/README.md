@@ -8,6 +8,14 @@
 
 > **Prototype, not an autonomous company.** The dashboard functions as a local, interactive demo. AI drafting only works if you start the optional private Node server with an API key. There are no live sales, account, banking, inventory, social-media or payment integrations. Closing the app stops its browser-only scheduled brief checks. See [Architecture](docs/ARCHITECTURE.md) and [Security](SECURITY.md).
 
+## iPhone and iPad Safari workstations (now included)
+
+**The regular Office HQ website now runs an iOS-specific browser workstation view.** On your iPhone or iPad, open [Office HQ workstations](https://hostkris.github.io/Office-HQ/#/workstations) in Safari. No Mac or cloud browser is needed for **guided work**: select a website, sign into your own account in Safari, assign tasks to existing workers, pause or mark work complete, and explicitly hand off jobs to another employee. The mobile page saves job records in the iOS browser and shows assignment status/thought bubbles.
+
+**Critical distinction:** Standard iOS Safari web pages cannot access or control other websites' tabs. To perform any actual per-site page reading or draft field insertion, Apple requires an **installed and authorized Safari web extension**. The repo now contains a least-privilege Safari extension source under `ios-safari-extension/` and the mobile app is prepared to communicate with it. The extension is **source-only and not installed or packaged for App Store/TestFlight yet**. Without that extension, account authorization in Office HQ does *not* give any bot login access; tasks are guided/manual. Even when installed, the current extension is **owner-triggered** only (read visible text or insert your exact draft), not autonomous AI publishing, buying or browsing. Sites and Safari background execution impose further limits. This does **not** require registering an API application with every individual website, but **distribution of the Safari extension** requires Apple's packaging and signing process.
+
+**Instructions and current limits:** [iOS Safari setup](docs/IOS_SAFARI_SETUP.md).
+
 ## Local computer browser employees (primary connection method)
 
 **No cloud browser and no developer account for each website required.** The primary **Social & business accounts → Use desktop browser** and **Desktop AI workstations** controls open a *visible local browser* when this app is running on your Windows/Mac/Linux computer through Node and Playwright. You log in manually to Gmail, TikTok, Instagram, Shopify, Chime, iCloud, and other supported websites, approve a specific employee, and assign a task. The task runs only while your own computer is running; if stopped, work resumes manually from a paused state after restarting.

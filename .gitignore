@@ -1,0 +1,7 @@
+# Never commit personal website sessions, tokens, passwords or local job history
+agent-office-hq/.office-hq-private/
+agent-office-hq/.env
+agent-office-hq/.env.*
+agent-office-hq/node_modules/
+agent-office-hq/dist/
+*.log

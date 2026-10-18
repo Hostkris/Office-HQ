@@ -53,7 +53,7 @@ test('iPad: project groups, 10 worker cap per level, independent empty second fl
  page.on('dialog',async dialog=>{if(dialog.type()==='prompt')await dialog.accept('TikTok campaign');else await dialog.accept();});
  try{
   await page.locator('[data-pf="new-project"]').click();
-  await page.locator('#pfProject').getByText('TikTok campaign').waitFor();
+  await page.locator('#pfProject option').filter({hasText:'TikTok campaign'}).waitFor({state:'attached'});
   assert.equal(await page.locator('#pfProject').inputValue(),await page.locator('#pfPlacementProject').inputValue());
   // Make the first floor maximally populated through explicit desk assignments.
   for(let i=0;i<10;i++){

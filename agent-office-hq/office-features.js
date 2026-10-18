@@ -13,14 +13,16 @@
   const ensure=()=>{const s=S(); if(!s.enterprise||typeof s.enterprise!=='object')s.enterprise={};for(const k of ['accounts','grants','messages','meetings','workflows'])if(!Array.isArray(s.enterprise[k]))s.enterprise[k]=[];return s.enterprise;};
   const ent=()=>ensure();
   const fmt=date=>{try{return new Date(date).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}catch{return 'Recently'}};
-  const providers=['Shopify','YouTube','Instagram','TikTok','Gmail / Email','Facebook','Other'];
+  const integrations=[{"name":"Gmail / Email","icon":"✉","group":"Email","method":"OAuth","explanation":"Google OAuth plus Gmail API requires a cloud project, approved scopes and a server token vault. Reading mail may require restricted-scope verification.","docs":"https://developers.google.com/workspace/gmail/api/auth/web-server"},{"name":"iCloud","icon":"☁","group":"Email","method":"Limited","explanation":"Sign in with Apple is identity login, not authorization to access iCloud Mail or Drive. A separate supported mail connector would be needed; never paste app-specific passwords here.","docs":"https://support.apple.com/en-us/102654"},{"name":"X (Twitter)","icon":"𝕏","group":"Social","method":"OAuth","explanation":"X developer access, app permissions, OAuth callback and a secure backend are necessary; quotas and costs may apply.","docs":"https://developer.x.com/en/portal/dashboard"},{"name":"Instagram","icon":"◎","group":"Social","method":"Meta OAuth","explanation":"An eligible professional account, Meta app and approved permissions are required for publishing and insights.","docs":"https://developers.facebook.com/docs/instagram-platform/"},{"name":"Shopify","icon":"◈","group":"Commerce","method":"App install","explanation":"Install a Shopify app with least-privilege store scopes, server token storage and CEO action approvals.","docs":"https://shopify.dev/docs/apps/build/authentication-authorization"},{"name":"Etsy","icon":"✦","group":"Commerce","method":"OAuth + PKCE","explanation":"Register an Etsy developer app, HTTPS OAuth callback, PKCE and shop-specific scopes.","docs":"https://developer.etsy.com/documentation/essentials/authentication/"},{"name":"TikTok","icon":"♪","group":"Social","method":"OAuth","explanation":"TikTok developer registration, permissions and approval or audit for some posting features are required.","docs":"https://developers.tiktok.com/doc/login-kit-overview/"},{"name":"Lemonade","icon":"◉","group":"Insurance","method":"Manual / restricted","explanation":"No standard consumer OAuth for independent AI agents has been established. Use the provider portal or formally approved integration; do not enter policy credentials here.","docs":"https://www.lemonade.com/"},{"name":"Chime","icon":"＄","group":"Finance","method":"Read-only if supported","explanation":"No direct autonomous banking connector exists in Office HQ. A consent-based financial data aggregator might support some read-only records; money movement is excluded.","docs":"https://www.chime.com/"},{"name":"Facebook","icon":"f","group":"Social","method":"Meta OAuth","explanation":"A Meta developer app, Pages API permissions and authenticated backend are required.","docs":"https://developers.facebook.com/docs/pages-api/"},{"name":"YouTube","icon":"▶","group":"Social","method":"Google OAuth","explanation":"A Google project, YouTube API scopes and a secure token service are required for channel operations.","docs":"https://developers.google.com/youtube/v3/guides/authentication"}];
+  const providers=integrations.map(x=>x.name);
+  let selectedProvider='Gmail / Email';
   const roles=()=>B.getRoles();
   const staff=cid=>S().employees.filter(e=>e.companyId===cid&&e.active);
   const prettyScope=r=>r?.scope?.replaceAll('_',' ')||'';
   const serviceAllowed=(employee,provider)=>{
     if(!employee)return false;
     const dept=B.roleFor(employee)?.dept;
-    const a={'Shopify':['Sales','Product','Marketing','Customer'],'YouTube':['Marketing'],'Instagram':['Marketing'],'TikTok':['Marketing'],'Facebook':['Marketing'],'Gmail / Email':['Customer','Leadership','Marketing','Sales','PMO'],'Other':['Technology']};
+    const a={'Shopify':['Sales','Product','Marketing','Customer'],'Etsy':['Sales','Product','Marketing','Customer'],'X (Twitter)':['Marketing'],'iCloud':['Customer','Leadership','PMO'],'Lemonade':['Finance','Leadership'],'Chime':['Finance','Leadership'],'YouTube':['Marketing'],'Instagram':['Marketing'],'TikTok':['Marketing'],'Facebook':['Marketing'],'Gmail / Email':['Customer','Leadership','Marketing','Sales','PMO'],'Other':['Technology']};
     return (a[provider]||[]).includes(dept);
   };
   const message=(author,body,companyId,kind='update')=>{
@@ -106,17 +108,22 @@
       <label>Campaign purpose</label><textarea name="note" required maxlength="450" placeholder="Describe the promotion and intended outcome"></textarea>
       <button class="btn btn-primary" type="submit">Send spending request to CEO</button></form><p class="tiny muted">You can change $40 to $5 in the phone inbox before approval. No transaction executes in this demo.</p>`;
   }
+  function integrationCenter(){
+    const selected=integrations.find(x=>x.name===selectedProvider)||integrations[0];
+    const tiles=integrations.map(x=>`<article class="ops-integration"><div class="ops-integration-title"><span class="ops-integration-icon">${E(x.icon)}</span><div><strong>${E(x.name)}</strong><small>${E(x.group)} · ${E(x.method)}</small></div></div><div class="muted small">${E(x.explanation.split('.')[0])}.</div><span class="ops-tag">Not connected</span><div class="ops-integration-actions">${button('provider-guide','How to connect',x.name)} ${button('select-provider','Add label',x.name)}</div></article>`).join('');
+    return `<section class="ops-catalog"><h2>Account Connection Center</h2><p class="muted">Choose a platform to see its requirements. These buttons show setup instructions and register labels; they do not sign in or grant live account access.</p><div class="ops-integration-grid">${tiles}</div><div id="connectionSetup" class="ops-connector-guide" aria-live="polite"><h3>${E(selected.name)} · connection steps</h3><p>${E(selected.explanation)}</p><p class="notice">A production connection requires provider approval, an authenticated backend, OAuth or another supported authorization method, protected tokens and server-enforced worker permissions. None is installed here yet.</p><a class="btn btn-sm btn-primary ops-guide-link" href="${E(selected.docs)}" rel="noopener noreferrer" target="_blank">Official provider setup ↗</a></div></section>`;
+  }
   function renderConnections(){
     const cid=currentCompany()==='all'?companies()[0]?.id:currentCompany();
     const accounts=ent().accounts.filter(x=>x.companyId===cid);
     const grants=ent().grants.filter(x=>x.companyId===cid&&x.status==='approved');
-    const legal=`<p class="notice">Registering an account below saves only its provider and public label, not passwords or tokens. The account is NOT connected. Approving worker access sets an internal policy only; secure OAuth and server-enforced permissions must be installed before workers can actually read, post, or publish.</p>`;
-    return page('Social & business connections','Add account labels, then require CEO permission for each worker and service.',
-      legal+`<div class="ops-grid">
+    const legal=`<p class="notice">Labels and CEO approvals are internal policy records only. Office HQ has not connected these services. Never enter passwords, bank details or access tokens here. Real access requires a verified backend connector.</p>`;
+    return page('Social & business connections','Review provider setup, save account labels and apply CEO authorization policies.',
+      legal+integrationCenter()+`<div class="ops-grid">
         ${panel('Your account directory',`<form id="opsAccountForm">
          <label>Company</label><select name="companyId">${companies().map(c=>`<option value="${E(c.id)}" ${c.id===cid?'selected':''}>${E(c.name)}</option>`).join('')}</select>
-         <label>Service</label><select name="provider">${providers.map(p=>`<option>${E(p)}</option>`).join('')}</select>
-         <label>Public account name or label (never passwords)</label><input name="label" required maxlength="90" placeholder="Example: @myshop / Store 1">
+         <label>Service</label><select id="opsProviderSelect" name="provider">${providers.map(p=>`<option ${p===selectedProvider?'selected':''}>${E(p)}</option>`).join('')}</select>
+         <label>Public account name or label (never passwords)</label><input id="opsProviderLabel" name="label" required maxlength="90" placeholder="Example: @myshop / Store 1">
          <button class="btn btn-primary" type="submit">Add account label</button></form>
          <div class="ops-account-list">${accounts.map(a=>`<div class="ops-account"><strong>${E(a.provider)} · ${E(a.label)}</strong><span class="ops-tag">Not connected</span><small>Actual sign-in requires secure OAuth; do not enter your password here.</small>
          ${button('remove-account','Remove label',a.id)}</div>`).join('')||'<p class="muted">No account labels registered for this company.</p>'}</div>`)}
@@ -217,6 +224,8 @@
       const op=action.dataset.ops,id=action.dataset.id;
       if(op==='phone-open')openPhone();
       else if(op==='phone-close')closePhone();
+      else if(op==='provider-guide'){if(providers.includes(id)){selectedProvider=id;refreshCurrent();$('#connectionSetup')?.scrollIntoView({block:'nearest'});}}
+      else if(op==='select-provider'){if(providers.includes(id)){selectedProvider=id;const f=$('#opsProviderSelect');if(f)f.value=id;$('#opsProviderLabel')?.focus();}}
       else if(op==='approve-request'||op==='deny-request')approve(id,op==='approve-request'?'approved':'rejected');
       else if(op==='view-request'){closePhone();B.setView('approvals');}
       else if(op==='save-amount'){
@@ -257,7 +266,7 @@
       if(!p.body?.trim())return;
       message('You · CEO',p.body.trim(),p.companyId,'update');B.addActivity('You · CEO','Posted instruction to internal company thread','message',p.companyId);refreshCurrent();B.toast('Internal message posted; not an SMS.');
     }else if(form.id==='opsAccountForm'){
-      if(!p.label?.trim())return;
+      if(!p.label?.trim()||!providers.includes(p.provider)||!companies().some(c=>c.id===p.companyId))return;
       ent().accounts.push({id:B.uid('acct'),companyId:p.companyId,provider:p.provider,label:p.label.trim().slice(0,90),createdAt:today(),connected:false});
       B.addActivity('You · CEO',`Registered ${p.provider} account label; OAuth not connected`,'settings',p.companyId);
       refreshCurrent();B.toast('Account label saved. Actual account is not connected.');
@@ -267,6 +276,7 @@
       if(!account||!emp||emp.companyId!==cid||!emp.active){B.toast('Choose a valid account and active worker.','error');return;}
       if(!serviceAllowed(emp,account.provider)){B.toast('That worker’s department cannot access this provider. Choose a role with the right specialty.','error');return;}
       if(!p.purpose?.trim()){B.toast('Explain the business purpose.','error');return;}
+       if(['Chime','Lemonade','iCloud'].includes(account.provider)&&p.permission==='publish'){B.toast('Publishing or changing this account is not supported.','error');return;}
       makeApproval({companyId:cid,kind:'access',title:`Access: ${emp.name} → ${account.provider}`,requester:emp.name,employeeId:emp.id,provider:account.provider,accountId:account.id,permission:p.permission,note:`${account.label} · Permission: ${p.permission} · Purpose: ${p.purpose.trim().slice(0,450)}. Internal authorization only; service not connected.`});
       refreshCurrent();B.toast('Worker access request sent to your phone inbox.');
     }else if(form.id==='opsCampaignForm'){

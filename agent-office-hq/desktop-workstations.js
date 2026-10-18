@@ -220,4 +220,5 @@ document.addEventListener('change',ev=>{
 });
 setInterval(()=>{if(isDesktop)void refresh();},2300);
 setTimeout(()=>{if(isDesktop)void refresh();},300);
+if(location.hash.replace('#/','')==='workstations')B.setView('workstations');
 })();

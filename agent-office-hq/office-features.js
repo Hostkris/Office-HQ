@@ -283,7 +283,7 @@
       const workflowId=B.uid('workflow'),taskIds=[];
       for(const [i,x] of assignments.entries()){
         const task={id:B.uid('task'),companyId:cid,workflowId,dependsOn:i?taskIds[i-1]:null,title:`${p.title.slice(0,110)} · Step ${i+1}: ${x.role.title}`,description:p.details.trim().slice(0,700),scope:x.scope,ownerId:x.owner.id,delegatedBy:'owner',status:'queued',priority:'High',due:new Date(Date.now()+7*86400000).toLocaleDateString('en-CA'),createdAt:today(),updatedAt:today(),output:'',requiresApproval:['paid_advertising','purchasing','accounts_payable','tax_preparation','finance_strategy','legal_strategy'].includes(x.scope),approvalId:null};
-        S().tasks.unshift(task);taskIds.push(task.id);
+        S().tasks.unshift(task);window.OfficeHQFloor?.onTaskAssigned(task);taskIds.push(task.id);
       }
       ent().workflows.unshift({id:workflowId,companyId:cid,title:p.title.trim(),taskIds,createdAt:today()});
       B.addActivity('You · CEO',`Created ${assignments.length}-stage task handoff workflow: ${p.title}`,'task',cid);refreshCurrent();B.toast('Ordered tasks created; each agent is restricted to its specialty.');

@@ -76,3 +76,71 @@ test('iPad: project groups, 10 worker cap per level, independent empty second fl
   assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
+
+test('iPhone: tap an X to delete an assignment without orphaning workflow or approvals',async()=>{
+ const {page,context,errors}=await pageFor();
+ page.on('dialog',d=>d.accept());
+ try{
+  const ids=await page.evaluate(()=>{
+   const B=window.OfficeHQBridge,s=B.getState(),cid=s.companies[0].id;
+   const task={id:'remove-me',companyId:cid,title:'Old assignment for cleanup',description:'Old work',ownerId:s.employees[0].id,scope:B.roleFor(s.employees[0]).scope,status:'queued',priority:'Low',createdAt:new Date().toISOString()};
+   s.tasks.unshift(task);
+   s.tasks.push({id:'dependent',companyId:cid,title:'Next workflow task',description:'Follow-up',dependsOn:'remove-me',ownerId:s.employees[1].id,status:'queued',priority:'Low'});
+   s.approvals.push({id:'delete-approval',companyId:cid,title:'Approval for old assignment',taskId:'remove-me',status:'pending',kind:'task'});
+   B.save();B.setView('tasks');
+   return {cid};
+  });
+  await page.locator('[data-action="deleteTask"][data-id="remove-me"]').click();
+  const result=await page.evaluate(()=>{
+   const s=window.OfficeHQBridge.getState();
+   return {exists:s.tasks.some(t=>t.id==='remove-me'),dependent:s.tasks.find(t=>t.id==='dependent'),approval:s.approvals.find(a=>a.id==='delete-approval')};
+  });
+  assert.equal(result.exists,false);
+  assert.equal(result.dependent.status,'blocked');
+  assert.equal(result.dependent.dependsOn,null);
+  assert.equal(result.approval.status,'rejected');
+  assert.equal(await page.locator('[data-action="deleteTask"][data-id="remove-me"]').count(),0);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+test('iPad: remove single phone and full-thread messages, approve and reject in CEO thread',async()=>{
+ const {page,context,errors}=await pageFor('iPad Pro 11');
+ page.on('dialog',d=>d.accept());
+ try{
+  await page.evaluate(()=>{
+   const B=window.OfficeHQBridge,s=B.getState(),cid=s.companies[0].id;
+   s.enterprise??={};s.enterprise.messages??=[];
+   s.enterprise.messages.push(
+    {id:'clear-phone',companyId:cid,author:'Employee A',body:'Old text to remove from phone',kind:'update',createdAt:new Date().toISOString()},
+    {id:'clear-thread',companyId:cid,author:'Employee B',body:'Old text to remove from full thread',kind:'update',createdAt:new Date().toISOString()}
+   );
+   s.approvals.push(
+    {id:'approve-inbox',companyId:cid,kind:'campaign',title:'Approval for team request',note:'Internal budget draft',status:'pending',amount:10,employeeId:s.employees[0].id,createdAt:new Date().toISOString()},
+    {id:'deny-inbox',companyId:cid,kind:'campaign',title:'Request to reject',note:'Not needed',status:'pending',amount:8,employeeId:s.employees[1].id,createdAt:new Date().toISOString()}
+   );
+   B.save();B.setView('thread');
+  });
+  await page.locator('#officePhoneBtn').click();
+  await page.locator('#opsDrawerContent [data-ops="delete-message"][data-id="clear-phone"]').click();
+  assert.equal(await page.locator('#opsDrawerContent [data-message-id="clear-phone"]').count(),0);
+  await page.locator('#opsDrawerContent [data-ops="approve-request"][data-id="approve-inbox"]').click();
+  await page.locator('#opsDrawerContent [data-approval="approve-inbox"]').count().then(n=>assert.equal(n,0));
+  await page.locator('#opsDrawerContent [data-ops="dismiss-request"][data-id="deny-inbox"]').click();
+  const decisions=await page.evaluate(()=>{
+   const s=window.OfficeHQBridge.getState();
+   return [s.approvals.find(a=>a.id==='approve-inbox')?.status,s.approvals.find(a=>a.id==='deny-inbox')?.status];
+  });
+  assert.deepEqual(decisions,['approved','rejected']);
+  await page.locator('#officePhoneClose').click();
+  await page.locator('#view [data-ops="delete-message"][data-id="clear-thread"]').click();
+  assert.equal(await page.locator('[data-message-id="clear-thread"]').count(),0);
+  // Individual cleanup does not delete unrelated company data or approval outcomes.
+  const still=await page.evaluate(()=>{
+   const s=window.OfficeHQBridge.getState();return {tasks:s.tasks.length,approvals:s.approvals.length};
+  });
+  assert.ok(still.tasks>0);assert.ok(still.approvals>=2);
+  await page.locator('#view [data-ops="clear-messages"]').click();
+  assert.equal((await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.messages.length)),0);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});

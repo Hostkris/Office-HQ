@@ -102,7 +102,7 @@ function render(){
  const options=available.map(e=>'<option value="'+E(e.id)+'">'+E(e.name)+' · '+E(role(e).title||'Worker')+'</option>').join('');
  const projOptions='<option value="all">All desks / placed workers</option>'+projects.map(p=>'<option value="'+E(p.id)+'"'+(project?.id===p.id?' selected':'')+'>'+E(p.name)+'</option>').join('');
  return '<div class="page-head"><div><div class="eyebrow">LIVE RPG OFFICE · ASSIGNED STAFF ONLY</div><h1>Project Floor</h1><p class="subtitle">A small, professional office with desks and computers. Nobody appears until you place a worker or assign a new task.</p></div>'+
- '<div class="head-actions"><button class="btn btn-primary" data-action="newTask">＋ Assign task</button></div></div>'+
+ '<div class="head-actions"><button class="btn" data-view="approvals">🏛 CEO approvals ('+(state().approvals||[]).filter(a=>a.companyId===cid&&a.status==='pending').length+')</button><button class="btn btn-primary" data-action="newTask">＋ Assign task</button></div></div>'+
  '<section class="card pf-toolbar"><div class="pf-tools">'+
  '<label>Level<select id="pfFloor">'+floors.map((f,i)=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+'</option>').join('')+'</select></label>'+
  '<label>Project / group<select id="pfProject">'+projOptions+'</select></label>'+
@@ -110,7 +110,7 @@ function render(){
  '<button class="btn btn-sm" data-pf="new-project">＋ New project</button></div>'+
  '<div class="pf-status"><strong>'+floor.placements.length+' / '+LIMIT+'</strong> worker desks occupied on this level · <strong>'+active.length+'</strong> shown for the selected project'+
  ' · Janitor <strong>'+(floor.janitor?'on duty':'off duty')+'</strong></div>'+
- '<div class="office-box pf-stage"><canvas class="office-canvas" id="officeCanvas" width="960" height="436" role="img" aria-label="Live RPG office: 10 desks, optional janitor and only assigned workers. Tap a desk to select it."></canvas></div>'+
+ '<div class="office-box pf-stage"><canvas class="office-canvas" id="officeCanvas" width="960" height="584" role="img" aria-label="Living RPG office with ten desks, names and thought bubbles, CEO office and staggered break-room activity."></canvas></div>'+
  '<div class="office-legend"><span>▣ Empty desk</span><span>● Assigned worker</span><span>📁 Handoff only after a linked task is completed</span></div>'+
  '<label class="pf-janitor"><input type="checkbox" id="pfJanitor"'+(floor.janitor?' checked':'')+'> Assign a janitor to this level <small>(separate from the 10 worker spaces)</small></label>'+
  '</section>'+
@@ -176,6 +176,12 @@ function label(c,text,x,y,color='#f0e1aa'){
 function renderFloor(c,now){
  if(!c)return;
  const cid=inCompany(),{floor,project}=setup(cid);if(!floor)return;
+ if(window.OfficeHQOfficeLife?.draw){
+  if(handoff&&handoff.cid===cid&&handoff.floorId===floor.id&&handoff.until===null)handoff.until=Date.now()+6500;
+  window.OfficeHQOfficeLife.draw({c,now,cid,floor,project,handoff,staff:state().employees,tasks:state().tasks,approvals:state().approvals||[],thoughts:window.OfficeHQDesktopThoughts||{},B});
+  if(handoff&&handoff.until!==null&&Date.now()>=handoff.until)handoff=null;
+  return;
+ }
  background(c);
  if(handoff&&handoff.cid===cid&&handoff.floorId===floor.id&&handoff.until===null)handoff.until=Date.now()+6500;
  const title=project?.name||floor.name;
@@ -235,7 +241,10 @@ function start(){
  function frame(now){if(!canvas.isConnected){stop();return;}if(now-frameAt>70){renderFloor(c,now);frameAt=now;}if(!reduced)raf=requestAnimationFrame(frame);}
  frame(performance.now());
  canvas.onclick=event=>{
-  const rect=canvas.getBoundingClientRect(),cx=(event.clientX-rect.left)*960/rect.width,cy=(event.clientY-rect.top)*436/rect.height;
+  const rect=canvas.getBoundingClientRect(),cx=(event.clientX-rect.left)*canvas.width/rect.width,cy=(event.clientY-rect.top)*canvas.height/rect.height;
+  const hit=window.OfficeHQOfficeLife?.hitTest(cx,cy);
+  if(hit?.kind==='worker'&&B.workerModal){B.workerModal(hit.id);return;}
+  if(hit?.kind==='approvals'){B.setView('approvals');return;}
   const {floor,project}=visible();if(!floor)return;
   const seat=seatList(floor).find(item=>{
    const {x,y}=coords(item.seat);return cx>=x-75&&cx<=x+75&&cy>=y-58&&cy<=y+76;

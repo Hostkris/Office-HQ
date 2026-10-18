@@ -24,11 +24,11 @@ test('GitHub Pages root redirect preserves iPhone workstation hash and search st
 test('installed iPhone app caches essential account and workstation controls',async()=>{
  const sw=await readFile(join(root,'agent-office-hq/sw.js'),'utf8');
  const refresh=await readFile(join(root,'agent-office-hq/refresh.js'),'utf8');
- for(const name of ['app.js','integration-center.js','desktop-workstations.js','ios-workstations.js']){
+ for(const name of ['app.js','integration-center.js','desktop-workstations.js','ios-workstations.js','project-floor.js','office-life.js']){
   assert.ok(sw.includes("'./"+name+"'"),'offline cache missing '+name);
   assert.ok(refresh.includes("'./"+name+"'"),'Refresh App missing '+name);
  }
- assert.match(sw,/agent-office-hq-v7/);
+ assert.match(sw,/agent-office-hq-v8/);
 });
 test('published site skips nonexistent localhost AI endpoint unless served locally',async()=>{
  const app=await readFile(join(root,'agent-office-hq/app.js'),'utf8');

@@ -92,7 +92,7 @@ function jobRow(t){
  return '<article class="desktop-job"><div class="desktop-job-heading"><strong>'+E(worker?.name||'Former employee')+' · '+E(site(t.site)?.[1]||t.site)+'</strong><span class="ops-tag">'+E(t.status||'queued')+'</span></div>'+
  '<p>'+E(t.instructions||'')+'</p><p class="desktop-thought">💭 '+E(t.thought||'Assignment saved; waiting for owner.')+'</p>'+
  (t.observation?'<p class="desktop-summary"><strong>Visible-page excerpt (not AI analysis):</strong> '+E(t.observation).replace(/\n/g,'<br>')+'</p>':'')+
- '<div class="desktop-actions">'+
+ '<div class="desktop-actions"><button class="btn btn-sm" data-ios="delete" data-job="'+id+'" aria-label="Delete guided assignment">× Delete</button>'+
  (active?'<button class="btn btn-sm" data-ios="inspect" data-job="'+id+'">⌕ Inspect open site (extension)</button>':'')+
  (active?'<button class="btn btn-sm" data-ios="manual" data-job="'+id+'">✓ Mark manually completed</button>':'')+
  (active?'<button class="btn btn-sm" data-ios="pause" data-job="'+id+'">⏸ Pause</button>':'')+
@@ -155,6 +155,11 @@ async function doAction(op,node){
  }
  const job=records().find(t=>t.id===node.dataset.job&&t.companyId===company());
  if(!job)throw Error('Choose an existing assignment.');
+ if(op==='delete'){if(!confirm('Delete this saved iOS guided assignment? This does not undo any website actions.'))return;
+  const index=records().findIndex(t=>t.id===job.id&&t.companyId===company());
+  if(index>=0)records().splice(index,1);
+  B.addActivity('You · CEO','Deleted saved iOS guided assignment '+job.instructions.slice(0,95),'message',job.companyId);
+  renderAgain();return;}
  if(op==='pause'){job.status='paused';job.thought='Paused by owner.';renderAgain();return;}
  if(op==='resume'){job.status='queued';job.thought='Owner resumed iOS task.';renderAgain();return;}
  if(op==='manual'){

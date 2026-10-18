@@ -10,7 +10,7 @@ function sandbox(){
  let next=0,saves=0;
  const companyId='company1';
  const workers=Array.from({length:13},(_,i)=>({id:'worker'+i,companyId,name:'Worker '+i,active:true,roleKey:'role'+i,skin:'#a77b59',hair:'#2d2523',outfit:'#77bbaa'}));
- const state={companies:[{id:companyId,name:'First Company'}],employees:workers,tasks:[],enterprise:{}};
+ const state={companies:[{id:companyId,name:'First Company'}],employees:workers,tasks:[],approvals:[],enterprise:{}};
  const controls={companyPicker:{value:companyId},pfFloor:{},pfEmployee:{value:'worker0'},pfSeat:{value:'0'},pfPlacementProject:{value:'all'},pfFirstTask:{value:''},pfNextTask:{value:''},pfJanitor:{checked:true}};
  const handlers={};
  const errors=[];

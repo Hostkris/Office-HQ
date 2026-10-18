@@ -108,3 +108,25 @@
 @media(max-width:730px){.pf-tools{display:grid;grid-template-columns:1fr 1fr}.pf-tools label{min-width:0}.pf-tools button{min-width:0}.pf-bottom{grid-template-columns:1fr}.pf-place-form button,.pf-handoff-form button{justify-self:stretch}.pf-person .btn{min-height:42px}}
 @media(max-width:400px){.pf-tools{grid-template-columns:1fr}.pf-toolbar{padding:14px}.pf-person{flex-wrap:wrap}.pf-person .btn{flex:1}.pf-tools select,.pf-place-form select,.pf-handoff-form select{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.pf-stage canvas{transition:none!important}}
+
+/* Office life refinements — scoped to the existing RPG floor and inbox. */
+.pf-stage{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.pf-stage canvas{width:100%;height:auto;display:block}
+.pf-life-note{font-size:12px;line-height:1.55;color:#bbd4d0;padding:8px 0}
+.task-dismiss,.ops-dismiss{border:1px solid #66828d;background:#18303d;color:#f2d5ce;border-radius:9px;display:inline-flex;justify-content:center;align-items:center;cursor:pointer;font:700 24px/1 system-ui;flex:0 0 auto;width:42px;height:42px;padding:0}
+.task-dismiss:hover,.ops-dismiss:hover{background:#723b3e;color:#fff;border-color:#d38a86}
+.task-dismiss:focus-visible,.ops-dismiss:focus-visible{outline:2px solid #f4ce80;outline-offset:3px}
+.ops-msg-controls{display:inline-flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:7px;min-width:0}
+.ops-msg-top .ops-dismiss{font-size:22px;color:#f3d4c6}
+.ops-thread-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:15px;flex-wrap:wrap}
+.ops-thread-heading h3{margin:0}
+.ops-thread-heading .btn{min-height:40px;white-space:normal}
+.ops-message{min-width:0}.ops-msg-top{align-items:center;flex-wrap:wrap}.ops-msg-top strong{min-width:0;overflow-wrap:anywhere}
+@media(max-width:660px){
+ .pf-stage canvas{max-width:none!important;min-width:740px;width:960px!important;touch-action:pan-x pan-y}
+ .pf-stage{overscroll-behavior-x:contain}
+ .pf-stage:after{content:'← Swipe office to see coffee, desks and CEO room →';display:block;font-size:11px;color:#c2d5cc;text-align:center;padding:5px}
+ .ops-msg-top .ops-dismiss,.task-dismiss{width:44px;height:44px}
+ .ops-msg-top time{white-space:normal}
+}
+@media(prefers-reduced-motion:reduce){.pf-stage canvas{scroll-behavior:auto}}

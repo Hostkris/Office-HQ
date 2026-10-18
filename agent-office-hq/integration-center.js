@@ -78,7 +78,7 @@ function html(){
   </div>`;
 }
 const original=window.OfficeHQExtraViews.connections;
-window.OfficeHQExtraViews.connections=function(){return html()+original();};
+window.OfficeHQExtraViews.connections=function(){const base=original();const marker='<div class="ops-grid">';return base.includes(marker)?base.replace(marker,html()+marker):base+html();};
 function employeeOptions(){
   const template=tmpl(document.getElementById('officePlanTemplate')?.value);
   const select=document.getElementById('officePlanEmployee');

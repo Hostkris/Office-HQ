@@ -210,4 +210,5 @@ document.addEventListener('click',event=>{
  event.preventDefault();if(state.busy)return;state.busy=true;
  void doAction(node.dataset.ios,node).catch(e=>feedback(e.message||'This action could not be completed.',true)).finally(()=>{state.busy=false;});
 });
+if(location.hash.replace('#/','')==='workstations')B.setView('workstations');
 })();

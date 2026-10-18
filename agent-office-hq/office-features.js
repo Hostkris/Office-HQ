@@ -47,7 +47,7 @@
     const amount=Number(a.amount||0);
     const canEdit=a.kind==='campaign'||a.kind==='expense';
     return `<article class="ops-message ops-request" data-approval="${E(a.id)}">
-     <div class="ops-msg-top"><strong>${E(a.requester||'Employee request')}</strong><span>${fmt(a.createdAt)}</span></div>
+     <div class="ops-msg-top"><strong>${E(a.requester||'Employee request')}</strong><span>${fmt(a.createdAt)} <button type="button" class="ops-dismiss" data-ops="dismiss-request" data-id="${E(a.id)}" aria-label="Reject and remove request: ${E(a.title)}" title="Reject and remove this request">×</button></span></div>
      <h3>${E(a.title)}</h3><p>${E(a.note||'Awaiting your decision.')}</p>
      ${a.provider?`<p class="tiny">Service: <strong>${E(a.provider)}</strong></p>`:''}
      ${canEdit?`<label class="ops-amount-label" for="amount_${E(a.id)}">Approved spending cap ($)</label><div class="ops-amount-row"><input id="amount_${E(a.id)}" type="number" step="0.01" min="0" max="100000" value="${amount.toFixed(2)}" aria-label="Proposed amount in dollars">${button('save-amount','Save amount',a.id)}</div>`:''}
@@ -56,14 +56,14 @@
   }
   function recentMessages(){
     const msgs=ent().messages.filter(inScope);
-    return msgs.slice(0,80).map(m=>`<article class="ops-message ${m.author==='You · CEO'?'ops-own':''}">
-     <div class="ops-msg-top"><strong>${E(m.author)}</strong><time>${fmt(m.createdAt)}</time></div>
+    return msgs.slice(0,80).map(m=>`<article class="ops-message ${m.author==='You · CEO'?'ops-own':''}" data-message-id="${E(m.id)}">
+     <div class="ops-msg-top"><strong>${E(m.author)}</strong><span class="ops-msg-controls"><time>${fmt(m.createdAt)}</time><button type="button" class="ops-dismiss" data-ops="delete-message" data-id="${E(m.id)}" aria-label="Delete message by ${E(m.author)}" title="Remove this message">×</button></span></div>
      <p>${E(m.body)}</p><small>${m.kind==='alert'?'⚠ Alert':m.kind==='meeting'?'Meeting':'Internal company message'}</small></article>`).join('')||'<p class="muted">No company messages yet. Activity, approvals, and your CEO announcements will appear here.</p>';
   }
   function threadInner(){
     return `<div class="ops-thread-list" aria-live="polite"><h3>Needs your authorization (${approvalItems().length})</h3>
      ${approvalItems().map(approvalCard).join('')||'<div class="notice">No pending requests.</div>'}
-     <h3 class="ops-section-head">Company text thread</h3>${recentMessages()}</div>`;
+     <div class="ops-thread-heading"><h3 class="ops-section-head">Company text thread</h3><button class="btn btn-sm" type="button" data-ops="clear-messages">Clear messages</button></div>${recentMessages()}</div>`;
   }
   function updateDrawer(){const c=$('#opsDrawerContent');if(c)c.innerHTML=threadInner();badge();}
   function badge(){
@@ -215,7 +215,24 @@
     const action=ev.target.closest('[data-ops]');
     if(action){
       const op=action.dataset.ops,id=action.dataset.id;
-      if(op==='phone-open')openPhone();
+      if(op==='delete-message'){
+        const msg=ent().messages.find(m=>m.id===id&&inScope(m));
+        if(msg&&confirm('Remove this message from your company text thread?')){
+          ent().messages=ent().messages.filter(m=>m.id!==id);
+          B.save();refreshCurrent();B.toast('Message removed.');
+        }
+      }
+      else if(op==='clear-messages'){
+        const kept=ent().messages.filter(m=>!inScope(m)),removed=ent().messages.length-kept.length;
+        if(removed&&confirm('Clear '+removed+' messages from this company thread? Pending CEO approval requests stay available.')){
+          ent().messages=kept;B.save();refreshCurrent();B.toast('Company thread cleared. Pending approvals preserved.');
+        }
+      }
+      else if(op==='dismiss-request'){
+        const pending=S().approvals.find(a=>a.id===id&&a.status==='pending'&&inScope(a));
+        if(pending&&confirm('Reject this pending request and remove it from your inbox? No approval will be granted.'))approve(id,'rejected');
+      }
+      else if(op==='phone-open')openPhone();
       else if(op==='phone-close')closePhone();
       else if(op==='approve-request'||op==='deny-request')approve(id,op==='approve-request'?'approved':'rejected');
       else if(op==='view-request'){closePhone();B.setView('approvals');}

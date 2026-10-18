@@ -8,7 +8,7 @@
     "dev": "node server.mjs",
     "dev:env": "node --env-file=.env server.mjs",
     "build": "node scripts/build.mjs",
-    "check": "node --check app.js && node --check office-features.js && node --check refresh.js && node --check sw.js && node --check server.mjs && node --check scripts/build.mjs",
+    "check": "node --check app.js && node --check cloud.js && node --check office-features.js && node --check refresh.js && node --check sw.js && node --check server.mjs && node --check scripts/build.mjs",
     "test": "npm run check && node --test tests/*.test.mjs"
   },
   "engines": {

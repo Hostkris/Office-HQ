@@ -72,3 +72,24 @@
 .app-refresh-status:not(:empty){font:650 11px/1.4 system-ui,sans-serif;color:#e7fbf7;background:#102936;border:1px solid var(--border);box-shadow:0 2px 10px #0007;padding:6px 10px;border-radius:8px;text-align:right}
 .main{padding-bottom:74px}
 @media(max-width:520px){.app-refresh-dock{bottom:calc(10px + env(safe-area-inset-bottom,0px));right:12px}.app-refresh-button{min-height:45px;padding:10px 14px;font-size:13px}}
+
+/* Account connection catalog and safe, disabled automation planning */
+.office-integration-center{display:flex;flex-direction:column;gap:0;max-width:100%;min-width:0}
+.office-integration-center>.card{margin-top:14px}
+.office-integration-center .section-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.office-integration-center .section-top h2{margin:0}
+.office-connector-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:12px;margin:18px 0}
+.office-connector{display:flex;flex-direction:column;gap:9px;border:1px solid var(--border);background:#102533;border-radius:13px;padding:14px;min-width:0}
+.office-connector-heading{display:flex;align-items:center;gap:11px;font-size:15px}
+.office-connector-icon{width:39px;height:39px;border-radius:11px;background:#284a4d;border:1px solid #42686d;display:grid;place-items:center;font-size:23px;color:var(--turq);flex:none}
+.office-connector p{font-size:12px;line-height:1.5;color:#c4d6d8;flex:1;margin:0}
+.office-connector-controls{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.office-connector-controls .btn{font-size:12px}
+.office-guide{margin:12px 0 4px;border:1px solid #486b73;background:#132d35;padding:15px;border-radius:12px;line-height:1.6;overflow-wrap:anywhere}
+.office-guide h3{margin:0 0 7px}
+.office-guide p{margin:8px 0}
+.office-plan-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:15px 0}
+.office-plan-form label{display:flex;flex-direction:column;gap:6px;color:#bcd3d2;font-size:12px;font-weight:700}
+.office-plan-form input,.office-plan-form select{display:block;min-width:0;width:100%;background:#102533;color:var(--text);border:1px solid #48656f;border-radius:9px;padding:11px}
+.office-plan-form button{align-self:end;min-height:42px}
+@media(max-width:520px){.office-connector-grid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px}.office-connector{padding:11px}.office-connector-controls .btn{font-size:11px}.office-plan-form{grid-template-columns:1fr}}

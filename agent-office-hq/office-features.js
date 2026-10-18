@@ -13,14 +13,14 @@
   const ensure=()=>{const s=S(); if(!s.enterprise||typeof s.enterprise!=='object')s.enterprise={};for(const k of ['accounts','grants','messages','meetings','workflows'])if(!Array.isArray(s.enterprise[k]))s.enterprise[k]=[];return s.enterprise;};
   const ent=()=>ensure();
   const fmt=date=>{try{return new Date(date).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}catch{return 'Recently'}};
-  const providers=['Shopify','YouTube','Instagram','TikTok','Gmail / Email','Facebook','Other'];
+  const providers=['Gmail','iCloud','X (Twitter)','Instagram','Shopify','Etsy','TikTok','Lemon8','Chime','Facebook','ChatGPT','YouTube','Google Calendar','Google Drive','Gmail / Email','Other'];
   const roles=()=>B.getRoles();
   const staff=cid=>S().employees.filter(e=>e.companyId===cid&&e.active);
   const prettyScope=r=>r?.scope?.replaceAll('_',' ')||'';
   const serviceAllowed=(employee,provider)=>{
     if(!employee)return false;
     const dept=B.roleFor(employee)?.dept;
-    const a={'Shopify':['Sales','Product','Marketing','Customer'],'YouTube':['Marketing'],'Instagram':['Marketing'],'TikTok':['Marketing'],'Facebook':['Marketing'],'Gmail / Email':['Customer','Leadership','Marketing','Sales','PMO'],'Other':['Technology']};
+    const a={'Shopify':['Sales','Product','Marketing','Customer','Operations','Finance'],'Etsy':['Sales','Product','Marketing','Customer','Operations','Finance'],'YouTube':['Marketing'],'Instagram':['Marketing'],'TikTok':['Marketing'],'Lemon8':['Marketing'],'Facebook':['Marketing'],'X (Twitter)':['Marketing'],'Gmail':['Customer','Leadership','Marketing','Sales','PMO'],'Gmail / Email':['Customer','Leadership','Marketing','Sales','PMO'],'iCloud':['Customer','Leadership','PMO'],'Google Calendar':['Leadership','PMO','People'],'Google Drive':['Leadership','PMO','Technology'],'Chime':['Finance','Audit'],'ChatGPT':['Technology'],'Other':['Technology']};
     return (a[provider]||[]).includes(dept);
   };
   const message=(author,body,companyId,kind='update')=>{

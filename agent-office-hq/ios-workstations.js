@@ -67,7 +67,7 @@ window.OfficeHQExtraViews.workstations=()=>{
  '<section class="card ios-guide"><div class="section-top"><h2>iOS browser status</h2><span class="ops-tag" id="iosStatus">'+E(statusText)+'</span></div>'+
  '<p><strong>Available now:</strong> choose a website, sign in yourself, assign work, track handoffs, and save task notes in the iOS browser.</p>'+
  '<p><strong>Optional extension:</strong> a Safari web extension can, once packaged and installed, read the currently open webpage or insert a draft with your specific permission. That extension is <em>not installed by opening this site</em>, and autonomous multi-site AI operation is not available in ordinary iOS web tabs.</p>'+
- '<p class="tiny muted">Apple requires a separately distributed Safari extension for code to interact with other websites. No browser can safely inherit your website passwords just from tapping Authorize in Office HQ.</p></section>'+
+ '<p class="tiny muted">Apple requires a separately distributed Safari extension for code to interact with other websites. No browser can safely inherit your website passwords just from tapping Authorize in Office HQ.</p>'+'<p class="small"><a href="https://github.com/Hostkris/Office-HQ/blob/main/agent-office-hq/docs/IOS_SAFARI_SETUP.md" target="_blank" rel="noopener noreferrer">iPhone/iPad Safari setup and extension limitations ↗</a></p></section>'+
  '<div class="desktop-grid ios-grid"><section class="card"><h2>① Choose website and sign in</h2>'+
  '<label class="desktop-label">Website<select id="iosSite">'+SITES.map(s=>'<option value="'+E(s[0])+'"'+(current===s[0]?' selected':'')+'>'+E(s[1])+'</option>').join('')+'</select></label>'+
  '<p id="iosSiteHint" class="muted small">Sign in yourself. Office HQ never asks for your website password.</p>'+
@@ -97,7 +97,7 @@ function jobRow(t){
  (active?'<button class="btn btn-sm" data-ios="manual" data-job="'+id+'">✓ Mark manually completed</button>':'')+
  (active?'<button class="btn btn-sm" data-ios="pause" data-job="'+id+'">⏸ Pause</button>':'')+
  (t.status==='paused'?'<button class="btn btn-sm" data-ios="resume" data-job="'+id+'">▶ Resume</button>':'')+
- (t.status==='completed'?'<button class="btn btn-sm" data-ios="handoff" data-job="'+id+'">⇥ New handoff assignment</button>':'')+
+ (t.status==='completed'?'<div class="ios-handoff"><label class="desktop-label">Next employee<select data-ios-recipient="'+id+'">'+'<option value="">Choose employee</option>'+workers(t.site).filter(w=>w.id!==t.employeeId).map(w=>'<option value="'+E(w.id)+'">'+E(w.name)+'</option>').join('')+'</select></label>'+'<button class="btn btn-sm" data-ios="handoff" data-job="'+id+'">⇥ Hand off</button></div>':'')+
  '</div>'+
  (active?'<div class="ios-insert"><label class="desktop-label">Optional draft to insert in a selected text field <textarea data-ios-draft="'+id+'" maxlength="450" rows="2" placeholder="Write text to be inserted; not sent or published."></textarea></label>'+
  '<button class="btn btn-sm" data-ios="insert" data-job="'+id+'">Insert draft (extension)</button></div>':'')+
@@ -118,7 +118,14 @@ function updateDynamic(){
   if(staff.some(w=>w.id===old))employee.value=old;
  }
 }
-function renderAgain(){B.save();B.setView('workstations');}
+function syncThoughts(){
+ const map={};
+ for(const t of records().filter(x=>x.companyId===company()).slice().reverse()){
+  if(!map[t.employeeId]&&['queued','review','running','paused'].includes(t.status))map[t.employeeId]=t.thought;
+ }
+ window.OfficeHQDesktopThoughts={...(window.OfficeHQDesktopThoughts||{}),...map};
+}
+function renderAgain(){B.save();syncThoughts();B.setView('workstations');}
 function feedback(msg,bad=false){state.notice=String(msg).slice(0,450);const el=$('#iosNotice');if(el){el.textContent=state.notice;el.style.color=bad?'var(--red)':'var(--turq)';}if(bad)B.toast(state.notice,'error');}
 async function doAction(op,node){
  const siteId=$('#iosSite')?.value||'gmail',employee=currentStaff().find(e=>e.id===$('#iosWorker')?.value);
@@ -160,7 +167,9 @@ async function doAction(op,node){
   sessionStorage.setItem('officehq_ios_handoff',job.id);
   const other=workers(job.site).filter(e=>e.id!==job.employeeId);
   if(!other.length){feedback('Hire or select a different active employee in the right department before handing off.',true);return;}
-  const recipient=other[0];
+  const chosen=$('[data-ios-recipient="'+CSS.escape(job.id)+'"]')?.value;
+  const recipient=other.find(e=>e.id===chosen);
+  if(!recipient)throw Error('Choose which authorized department employee should receive this handoff.');
   records().push({id:B.uid('iosjob'),companyId:job.companyId,employeeId:recipient.id,site:job.site,
    instructions:('Follow up on prior assignment: '+job.instructions+' · '+(job.observation||job.thought)).slice(0,1600),
    thought:'Handoff saved from completed task. Awaiting browser review.',status:'queued',parentJobId:job.id,
@@ -186,6 +195,7 @@ async function doAction(op,node){
   job.status='review';renderAgain();return;
  }
 }
+syncThoughts();
 document.addEventListener('change',event=>{
  if(event.target.id==='iosSite'){
   sessionStorage.setItem('officehq_desktop_preferred_site',event.target.value);

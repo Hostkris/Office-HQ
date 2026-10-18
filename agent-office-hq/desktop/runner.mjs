@@ -14,6 +14,8 @@ export const SITES=Object.freeze({
   instagram:{name:'Instagram',url:'https://www.instagram.com/',hosts:['instagram.com'],departments:['Marketing'],mode:'draft'},
   facebook:{name:'Facebook',url:'https://www.facebook.com/',hosts:['facebook.com'],departments:['Marketing'],mode:'draft'},
   tiktok:{name:'TikTok',url:'https://www.tiktok.com/',hosts:['tiktok.com'],departments:['Marketing'],mode:'draft'},
+  lemon8:{name:'Lemon8',url:'https://www.lemon8-app.com/',hosts:['lemon8-app.com'],departments:['Marketing'],mode:'draft'},
+  chatgpt:{name:'ChatGPT website',url:'https://chatgpt.com/',hosts:['chatgpt.com'],departments:['Technology','Leadership','Marketing'],mode:'draft'},
   x:{name:'X (Twitter)',url:'https://x.com/',hosts:['x.com','twitter.com'],departments:['Marketing'],mode:'draft'},
   shopify:{name:'Shopify',url:'https://admin.shopify.com/',hosts:['shopify.com','myshopify.com'],departments:['Sales','Product','Marketing','Customer','Operations','Finance'],mode:'draft'},
   etsy:{name:'Etsy',url:'https://www.etsy.com/',hosts:['etsy.com'],departments:['Sales','Product','Marketing','Customer','Operations'],mode:'draft'},
@@ -124,7 +126,12 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
     },{x,y});
   }
   async function hasLoginGate(page){
-    return page.locator('input[type="password"],input[autocomplete="one-time-code"]').count().then(n=>n>0).catch(()=>true);
+    if(/\/(login|signin|auth|checkpoint|challenge)(\/|$|\?)/i.test(new URL(page.url()).pathname))return true;
+    for(const frame of page.frames()){
+      try{if(await frame.locator('input[type="password"],input[autocomplete="one-time-code"]').count()>0)return true;}
+      catch{return true;}
+    }
+    return false;
   }
   function getJob(id){return jobs.find(j=>j.id===id);}
   function getGrant(id){return grants.find(g=>g.id===id&&g.active);}

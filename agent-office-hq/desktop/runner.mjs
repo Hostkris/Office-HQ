@@ -33,10 +33,10 @@ export function decideClick(target,site){
   const label=String(target?.label||'').slice(0,150);
   if(target?.sensitive||/password|passcode|verification code|2fa|otp|one.time code|captcha/i.test(label))
     return {type:'blocked',reason:'Authentication and security controls must be operated by you.'};
-  if(/\b(transfer|wire|withdraw|deposit|pay|checkout|buy|purchase|refund|bank|delete account|security settings|password)\b/i.test(label))
+  if(/\b(transfer|wire|withdraw|deposit|pay|checkout|buy|purchase|refund|delete account|security settings|password|add payee)\b/i.test(label))
     return {type:'blocked',reason:'Financial, deletion and account-security actions are not delegated to browser agents.'};
   if(['chime','lemonade','icloud'].includes(site)&&target?.tag!=='A')
-    return {type:'approval',reason:'Sensitive service navigation requires your approval.'};
+    return {type:'blocked',reason:'This account is strictly read-only for AI employees. Navigate manually in its open browser.'};
   // Even apparently harmless buttons can trigger an external write in a modern web app.
   if(target?.tag==='BUTTON'||target?.role==='button'||target?.submit||
      /\b(send|post|publish|submit|save|delete|remove|create|upload|share|message|follow|like|reply|invite|confirm)\b/i.test(label))

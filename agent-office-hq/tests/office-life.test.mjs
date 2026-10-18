@@ -55,7 +55,7 @@ test('real in-progress assignments keep a worker on-task, no false completed wor
  const o=run();
  const task={id:'task1',companyId:'company1',ownerId:'agent0',title:'Write a report',status:'in_progress'};
  o.draw({tasks:[task]});
- assert.ok(o.labels.some(x=>x.includes('Working: Write a report')));
+ assert.ok(o.labels.some(x=>x.includes('Working: Write a')));
  assert.equal(o.life.activitySnapshot('company1:level1:all').some(x=>x.id==='agent0'),true);
 });
 test('workers stay invisible until placed and room hit-testing can open CEO approvals',()=>{

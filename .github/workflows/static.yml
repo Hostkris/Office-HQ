@@ -1,6 +1,5 @@
-# Deploy the Agent Office HQ static web app from its actual source directory.
+# Validate the Node-powered source but publish static files only.
 name: Deploy Agent Office HQ to GitHub Pages
-
 on:
   push:
     branches: ["main"]
@@ -24,12 +23,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify role boundaries, server and static site
+        working-directory: agent-office-hq
+        run: npm test
+      - name: Build public-only website
+        working-directory: agent-office-hq
+        run: npm run build
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Upload the app itself as the website root
+      - name: Upload safe static artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './agent-office-hq'
+          path: './agent-office-hq/dist'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

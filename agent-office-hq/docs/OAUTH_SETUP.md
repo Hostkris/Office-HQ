@@ -55,7 +55,7 @@ Shopify also requires the store's `*.myshopify.com` domain to begin authorizatio
 
 ## Known follow-up work before launching automated bots
 
-- OAuth refresh/expiry and provider-side revoke where supported.
+- Scheduled refresh/expiry handling and provider-specific long-lived credentials (manual refresh is supported for Google, Etsy, X and TikTok). Provider-side consent revocation where supported.
 - Provider-specific account capability checks and permission/scope upgrades after app review.
 - Signed webhooks, durable job queues, retries and idempotency.
 - Verified owner/employee authorization and audit logging for every real API action.

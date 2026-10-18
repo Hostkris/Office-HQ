@@ -6,7 +6,7 @@ const PROJECT_URL='https://wvadoqncgrmfsftefuoy.supabase.co';
 const PUBLISHABLE_KEY='sb_publishable_c3owfootc_qRwCN7v3Q24Q_GKB8PIjK';
 const STORE='office_hq_cloud_session_v1';
 const root=document.getElementById('cloudRoot'),notice=document.getElementById('notice');
-const state={session:null,user:null,companies:[],tasks:[],approvals:[],messages:[],company:null,tab:'companies',busy:false};
+const state={session:null,user:null,companies:[],tasks:[],approvals:[],messages:[],connections:[],oauth:{configured:{},unsupported:{}},company:null,tab:'companies',busy:false};
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=s=>new Date(s).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 let activeFeedback='';
@@ -50,6 +50,63 @@ async function rest(table,method='GET',body=null,query=''){
   if(body!==null){headers['Content-Type']='application/json';headers.Prefer='return=representation';}
   return jsonFetch(PROJECT_URL+'/rest/v1/'+table+query,{method,headers,body:body===null?undefined:JSON.stringify(body)});
 }
+const OAUTH=PROJECT_URL+'/functions/v1/office-oauth';
+const CONNECTORS=[
+ {key:'gmail',name:'Gmail',kind:'Google',docs:'https://console.cloud.google.com/apis/credentials',capability:'Read-only Gmail access first; email sending requires separate approved scopes and a worker execution service.'},
+ {key:'calendar',name:'Google Calendar',kind:'Google',docs:'https://console.cloud.google.com/apis/credentials',capability:'Read-only calendar connection.'},
+ {key:'drive',name:'Google Drive',kind:'Google',docs:'https://console.cloud.google.com/apis/credentials',capability:'Read-only file metadata.'},
+ {key:'youtube',name:'YouTube',kind:'Google',docs:'https://console.cloud.google.com/apis/credentials',capability:'Read-only channel data.'},
+ {key:'tiktok',name:'TikTok',kind:'Social',docs:'https://developers.tiktok.com/',capability:'Basic profile identification only. Video posting requires separate approved scopes.'},
+ {key:'instagram',name:'Instagram',kind:'Social',docs:'https://developers.facebook.com/docs/instagram-platform/',capability:'Initial Instagram professional account authorization only; posting requires approved additional scopes.'},
+ {key:'facebook',name:'Facebook',kind:'Social',docs:'https://developers.facebook.com/',capability:'Basic identity authorization only. Page management requires additional approved permissions.'},
+ {key:'x',name:'X (Twitter)',kind:'Social',docs:'https://developer.x.com/',capability:'Read-only account access; posting requires write scope and API approval.'},
+ {key:'shopify',name:'Shopify',kind:'Commerce',docs:'https://shopify.dev/docs/apps/build/authentication-authorization',capability:'Initial read-only products scope; order fulfillment and inventory writes require more authorized scopes.'},
+ {key:'etsy',name:'Etsy',kind:'Commerce',docs:'https://developers.etsy.com/documentation/essentials/oauth2/',capability:'Read-only shop/listings data. Writes require additional seller consent.'},
+ {key:'icloud',name:'iCloud',kind:'Limited',docs:'https://support.apple.com/en-us/102654',capability:'No universal iCloud OAuth connector; no account login supported.'},
+ {key:'chime',name:'Chime',kind:'Limited',docs:'https://www.chime.com/',capability:'No direct bank automation authorized. Potential financial aggregation must use separate approved infrastructure.'},
+ {key:'lemonade',name:'Lemonade Insurance',kind:'Limited',docs:'https://www.lemonade.com/',capability:'No verified third-party OAuth API for automated insurance administration.'},
+ {key:'lemon8',name:'Lemon8',kind:'Limited',docs:'https://www.lemon8-app.com/',capability:'No verified automated account connection.'},
+ {key:'chatgpt',name:'ChatGPT / OpenAI',kind:'Limited',docs:'https://platform.openai.com/',capability:'ChatGPT login does not enable the OpenAI API. API access needs separate server credentials.'}
+];
+async function oauthRequest(payload){
+  const token=await access();
+  return jsonFetch(OAUTH,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+}
+async function loadConnections(){
+ try{
+  const [status,accounts]=await Promise.all([
+   oauthRequest({action:'status'}),
+   rest('hq_connections','GET',null,'?select=id,provider,display_name,granted_scopes,connected_at,company_id&order=connected_at.desc&limit=100')
+  ]);
+  state.oauth=status;state.connections=accounts;
+ }catch(e){
+  state.oauth={configured:{},unsupported:{}};
+  state.connections=[];
+  msg('Connection service unavailable: '+(e.message||'Try refreshing.'),true);
+ }
+}
+function connectionsPanel(){
+ if(!state.company)return '<p class="banner">Create a company in Secure Cloud HQ before connecting outside accounts.</p>';
+ const list=state.connections.filter(c=>c.company_id===state.company);
+ return chooseCompany()+'<section class="card"><h2>Real account authorization</h2>'+
+ '<p class="muted">Each Connect button starts an authenticated request to the Office HQ OAuth server. If official developer credentials have not been installed yet, it will say setup required instead of showing a fake login. No tokens or account passwords appear in this page.</p>'+
+ '<div class="cards connection-cards">'+CONNECTORS.map(p=>{
+  const cfg=!!state.oauth?.configured?.[p.key],disabled=Object.prototype.hasOwnProperty.call(state.oauth?.unsupported||{},p.key);
+  const matching=list.filter(c=>c.provider===p.key);
+  const status=disabled?'Unavailable':matching.length?'Account authorized':cfg?'Ready to authorize':'Developer setup needed';
+  return '<article class="card connection-card"><h3>'+escape(p.name)+'</h3><span class="pill">'+escape(status)+'</span>'+
+    '<p class="small muted">'+escape(p.capability)+'</p>'+
+    (p.key==='shopify'?'<label for="shopifyDomain">Store domain</label><input id="shopifyDomain" placeholder="your-store.myshopify.com" maxlength="90" autocomplete="off">':'')+
+    (disabled?'<p class="small muted">Official provider integration is not available in this build.</p>':
+      '<button type="button" data-connect-provider="'+escape(p.key)+'">'+(cfg?'Connect '+escape(p.name):'Check '+escape(p.name)+' setup')+'</button>')+
+    '<a class="secondary button" target="_blank" rel="noopener noreferrer" href="'+escape(p.docs)+'">Developer setup ↗</a>'+
+    matching.map(c=>'<div class="item"><strong>'+escape(c.display_name)+'</strong><div class="small muted">Authorized '+date(c.connected_at)+'</div>'+
+      '<div class="small muted">Scopes: '+escape((c.granted_scopes||[]).join(', ')||'Provider controlled')+'</div>'+
+      '<button type="button" class="danger" data-disconnect="'+escape(c.id)+'">Disconnect</button></div>').join('')+'</article>';
+ }).join('')+'</div>'+
+ '<p class="small muted">Authorized accounts are stored per company. Provider secrets are encrypted server-side. Live employee API actions and background workflows are <strong>not yet activated</strong>; even an authorized account does not give a bot permission to publish or spend.</p>'+
+ '</section>';
+}
 const companyOptions=()=>state.companies.map(c=>'<option value="'+escape(c.id)+'" '+(state.company===c.id?'selected':'')+'>'+escape(c.name)+'</option>').join('');
 const activeCompany=()=>state.companies.find(c=>c.id===state.company);
 function authView(){
@@ -58,8 +115,8 @@ function authView(){
 function homeView(){
  const c=activeCompany(),tab=state.tab;
  root.innerHTML='<div class="row"><p class="muted">Signed in: <strong>'+escape(state.user.email||'Account')+'</strong></p><button class="secondary" type="button" data-cloud="logout">Sign out</button></div>'+
- '<div class="tabs" role="tablist" aria-label="Cloud HQ sections">'+['companies','tasks','approvals','messages','services'].map(x=>'<button type="button" role="tab" aria-selected="'+(tab===x)+'" data-tab="'+x+'">'+({companies:'Companies',tasks:'Tasks',approvals:'CEO approvals',messages:'Messages',services:'Service signup links'}[x])+'</button>').join('')+'</div>'+
- (tab==='companies'?companyPanel():tab==='tasks'?tasksPanel(c):tab==='approvals'?approvalsPanel(c):tab==='messages'?messagesPanel(c):servicesPanel())+
+ '<div class="tabs" role="tablist" aria-label="Cloud HQ sections">'+['companies','tasks','approvals','messages','connections','services'].map(x=>'<button type="button" role="tab" aria-selected="'+(tab===x)+'" data-tab="'+x+'">'+({companies:'Companies',tasks:'Tasks',approvals:'CEO approvals',messages:'Messages',connections:'Connect accounts',services:'Developer links'}[x])+'</button>').join('')+'</div>'+
+ (tab==='companies'?companyPanel():tab==='tasks'?tasksPanel(c):tab==='approvals'?approvalsPanel(c):tab==='messages'?messagesPanel(c):tab==='connections'?connectionsPanel():servicesPanel())+
  '<p class="small muted" style="margin-top:22px">Data in this area is stored in Supabase with owner-level security. The original Office-HQ dashboard still runs locally. Cloud approvals are records only; they do not authorize purchases or access third-party accounts.</p>';
 }
 function companyPanel(){
@@ -94,6 +151,7 @@ async function reload(){
    rest('hq_messages','GET',null,'?select=id,sender,body,created_at&order=created_at.desc&limit=100'+where)]);
   Object.assign(state,{tasks,approvals,messages});
  }else Object.assign(state,{tasks:[],approvals:[],messages:[]});
+ if(state.tab==='connections')await loadConnections();
  homeView();
 }
 async function signOut(){
@@ -141,8 +199,27 @@ document.addEventListener('invalid',e=>{
 },true);
 document.addEventListener('click',e=>{
  const tab=e.target.closest('[data-tab]'),c=e.target.closest('[data-company]'),op=e.target.closest('[data-cloud]'),decision=e.target.closest('[data-decision]');
- if(tab){state.tab=tab.dataset.tab;homeView();}
+ if(tab){state.tab=tab.dataset.tab;if(state.tab==='connections')guard(async()=>{await loadConnections();homeView();});else homeView();}
  if(c){state.company=c.dataset.company;state.tab='tasks';guard(reload);}
+ const connect=e.target.closest('[data-connect-provider]');
+ if(connect)guard(async()=>{
+  const provider=connect.dataset.connectProvider;
+  const item=CONNECTORS.find(x=>x.key===provider);
+  if(!item||!state.company)throw Error('Choose a company and service.');
+  const shop=provider==='shopify'?document.getElementById('shopifyDomain')?.value.trim()||'':undefined;
+  if(provider==='shopify'&&!/^[a-z0-9][a-z0-9-]*\\.myshopify\\.com$/i.test(shop))throw Error('Enter your store domain, such as example.myshopify.com.');
+  msg('Checking secure authorization for '+item.name+'…');
+  const data=await oauthRequest({action:'start',provider,companyId:state.company,shop});
+  if(!data.authorization_url||!/^https:\\/\\//.test(data.authorization_url))throw Error('Provider did not return a secure authorization link.');
+  location.assign(data.authorization_url);
+ });
+ const disconnect=e.target.closest('[data-disconnect]');
+ if(disconnect)guard(async()=>{
+  if(!confirm('Disconnect this account from Office HQ? This deletes stored local credentials. You may also need to revoke access on the provider website.'))return;
+  await oauthRequest({action:'disconnect',connectionId:disconnect.dataset.disconnect});
+  msg('Account disconnected from Office HQ. To revoke the provider authorization entirely, remove Office HQ from the provider’s authorized apps.');
+  await loadConnections();homeView();
+ });
  if(op?.dataset.cloud==='logout')guard(signOut);
  if(decision)guard(async()=>{
   const id=decision.dataset.id,requested=decision.dataset.decision;
@@ -167,6 +244,14 @@ document.addEventListener('change',e=>{
    history.replaceState(null,'',location.pathname+location.search);msg('Email confirmation received.');
   }
   if(fragment.has('error_description')){msg(fragment.get('error_description'),true);history.replaceState(null,'',location.pathname+location.search)}
+  // OAuth server redirects without including tokens or secret data in this URL.
+  if(fragment.has('oauth')){
+    const outcome=fragment.get('oauth'),provider=fragment.get('provider')||'service';
+    state.tab='connections';
+    history.replaceState(null,'',location.pathname+location.search);
+    if(outcome==='connected')msg('Authorization completed for '+provider+'. Your Cloud HQ connections will now refresh.');
+    else msg('Authorization not completed ('+outcome+'). Review the connection setup or try again.',true);
+  }else if(fragment.has('connections')){state.tab='connections';}
   const saved=sessionStorage.getItem(STORE);
   if(!state.session&&saved){try{state.session=JSON.parse(saved)}catch{storeSession(null)}}
   if(!state.session){authView();return}

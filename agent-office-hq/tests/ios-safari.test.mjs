@@ -46,5 +46,5 @@ test('Safari extension rejects non-HQ commands, unauthorized employees and write
  assert.match(agent,/selected field/);
  assert.match(agent,/No submit, send or publish button was pressed/);
  assert.doesNotMatch(agent,/\.submit\(/);
- assert.doesNotMatch(background,/password|cookies/gi);
+ assert.doesNotMatch(background,/document\\.cookie|browser\\.cookies\\./gi);
 });

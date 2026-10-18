@@ -14,6 +14,7 @@ const catalog=[
   {name:'Etsy',icon:'✦',method:'Etsy OAuth 2.0 and API key',desc:'Listings, orders and stock changes.',docs:'https://developers.etsy.com/documentation/essentials/oauth2/',warning:'An approved Etsy app, callback and scopes are required.'},
   {name:'TikTok',icon:'♫',method:'TikTok authorization',desc:'Supported video operations and approved posting.',docs:'https://developers.tiktok.com/',warning:'Publishing access may require additional TikTok review or audit.'},
   {name:'Lemon8',icon:'◐',method:'Official automation not confirmed',desc:'Plan content and register an account label.',docs:'https://www.lemon8-app.com/',warning:'No verified general-purpose automation connection for this service is included.'},
+  {name:'Lemonade',icon:'◉',method:'No approved OAuth connector',desc:'Insurance account management needs an approved official integration.',docs:'https://www.lemonade.com/',warning:'Do not enter insurance credentials into Office HQ. No automated claims or policy actions are authorized.'},
   {name:'Chime',icon:'＄',method:'Bank-data provider (to evaluate)',desc:'Potential read-only financial reporting, subject to coverage.',docs:'https://www.chime.com/',warning:'Never enter bank login details here. No payment, withdrawal or transfer permissions are supported.'},
   {name:'Facebook',icon:'f',method:'Meta authorization',desc:'Approved Page content and insights.',docs:'https://developers.facebook.com/',warning:'Page permissions, API review and authorized account type may be necessary.'},
   {name:'ChatGPT',icon:'✳',method:'OpenAI API (separate product)',desc:'Back approved AI drafting using an authorized model API.',docs:'https://platform.openai.com/docs/overview',warning:'A ChatGPT subscription is not the OpenAI API; there is no automatic access to private ChatGPT conversations.'},
@@ -48,12 +49,12 @@ function html(){
   const plans=record().filter(p=>p.companyId===cid);
   return `<div class="office-integration-center">
     <section class="card">
-      <div class="section-top"><h2>Account Connection Center</h2><span class="ops-tag">0 live integrations</span></div>
-      <p class="notice"><strong>Setup phase — no accounts connected.</strong> These buttons show official authorization requirements, not a working sign-in. An account label and CEO approval alone cannot make an AI employee access another service.</p>
+      <div class="section-top"><h2>Account Connection Center</h2><span class="ops-tag">Secure OAuth gateway deployed</span></div>
+      <p class="notice"><strong>Setup phase — no accounts connected.</strong> These buttons can now take you to the secure, signed-in Cloud HQ account authorization screen. Developer credentials and platform approval are still needed before provider sign-in will work. Local labels do not grant API access.</p>
       <div class="office-connector-grid">${catalog.map(p=>`<article class="office-connector">
         <div class="office-connector-heading"><span class="office-connector-icon" aria-hidden="true">${esc(p.icon)}</span><strong>${esc(p.name)}</strong></div>
         <p>${esc(p.desc)}</p><span class="ops-tag">Setup required</span>
-        <div class="office-connector-controls"><button type="button" class="btn btn-sm" data-connect-guide="${esc(p.name)}">Connection setup</button>
+        <div class="office-connector-controls"><a class="btn btn-sm btn-primary" href="./cloud.html#connections&provider=${encodeURIComponent(({Gmail:'gmail',iCloud:'icloud','X (Twitter)':'x',Instagram:'instagram',Shopify:'shopify',Etsy:'etsy',TikTok:'tiktok',Lemon8:'lemon8',Lemonade:'lemonade',Chime:'chime',Facebook:'facebook',ChatGPT:'chatgpt',YouTube:'youtube','Google Calendar':'calendar','Google Drive':'drive'})[p.name]||'')}">Open secure connection ↗</a><button type="button" class="btn btn-sm" data-connect-guide="${esc(p.name)}">Setup details</button>
           <a class="btn btn-sm" href="${esc(p.docs)}" target="_blank" rel="noopener noreferrer" aria-label="Official ${esc(p.name)} integration documentation">Docs ↗</a></div>
       </article>`).join('')}</div>
       <div id="officeIntegrationGuide" class="office-guide" role="status" aria-live="polite">Choose a platform above for its connection checklist.</div>
@@ -95,7 +96,7 @@ function showGuide(provider){
     <p>${esc(p.desc)}</p>
     <p><strong>Required:</strong> configure a registered developer app or supported authorization process; obtain approved scopes and a callback; install a private server-side exchange/token vault; verify the account; enforce per-company, per-worker permissions on every request; add a worker task runner and audit trail.</p>
     <p class="notice">${esc(p.warning)}</p><a href="${esc(p.docs)}" class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Open official setup ↗</a>
-    <p class="tiny muted">This setup action does not open a connected OAuth session or authorize a bot.</p>`;
+    <p class="tiny muted">Select Open secure connection to sign in to Cloud HQ and attempt the official provider OAuth flow. Some services have no supported OAuth API. Login credentials and tokens are never entered here.</p>`;
   box.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 document.addEventListener('click',event=>{

@@ -102,6 +102,7 @@ function connectionsPanel(){
     '<a class="secondary button" target="_blank" rel="noopener noreferrer" href="'+escape(p.docs)+'">Developer setup ↗</a>'+
     matching.map(c=>'<div class="item"><strong>'+escape(c.display_name)+'</strong><div class="small muted">Authorized '+date(c.connected_at)+'</div>'+
       '<div class="small muted">Scopes: '+escape((c.granted_scopes||[]).join(', ')||'Provider controlled')+'</div>'+
+      '<button type="button" class="secondary" data-refresh-connection="'+escape(c.id)+'">Refresh authorization</button>'+ 
       '<button type="button" class="danger" data-disconnect="'+escape(c.id)+'">Disconnect</button></div>').join('')+'</article>';
  }).join('')+'</div>'+
  '<p class="small muted">Authorized accounts are stored per company. Provider secrets are encrypted server-side. Live employee API actions and background workflows are <strong>not yet activated</strong>; even an authorized account does not give a bot permission to publish or spend.</p>'+
@@ -212,6 +213,13 @@ document.addEventListener('click',e=>{
   const data=await oauthRequest({action:'start',provider,companyId:state.company,shop});
   if(!data.authorization_url||new URL(data.authorization_url).protocol!=='https:')throw Error('Provider did not return a secure authorization link.');
   location.assign(data.authorization_url);
+ });
+ const refreshConnectionButton=e.target.closest('[data-refresh-connection]');
+ if(refreshConnectionButton)guard(async()=>{
+  msg('Renewing connection securely…');
+  const data=await oauthRequest({action:'refresh',connectionId:refreshConnectionButton.dataset.refreshConnection});
+  msg(data.refreshed?'Connection authorization renewed.':data.note||'Provider authorization checked.');
+  await loadConnections();homeView();
  });
  const disconnect=e.target.closest('[data-disconnect]');
  if(disconnect)guard(async()=>{

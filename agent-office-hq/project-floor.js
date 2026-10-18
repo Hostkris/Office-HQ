@@ -82,7 +82,7 @@ function onTaskAssigned(task){
  const slot=seatList(floor).find(s=>!s.placement);
  if(!slot)return;
  const r=place(cid,floor,task.ownerId,slot.seat,auto.id,task.id);
- if(r.ok){auto.taskIds??=[];if(!auto.taskIds.includes(task.id))auto.taskIds.push(task.id);save();popup('Task assigned. '+r.message+' Open Live RPG Office to see them.');}
+ if(r.ok){auto.taskIds??=[];if(!auto.taskIds.includes(task.id))auto.taskIds.push(task.id);d.selected[cid]={floorId:floor.id,projectId:auto.id};save();popup('Task assigned. '+r.message+' Open Live RPG Office to see them.');}
 }
 function onTaskStatus(task){
  if(task?.status!=='done')return;

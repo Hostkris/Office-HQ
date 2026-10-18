@@ -132,9 +132,9 @@ function render(){
  '<div class="pf-projects">'+(projects.length?projects.map(p=>'<div class="pf-person"><span><strong>'+E(p.name)+'</strong><small>'+p.members?.length+' selected employee(s)</small></span><button class="btn btn-sm" data-pf="view-project" data-project="'+E(p.id)+'">Show</button></div>').join(''):'<p class="muted">Create a project group to focus the live office on that team.</p>')+'</div>'+
  '<hr class="divider"><h3>Link an existing task handoff</h3><p class="muted small">Only after Task A is marked done with its normal approval checks will its worker walk to the next placed worker and hand over paperwork. This does not start external account automation.</p>'+
  '<form id="pfHandoffForm" class="pf-handoff-form"><label>First task<select id="pfFirstTask" required><option value="">Choose first task</option>'+
- allTasks(cid).filter(t=>t.ownerId).slice(0,100).map(t=>'<option value="'+E(t.id)+'">'+E(t.title.slice(0,60))+'</option>').join('')+'</select></label>'+
+ allTasks(cid).filter(t=>t.ownerId).slice(0,100).map(t=>'<option value="'+E(t.id)+'">'+E(String(t.title||'Untitled task').slice(0,60))+'</option>').join('')+'</select></label>'+
  '<label>Next task<select id="pfNextTask" required><option value="">Choose next task</option>'+
- allTasks(cid).filter(t=>t.ownerId).slice(0,100).map(t=>'<option value="'+E(t.id)+'">'+E(t.title.slice(0,60))+'</option>').join('')+'</select></label>'+
+ allTasks(cid).filter(t=>t.ownerId).slice(0,100).map(t=>'<option value="'+E(t.id)+'">'+E(String(t.title||'Untitled task').slice(0,60))+'</option>').join('')+'</select></label>'+
  '<button class="btn" type="submit">⇥ Link handoff</button></form>'+
  '<div class="pf-footnote">Janitors are optional visual support staff on each level. They do not consume a worker desk, own business tasks, or alter your existing roster.</div></section></div>';
 }

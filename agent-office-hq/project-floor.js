@@ -90,7 +90,7 @@ function onTaskStatus(task){
  if(!floor)return;
  const a=floor.placements.find(p=>p.employeeId===task.ownerId);
  const b=floor.placements.find(p=>p.employeeId===next.ownerId);
- const event={cid:task.companyId,floorId:floor.id,from:a.seat,to:b.seat,taskId:task.id,until:Date.now()+6500};
+ const event={cid:task.companyId,floorId:floor.id,from:a.seat,to:b.seat,taskId:task.id,until:null};
  handoff=event;
  // Only visualizes a verified internal task transition; does not execute the next task.
 }
@@ -177,6 +177,7 @@ function renderFloor(c,now){
  if(!c)return;
  const cid=inCompany(),{floor,project}=setup(cid);if(!floor)return;
  background(c);
+ if(handoff&&handoff.cid===cid&&handoff.floorId===floor.id&&handoff.until===null)handoff.until=Date.now()+6500;
  const title=project?.name||floor.name;
  c.fillStyle='#eac887';c.font='bold 13px system-ui';c.textAlign='right';c.fillText(clamp(title,45),928,34);c.textAlign='left';
  for(const {seat,placement} of seatList(floor)){
@@ -185,7 +186,8 @@ function renderFloor(c,now){
   if(show){
    const e=state().employees.find(x=>x.id===placement.employeeId);
    const pt=coords(seat);
-   sprite(c,placement,pt.x+27,pt.y+24,now);
+   const isCarrying=handoff&&handoff.cid===cid&&handoff.floorId===floor.id&&handoff.from===seat&&handoff.until!==null&&Date.now()<handoff.until;
+   if(!isCarrying)sprite(c,placement,pt.x+27,pt.y+24,now);
    c.textAlign='center';c.fillStyle='#e2efec';c.font='11px system-ui';
    c.fillText(clamp(e?.name?.split(' ')[0]||'Worker',13),pt.x,pt.y+52);
    c.textAlign='left';

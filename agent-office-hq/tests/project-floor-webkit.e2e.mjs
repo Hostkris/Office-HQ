@@ -33,8 +33,8 @@ test('iPhone: fifteen live RPG employees begin visible; add another and toggle j
   assert.match(await page.locator('.pf-status').innerText(),/15 \/ 30/);
   assert.equal(await page.locator('.pf-person').count(),15);
   const initialized=await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.projectFloor);
-  assert.equal(initialized.floors[0].placements.length,15);
-  assert.equal(initialized.floors[0].janitor,false);
+  assert.equal(initialized.floors.find(f=>f.id===initialized.selected[Object.keys(initialized.selected)[0]].floorId).placements.length,15);
+  assert.equal(initialized.floors.find(f=>f.id===initialized.selected[Object.keys(initialized.selected)[0]].floorId).janitor,false);
   await page.locator('#pfJanitor').check();
   assert.equal(await page.locator('#pfJanitor').isChecked(),true);
   await page.locator('#pfEmployee').selectOption({index:1});
@@ -42,7 +42,7 @@ test('iPhone: fifteen live RPG employees begin visible; add another and toggle j
   await page.locator('#pfPlaceForm [type=submit]').click();
   await page.locator('.pf-status').getByText('16 / 30').waitFor({timeout:7000});
   assert.equal(await page.locator('.pf-person').count()>0,true);
-  const live=await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.projectFloor.floors[0]);
+  const live=await page.evaluate(()=>{const d=window.OfficeHQBridge.getState().enterprise.projectFloor;return d.floors.find(f=>f.id===d.selected[Object.keys(d.selected)[0]].floorId);});
   assert.equal(live.placements.length,16);
   assert.equal(live.janitor,true);
   assert.deepEqual(errors,[]);
@@ -65,14 +65,14 @@ test('iPad: project groups and 30 worker cap, with independent empty second floo
    await page.locator('.pf-status').getByText(String(i+1)+' / 30').waitFor({timeout:6000});
   }
   assert.equal(await page.locator('#pfPlaceForm [type=submit]').isDisabled(),true);
-  const floor1=await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.projectFloor.floors[0]);
+  const floor1=await page.evaluate(()=>{const d=window.OfficeHQBridge.getState().enterprise.projectFloor;return d.floors.find(f=>f.id===d.selected[Object.keys(d.selected)[0]].floorId);});
   assert.equal(floor1.placements.length,30);
   assert.equal(new Set(floor1.placements.map(p=>p.employeeId)).size,30);
   await page.locator('[data-pf="new-floor"]').click();
   await page.locator('.pf-status').getByText('0 / 30').waitFor({timeout:7000});
   assert.equal(await page.locator('#pfProject').inputValue(),'all');
   const floors=await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.projectFloor.floors);
-  assert.equal(floors.length,13);assert.equal(floors[0].placements.length,30);assert.equal(floors[12].placements.length,0);
+  assert.equal(floors.length,13);assert.equal(floors.find(f=>f.id===floor1.id).placements.length,30);assert.equal(floors[12].placements.length,0);
   assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });

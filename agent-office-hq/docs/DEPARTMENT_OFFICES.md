@@ -19,7 +19,7 @@ Office HQ uses the **12 department names already defined in the company's employ
 | Customer Experience | Customer Experience Director |
 | Product & Catalog | Product Director |
 
-A company initially has 12 distinct office levels (one for each department); **each level holds at most 10 manually placed workers**, plus a separate optional janitor. Existing placed staff and custom floors are retained when the structure is introduced. There is **no automatic crowding of office floors**: an employee appears only when manually placed or when a newly assigned task places them in their own department. Staff are not duplicated when assigned multiple tasks. An occupied department floor prompts the owner to free a desk or add an extra level instead of drawing an 11th employee.
+A company initially has 12 distinct office levels (one for each department); **each level holds at most 30 manually placed workers**, plus a separate optional janitor. Existing placed staff and custom floors are retained when the structure is introduced. There is **no automatic crowding of office floors**: an employee appears only when manually placed or when a newly assigned task places them in their own department. Staff are not duplicated when assigned multiple tasks. An occupied department floor prompts the owner to free a desk or add an extra level instead of drawing an 11th employee.
 
 ## Department-head paperwork
 

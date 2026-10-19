@@ -167,4 +167,5 @@
  });
  window.OfficeHQExtraViews.files=render;
  window.OfficeHQDeliverables={render,openTask,safeUrl,records};
+ if(location.hash.replace('#/','')==='files')B.setView('files');
 })();

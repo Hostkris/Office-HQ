@@ -8,7 +8,7 @@ const E=B.E, $=s=>document.querySelector(s);
 const isDesktop=['localhost','127.0.0.1'].includes(location.hostname);
 const fallback=[
   ['google','Google Search'],['gmail','Gmail'],['instagram','Instagram'],['facebook','Facebook'],
-  ['tiktok','TikTok'],['lemon8','Lemon8'],['chatgpt','ChatGPT website'],['x','X (Twitter)'],['shopify','Shopify'],['etsy','Etsy'],
+  ['tiktok','TikTok'],['suno','Suno music production'],['lemon8','Lemon8'],['chatgpt','ChatGPT website'],['x','X (Twitter)'],['shopify','Shopify'],['etsy','Etsy'],
   ['youtube','YouTube'],['calendar','Google Calendar'],['drive','Google Drive'],
   ['icloud','iCloud'],['chime','Chime (view only)'],['lemonade','Lemonade (view only)']
 ];

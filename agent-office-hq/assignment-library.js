@@ -92,6 +92,12 @@ grant_specialist|Prepare grant application checklist|Organize grant evidence doc
 insurance_specialist|Review coverage renewal calendar|Organize policy documents|Prepare insurance paperwork checklist
 finance_compliance|Review financial control exceptions|Audit separation of payment duties|Prepare internal finance control brief
 creative_director|Write visual campaign creative brief|Review concept direction|Coordinate creative approval stages
+creative_production_dir|Plan original music and visual release|Coordinate Suno music-production brief|Review creative studio deliverables
+music_producer|Develop an original Suno song prompt|Prepare musical arrangement and structure|Review generated demo and draft revision notes
+songwriter|Write original verses chorus and bridge|Revise lyrics for pacing and tone|Create alternate hooks and lyrical themes
+beat_producer|Create drum and rhythm production brief|Plan tempo and instrumentation|Review beat structure and transitions
+audio_engineer|Prepare mix and mastering checklist|Review vocal clarity and balance notes|Plan final audio export quality checks
+album_art_designer|Draft original album cover concept|Prepare cover image generation brief|Check artwork layout and release dimensions
 graphic_designer|Prepare promotional image brief|Review design layout concepts|Develop brand visual specifications
 image_creator|Prepare AI image production prompt|Review generated image candidates|Organize approved image delivery
 video_producer|Prepare video production storyboard|Plan shot sequence|Coordinate video shoot requirements

@@ -42,6 +42,30 @@ function ensure(cid,d){
   }
   if(/^Level \d+$/.test(floor.name||'')){floor.name=dept.name;changed=true;}
  }
+ // One-time safe repair of existing mixed-role placements; keep all assignments and employee profiles.
+ // A department office holds no more than 30 employees, and overflow offices retain its specialty.
+ if(typeof B.roleFor==='function'){
+  const placed=new Set(d.floors.filter(f=>f.companyId===cid).flatMap(f=>(f.placements||[]).map(p=>p.employeeId)));
+  for(const source of d.floors.filter(f=>f.companyId===cid&&deptIds.has(f.department))){
+   for(const placement of [...(source.placements||[])]){
+    const worker=S().employees.find(e=>e.id===placement.employeeId&&e.companyId===cid);
+    const home=worker&&B.roleFor(worker)?.dept;
+    if(!deptIds.has(home)||home===source.department)continue;
+    let target=d.floors.find(f=>f.companyId===cid&&f.department===home&&(f.placements||[]).length<30);
+    if(!target){
+     const count=d.floors.filter(f=>f.companyId===cid&&f.department===home).length;
+     target={id:B.uid('floor'),companyId:cid,name:label(home)+' · overflow '+count,department:home,placements:[],janitor:false,createdAt:stamp()};
+     d.floors.push(target);
+    }
+    const used=new Set((target.placements||[]).map(p=>p.seat));
+    const seat=Array.from({length:30},(_,i)=>i).find(s=>!used.has(s));
+    if(seat===undefined)continue;
+    target.placements.push({...placement,seat});
+    source.placements=source.placements.filter(p=>p!==placement);
+    changed=true;
+   }
+  }
+ }
  if(changed)B.save();
  return DEPTS.map(dept=>d.floors.find(f=>f.companyId===cid&&f.department===dept.id));
 }
@@ -127,8 +151,9 @@ function flowMarkup(cid){
  '<p class="muted small">Each department has its own floor, a department head, and up to 30 placed workers. Packets move only when the owner confirms a department head reviewed them.</p>'+
  '<div class="pf-dept-list">'+DEPTS.map(d=>{
   const f=deptFloor(cid,d.id),head=headFor(cid,d.id);
+  const placed=(S().enterprise?.projectFloor?.floors||[]).filter(f=>f.companyId===cid&&f.department===d.id).reduce((sum,f)=>sum+(f.placements?.length||0),0);
   return '<button type="button" class="pf-dept-tile" data-dept-action="visit" data-floor="'+E(f?.id||'')+'"><strong>'+E(d.name)+'</strong>'+
-   '<small>'+E(head?.name||'Head position inactive')+' · '+(f?.placements?.length||0)+'/30 workers</small></button>';
+   '<small>'+E(head?.name||'Head position inactive')+' · '+placed+' workers · 30 desks per floor</small></button>';
  }).join('')+'</div>'+
  '<details class="pf-route-builder"><summary>＋ Create department-to-CEO routing</summary>'+
  '<form id="pfDepartmentRouteForm"><label>Packet or project name<input id="pfRouteTitle" required minlength="5" maxlength="110" placeholder="e.g. Holiday sales promotion"></label>'+

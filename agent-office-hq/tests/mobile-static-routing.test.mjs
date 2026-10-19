@@ -28,7 +28,7 @@ test('installed iPhone app caches essential account and workstation controls',as
   assert.ok(sw.includes("'./"+name+"'"),'offline cache missing '+name);
   assert.ok(refresh.includes("'./"+name+"'"),'Refresh App missing '+name);
  }
- assert.match(sw,/agent-office-hq-v9/);
+ assert.match(sw,/agent-office-hq-v10/);
 });
 test('published site skips nonexistent localhost AI endpoint unless served locally',async()=>{
  const app=await readFile(join(root,'agent-office-hq/app.js'),'utf8');

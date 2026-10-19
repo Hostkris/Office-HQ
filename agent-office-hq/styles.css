@@ -252,3 +252,31 @@
 [data-theme="day"] .office-connector-icon{background:#e5f1f1;color:#096f73}
 [data-theme="day"] .app-refresh-button{background:#f8fcfc;color:#145d69;border-color:#b4cbd3}
 [data-theme="day"] .app-refresh-status:not(:empty){background:#e7f3f4;color:#315b65;border-color:#bcd4d8}
+
+
+/* Day Mode must reach the RPG roster and Command Center's add/remove controls,
+   not only the general dashboard and its dropdowns. */
+[data-theme="day"] .pf-person{
+  background:#fff;color:#1c3542;border-color:#c3d7df;
+}
+[data-theme="day"] .pf-person small{color:#516e78}
+[data-theme="day"] .pf-placed,[data-theme="day"] .pf-projects{color:#1c3542}
+[data-theme="day"] .pf-status,[data-theme="day"] .pf-janitor,
+[data-theme="day"] .pf-life-note,[data-theme="day"] .pf-command-controls>p{color:#3c5f6c}
+[data-theme="day"] .pf-status strong{color:#855c13}
+[data-theme="day"] .pf-command-controls{border-top-color:#c3d7df}
+[data-theme="day"] .pf-command-controls label{color:#294c5b}
+[data-theme="day"] .pf-stage{border-color:#bbd3dd;background:#e6eef3}
+[data-theme="day"] .pf-stage::after{color:#466878}
+[data-theme="day"] .pf-janitor small{color:#527581}
+[data-theme="day"] .pf-footnote{border-left-color:#a88748;color:#4c6670}
+[data-theme="day"] .pf-person .btn{
+  background:#e5f0f3;color:#244855;border-color:#b9cfd7;
+}
+[data-theme="day"] .pf-person .btn:hover{background:#d5e8ee}
+[data-theme="day"] .pf-command-controls [data-pf="command-remove"]{
+  background:#f9e9e7;color:#8e353e;border-color:#deb5b5;
+}
+[data-theme="day"] .pf-command-controls [data-pf="command-remove"]:hover{
+  background:#f0d5d2;color:#79292f;
+}

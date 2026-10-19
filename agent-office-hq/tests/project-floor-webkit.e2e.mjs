@@ -221,3 +221,73 @@ test('iPhone Command Center shares same 15 employees and supports safe remove, a
   assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
+
+
+test('iPhone: tap empty Assignments on a specific employee, save a job, and reopen the same profile after reload',async()=>{
+ const {page,context,errors}=await pageFor('iPhone 13');
+ try{
+  const subject=await page.evaluate(()=>{
+   const B=window.OfficeHQBridge,s=B.getState(),cid=s.companies[0].id;
+   const e=s.employees.find(e=>e.active&&e.companyId===cid&&!s.tasks.some(t=>t.ownerId===e.id));
+   if(!e)throw Error('Need an unassigned active specialist to test the empty profile');
+   B.workerModal(e.id);
+   return {id:e.id,name:e.name,companyId:e.companyId,scope:B.roleFor(e).scope,roles:B.getRoles().length};
+  });
+  assert.ok(subject.roles>=160,'All specialist roles should support direct profile assignments');
+  await page.locator('#modalRoot .pf-assignment-empty').waitFor();
+  assert.match(await page.locator('#modalRoot .pf-assignment-empty').innerText(),/No tasks assigned yet/i);
+  await page.locator('#modalRoot .pf-assignment-empty').click();
+  await page.locator('#taskForm').waitFor();
+  assert.equal(await page.locator('input[name="employeeId"]').inputValue(),subject.id);
+  assert.equal(await page.locator('#taskCompany').inputValue(),subject.companyId);
+  assert.equal(await page.locator('#taskScope').inputValue(),subject.scope);
+  assert.equal(await page.locator('#taskScope option').count(),1);
+  const title='Profile-only mobile task '+Date.now();
+  await page.locator('#taskTitle').fill(title);
+  await page.locator('#taskForm textarea[name="description"]').fill('Prepare the requested internal report for CEO review, without external actions.');
+  await page.locator('#taskForm select[name="priority"]').selectOption('High');
+  await page.locator('#taskForm button[type="submit"]').click();
+  await page.locator('#modalRoot [data-action="inspectTask"]').filter({hasText:title}).waitFor({timeout:10000});
+  const result=await page.evaluate((name)=>{
+   const s=window.OfficeHQBridge.getState(),matches=s.tasks.filter(t=>t.title===name);
+   return {matches:matches.map(t=>({ownerId:t.ownerId,companyId:t.companyId,scope:t.scope,status:t.status})),count:s.tasks.length};
+  },title);
+  assert.equal(result.matches.length,1);
+  assert.equal(result.matches[0].ownerId,subject.id);
+  assert.equal(result.matches[0].companyId,subject.companyId);
+  assert.equal(result.matches[0].scope,subject.scope);
+  assert.equal(result.matches[0].status,'queued');
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.evaluate(id=>window.OfficeHQBridge.workerModal(id),subject.id);
+  await page.locator('#modalRoot [data-action="inspectTask"]').filter({hasText:title}).waitFor();
+  assert.equal(await page.locator('#modalRoot [data-action="assignEmployee"]').first().getAttribute('data-id'),subject.id);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
+test('iPad: Add assignment always stays assigned to the chosen bot even if form ID is altered',async()=>{
+ const {page,context,errors}=await pageFor('iPad Pro 11');
+ try{
+  const people=await page.evaluate(()=>{
+   const B=window.OfficeHQBridge,s=B.getState(),cid=s.companies[0].id;
+   const available=s.employees.filter(e=>e.active&&e.companyId===cid);
+   B.workerModal(available[7].id);
+   return {chosen:available[7].id,other:available[8].id};
+  });
+  await page.locator('#modalRoot [data-action="assignEmployee"]').first().click();
+  await page.locator('#taskForm').waitFor();
+  assert.equal(await page.locator('input[name="employeeId"]').inputValue(),people.chosen);
+  await page.locator('#taskTitle').fill('Scope guard test');
+  await page.locator('#taskForm textarea[name="description"]').fill('Test authorized role ownership checks.');
+  await page.locator('input[name="employeeId"]').evaluate((input,id)=>input.value=id,people.other);
+  const before=await page.evaluate(()=>window.OfficeHQBridge.getState().tasks.length);
+  await page.locator('#taskForm button[type="submit"]').click();
+  assert.equal(await page.evaluate(()=>window.OfficeHQBridge.getState().tasks.length),before);
+  assert.match(await page.locator('#toastArea').innerText(),/does not match the authorized company role/i);
+  await page.locator('input[name="employeeId"]').evaluate((input,id)=>input.value=id,people.chosen);
+  await page.locator('#taskForm button[type="submit"]').click();
+  assert.equal(await page.evaluate(()=>window.OfficeHQBridge.getState().tasks.length),before+1);
+  await page.locator('#modalRoot [data-action="inspectTask"]').filter({hasText:'Scope guard test'}).waitFor();
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});

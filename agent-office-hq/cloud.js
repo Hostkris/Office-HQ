@@ -6,7 +6,7 @@ const PROJECT_URL='https://wvadoqncgrmfsftefuoy.supabase.co';
 const PUBLISHABLE_KEY='sb_publishable_c3owfootc_qRwCN7v3Q24Q_GKB8PIjK';
 const STORE='office_hq_cloud_session_v1';
 const root=document.getElementById('cloudRoot'),notice=document.getElementById('notice');
-const state={session:null,user:null,companies:[],tasks:[],approvals:[],messages:[],connections:[],oauth:{configured:{},unsupported:{}},company:null,tab:'companies',busy:false};
+const state={session:null,user:null,companies:[],tasks:[],approvals:[],messages:[],connections:[],oauth:{configured:{},unsupported:{}},company:null,tab:'companies',busy:false,executive:{settings:null,reviews:[],connections:[]}};
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=s=>new Date(s).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 let activeFeedback='';
@@ -51,6 +51,7 @@ async function rest(table,method='GET',body=null,query=''){
   return jsonFetch(PROJECT_URL+'/rest/v1/'+table+query,{method,headers,body:body===null?undefined:JSON.stringify(body)});
 }
 const OAUTH=PROJECT_URL+'/functions/v1/office-oauth';
+const EXEC=PROJECT_URL+'/functions/v1/office-executive-inbox';
 const CONNECTORS=[
  {key:'gmail',name:'Gmail',kind:'Google',docs:'https://console.cloud.google.com/apis/credentials',capability:'Read-only Gmail access first; email sending requires separate approved scopes and a worker execution service.'},
  {key:'calendar',name:'Google Calendar',kind:'Google',docs:'https://console.cloud.google.com/apis/credentials',capability:'Read-only calendar connection.'},
@@ -85,6 +86,40 @@ async function loadConnections(){
   msg('Connection service unavailable: '+(e.message||'Try refreshing.'),true);
  }
 }
+
+async function executiveRequest(action,extra={}){
+ const token=await access();
+ return jsonFetch(EXEC,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({action,companyId:state.company,...extra})});
+}
+async function loadExecutiveInbox(){
+ state.executive={settings:null,reviews:[],connections:[]};
+ if(!state.company)return;
+ const where='&company_id=eq.'+encodeURIComponent(state.company);
+ const [settings,reviews,connections]=await Promise.all([
+ rest('hq_exec_email_settings','GET',null,'?select=enabled,last_scan_at,last_error'+where),
+ rest('hq_exec_email_reviews','GET',null,'?select=thread_id,sender,subject,snippet,priority,reason,received_at,reviewed_at'+where+'&order=reviewed_at.desc&limit=80'),
+ rest('hq_connections','GET',null,'?select=id,provider,display_name'+where+'&provider=eq.gmail')]);
+ state.executive={settings:settings[0]||null,reviews,connections};
+}
+function executiveInboxPanel(c){
+ if(!c)return '<p class="banner">Create a company before using the Executive Assistant inbox.</p>';
+ const v=state.executive,connected=v.connections.length>0,enabled=!!v.settings?.enabled;
+ return chooseCompany()+'<section class="card"><h2>Executive Assistant · Gmail</h2>'+
+ '<p class="muted">This belongs to your existing Executive Assistant in Executive Leadership. The worker reports to the Chief of Staff, who escalates urgent issues to you. No new email employee is created.</p>'+
+ '<p class="notice">'+escape(!connected?'Gmail not yet connected':enabled?'Authorized Gmail · hourly checks enabled':'Authorized Gmail · hourly checks off')+'</p>'+
+ '<p class="small muted">'+escape(v.settings?.last_scan_at?'Last check: '+date(v.settings.last_scan_at):'No inbox check has run yet.')+'</p>'+
+ (v.settings?.last_error?'<p class="notice">'+escape(v.settings.last_error)+'</p>':'')+
+ '<div class="row"><button type="button" data-exec-scan '+(!connected?'disabled':'')+'>Check inbox now</button>'+
+ '<button type="button" class="secondary" data-exec-monitor="'+(enabled?'off':'on')+'" '+(!connected&&!enabled?'disabled':'')+'>'+(enabled?'Turn hourly checks off':'Enable hourly checks')+'</button>'+
+ '<button type="button" class="secondary" data-tab="connections">Connect Gmail</button></div>'+
+ '<p class="small muted">Read-only Gmail reviews on weekdays from 9 a.m. to 6 p.m. Eastern. Urgency is preliminary keyword matching, not a verified AI judgment. No sending, deleting or marking messages as read.</p></section>'+
+ '<section class="card"><h2>Email priority reports</h2>'+
+ (v.reviews.length?v.reviews.map(x=>{const thread=/^[a-z0-9]+$/i.test(x.thread_id)?x.thread_id:'';return '<div class="item"><span class="pill">'+escape(x.priority.toUpperCase())+'</span> <strong>'+escape(x.subject)+'</strong>'+
+ '<p class="small muted">From '+escape(x.sender)+' · '+(x.received_at?date(x.received_at):'Date unavailable')+'</p>'+
+ '<p>'+escape(x.snippet)+'</p><p class="small muted">'+escape(x.reason)+'</p>'+
+ (thread?'<a target="_blank" rel="noopener noreferrer" href="https://mail.google.com/mail/u/0/#all/'+thread+'">Open original email in Gmail ↗</a>':'')+'</div>'}).join(''):'<p class="muted">No reviewed emails. Connect Gmail and check your inbox to begin.</p>')+'</section>';
+}
+
 function connectionsPanel(){
  if(!state.company)return '<p class="banner">Create a company in Secure Cloud HQ before connecting outside accounts.</p>';
  const list=state.connections.filter(c=>c.company_id===state.company);
@@ -105,7 +140,7 @@ function connectionsPanel(){
       '<button type="button" class="secondary" data-refresh-connection="'+escape(c.id)+'">Refresh authorization</button>'+ 
       '<button type="button" class="danger" data-disconnect="'+escape(c.id)+'">Disconnect</button></div>').join('')+'</article>';
  }).join('')+'</div>'+
- '<p class="small muted">Authorized accounts are stored per company. Provider secrets are encrypted server-side. Live employee API actions and background workflows are <strong>not yet activated</strong>; even an authorized account does not give a bot permission to publish or spend.</p>'+
+ '<p class="small muted">Authorized accounts are stored per company. Provider secrets are encrypted server-side. Only the Executive Assistant read-only Gmail workflow is available after authorization; other agent automation is not yet active. No bot has permission to send email or spend.</p>'+
  '</section>';
 }
 const companyOptions=()=>state.companies.map(c=>'<option value="'+escape(c.id)+'" '+(state.company===c.id?'selected':'')+'>'+escape(c.name)+'</option>').join('');
@@ -116,8 +151,8 @@ function authView(){
 function homeView(){
  const c=activeCompany(),tab=state.tab;
  root.innerHTML='<div class="row"><p class="muted">Signed in: <strong>'+escape(state.user.email||'Account')+'</strong></p><button class="secondary" type="button" data-cloud="logout">Sign out</button></div>'+
- '<div class="tabs" role="tablist" aria-label="Cloud HQ sections">'+['companies','tasks','approvals','messages','connections','services'].map(x=>'<button type="button" role="tab" aria-selected="'+(tab===x)+'" data-tab="'+x+'">'+({companies:'Companies',tasks:'Tasks',approvals:'CEO approvals',messages:'Messages',connections:'Connect accounts',services:'Developer links'}[x])+'</button>').join('')+'</div>'+
- (tab==='companies'?companyPanel():tab==='tasks'?tasksPanel(c):tab==='approvals'?approvalsPanel(c):tab==='messages'?messagesPanel(c):tab==='connections'?connectionsPanel():servicesPanel())+
+ '<div class="tabs" role="tablist" aria-label="Cloud HQ sections">'+['companies','tasks','approvals','messages','executive-inbox','connections','services'].map(x=>'<button type="button" role="tab" aria-selected="'+(tab===x)+'" data-tab="'+x+'">'+({companies:'Companies',tasks:'Tasks',approvals:'CEO approvals',messages:'Messages','executive-inbox':'Executive Assistant',connections:'Connect accounts',services:'Developer links'}[x])+'</button>').join('')+'</div>'+
+ (tab==='companies'?companyPanel():tab==='tasks'?tasksPanel(c):tab==='approvals'?approvalsPanel(c):tab==='messages'?messagesPanel(c):tab==='executive-inbox'?executiveInboxPanel(c):tab==='connections'?connectionsPanel():servicesPanel())+
  '<p class="small muted" style="margin-top:22px">Data in this area is stored in Supabase with owner-level security. The original Office-HQ dashboard still runs locally. Cloud approvals are records only; they do not authorize purchases or access third-party accounts.</p>';
 }
 function companyPanel(){
@@ -153,6 +188,7 @@ async function reload(){
   Object.assign(state,{tasks,approvals,messages});
  }else Object.assign(state,{tasks:[],approvals:[],messages:[]});
  if(state.tab==='connections')await loadConnections();
+  if(state.tab==='executive-inbox')await loadExecutiveInbox();
  homeView();
 }
 async function signOut(){
@@ -174,7 +210,7 @@ document.addEventListener('submit',e=>{
  guard(async()=>{
   if(f.id==='cloudLogin'){
    const s=await authRequest('token?grant_type=password',{email:p.email,password:p.password});
-   storeSession(s);state.user=await authUser();state.tab='companies';msg('Secure sign-in successful.');await reload();return;
+   storeSession(s);state.user=await authUser();state.tab=location.hash==='#executive-inbox'?'executive-inbox':'companies';msg('Secure sign-in successful.');await reload();return;
   }
   if(f.id==='cloudSignUp'){
    const redirect=window.location.origin+window.location.pathname;
@@ -200,8 +236,13 @@ document.addEventListener('invalid',e=>{
 },true);
 document.addEventListener('click',e=>{
  const tab=e.target.closest('[data-tab]'),c=e.target.closest('[data-company]'),op=e.target.closest('[data-cloud]'),decision=e.target.closest('[data-decision]');
- if(tab){state.tab=tab.dataset.tab;if(state.tab==='connections')guard(async()=>{await loadConnections();homeView();});else homeView();}
+ if(tab){state.tab=tab.dataset.tab;if(['connections','executive-inbox'].includes(state.tab))guard(async()=>{if(state.tab==='connections')await loadConnections();else await loadExecutiveInbox();homeView();});else homeView();}
  if(c){state.company=c.dataset.company;state.tab='tasks';guard(reload);}
+
+ const scan=e.target.closest('[data-exec-scan]');
+ if(scan)guard(async()=>{msg('Executive Assistant is reviewing Gmail…');const result=await executiveRequest('scan');await loadExecutiveInbox();homeView();msg('Executive Assistant checked '+result.reviewed+' emails: '+result.urgent+' urgent and '+result.important+' important.');});
+ const monitor=e.target.closest('[data-exec-monitor]');
+ if(monitor)guard(async()=>{const enabled=monitor.dataset.execMonitor==='on';await executiveRequest('configure',{enabled});await loadExecutiveInbox();homeView();msg(enabled?'Executive Assistant hourly Gmail checks enabled.':'Executive Assistant hourly checks disabled.');});
  const connect=e.target.closest('[data-connect-provider]');
  if(connect)guard(async()=>{
   const provider=connect.dataset.connectProvider;
@@ -259,7 +300,7 @@ document.addEventListener('change',e=>{
     history.replaceState(null,'',location.pathname+location.search);
     if(outcome==='connected')msg('Authorization completed for '+provider+'. Your Cloud HQ connections will now refresh.');
     else msg('Authorization not completed ('+outcome+'). Review the connection setup or try again.',true);
-  }else if(fragment.has('connections')){state.tab='connections';}
+  }else if(fragment.has('connections')){state.tab='connections';}else if(location.hash==='#executive-inbox'){state.tab='executive-inbox';}
   const saved=sessionStorage.getItem(STORE);
   if(!state.session&&saved){try{state.session=JSON.parse(saved)}catch{storeSession(null)}}
   if(!state.session){authView();return}

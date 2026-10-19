@@ -9,8 +9,8 @@ test('static publish artifact contains required files but no backend or secrets'
   const build=spawnSync(process.execPath,['scripts/build.mjs'],{cwd:root,encoding:'utf8'});
   assert.equal(build.status,0,build.stderr);
   const files=await readdir(path.join(root,'dist'));
-  assert.deepEqual(files.sort(),['.nojekyll','app.js','cloud.html','cloud.js','office-features.js','project-floor.js','office-life.js','department-offices.js','integration-center.js','desktop-workstations.js','ios-workstations.js','refresh.js','theme.js','icon.svg','index.html','manifest.webmanifest','styles.css','sw.js'].sort());
+  assert.deepEqual(files.sort(),['.nojekyll','assignment-library.js','app.js','cloud.html','cloud.js','office-features.js','project-floor.js','office-life.js','department-offices.js','integration-center.js','desktop-workstations.js','ios-workstations.js','refresh.js','theme.js','icon.svg','index.html','manifest.webmanifest','styles.css','sw.js'].sort());
   const html=await readFile(path.join(root,'dist','index.html'),'utf8');
-  for(const name of ['cloud.html','app.js','office-features.js','project-floor.js','office-life.js','department-offices.js','integration-center.js','desktop-workstations.js','ios-workstations.js','refresh.js','theme.js','styles.css','manifest.webmanifest','icon.svg'])assert.match(html,new RegExp(name.replace('.','\\.')));
+  for(const name of ['cloud.html','assignment-library.js','app.js','office-features.js','project-floor.js','office-life.js','department-offices.js','integration-center.js','desktop-workstations.js','ios-workstations.js','refresh.js','theme.js','styles.css','manifest.webmanifest','icon.svg'])assert.match(html,new RegExp(name.replace('.','\\.')));
   assert.doesNotMatch(html,/src="\//);
 });

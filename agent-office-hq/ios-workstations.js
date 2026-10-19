@@ -65,18 +65,19 @@ window.OfficeHQExtraViews.workstations=()=>{
  return '<div class="page-head"><div class="eyebrow">IPHONE + IPAD · SAFARI</div><h1>iOS browser workstations</h1>'+
  '<p class="muted">Manage your employees and open your own logged-in websites directly from your iPhone or iPad. No desktop computer or cloud browser is required for guided tasks.</p></div>'+
  '<section class="card ios-guide"><div class="section-top"><h2>iOS browser status</h2><span class="ops-tag" id="iosStatus">'+E(statusText)+'</span></div>'+
- '<p><strong>Available now:</strong> choose a website, sign in yourself, assign work, track handoffs, and save task notes in the iOS browser.</p>'+
+ '<p><strong>Available now:</strong> sign into your accounts first, without an employee. Later choose an eligible worker, authorize access if supported, and assign a task.</p>'+
  '<p><strong>Optional extension:</strong> a Safari web extension can, once packaged and installed, read the currently open webpage or insert a draft with your specific permission. That extension is <em>not installed by opening this site</em>, and autonomous multi-site AI operation is not available in ordinary iOS web tabs.</p>'+
  '<p class="tiny muted">Apple requires a separately distributed Safari extension for code to interact with other websites. No browser can safely inherit your website passwords just from tapping Authorize in Office HQ.</p>'+'<p class="small"><a href="https://github.com/Hostkris/Office-HQ/blob/main/agent-office-hq/docs/IOS_SAFARI_SETUP.md" target="_blank" rel="noopener noreferrer">iPhone/iPad Safari setup and extension limitations ↗</a></p></section>'+
  '<div class="desktop-grid ios-grid"><section class="card"><h2>① Choose website and sign in</h2>'+
  '<label class="desktop-label">Website<select id="iosSite">'+SITES.map(s=>'<option value="'+E(s[0])+'"'+(current===s[0]?' selected':'')+'>'+E(s[1])+'</option>').join('')+'</select></label>'+
- '<p id="iosSiteHint" class="muted small">Sign in yourself. Office HQ never asks for your website password.</p>'+
+ '<p id="iosSiteHint" class="muted small">Sign in yourself now, even if you are not assigning an employee yet. Your Safari login is separate from Office HQ permissions.</p>'+
  '<a class="btn btn-primary ios-go" id="iosOpenSite" href="'+E(site(current)[2])+'" target="_blank" rel="noopener noreferrer">🌐 Open '+E(site(current)[1])+' in Safari ↗</a>'+
- '<label class="desktop-label">AI employee<select id="iosWorker"><option value="">Choose eligible employee</option>'+workers(current).map(w=>'<option value="'+E(w.id)+'">'+E(w.name)+' · '+E(B.roleFor(w)?.dept||'')+'</option>').join('')+'</select></label>'+
+ '<p class="tiny muted">Open the website and sign in above without choosing anyone. Employee authorization is only relevant here, when assigning work. The optional Safari extension must be installed before it can be authorized.</p></section>'+
+ '<section class="card"><h2>② Assign an employee and manage access</h2>'+
+  '<label class="desktop-label">AI employee<select id="iosWorker"><option value="">Choose eligible employee</option>'+workers(current).map(w=>'<option value="'+E(w.id)+'">'+E(w.name)+' · '+E(B.roleFor(w)?.dept||'')+'</option>').join('')+'</select></label>'+
  '<label class="desktop-check"><input type="checkbox" id="iosConsent"> I have signed into this website myself and permit this employee to assist with assigned work.</label>'+
  '<button class="btn" type="button" data-ios="authorize">✓ Authorize Safari extension worker</button>'+
- '<p class="tiny muted">This button requires the Safari extension to be installed and permitted by iOS. Guided task planning works without it.</p></section>'+
- '<section class="card"><h2>② Assign an iOS task</h2>'+
+ 
  '<label class="desktop-label">Instructions<textarea id="iosInstructions" maxlength="1600" placeholder="Example: Review my visible Etsy orders and list anything needing my attention."></textarea></label>'+
  '<button class="btn btn-primary" type="button" data-ios="assign">＋ Save worker assignment</button>'+
  '<p class="tiny muted">This creates a real saved Office HQ assignment, <strong>not an autonomous browser job</strong>. With the Safari extension installed, you can ask a worker to inspect the open site for information. Without it, follow the assignment manually.</p></section></div>'+

@@ -64,3 +64,15 @@ test('workers stay invisible until placed and room hit-testing can open CEO appr
  const hit=o.life.hitTest(1090,105);
  assert.equal(hit.kind,'approvals');
 });
+
+test('RPG characters use stable varied skin, hair and outfit colors, without changing while they animate',()=>{
+ const o=run(),snap=o.staff.map(e=>o.life.appearance(e));
+ assert.ok(new Set(snap.map(x=>x.skin)).size>=5,'visible staff should have varied skin tones');
+ assert.ok(new Set(snap.map(x=>x.hair)).size>=4,'visible staff should have varied hair colors');
+ assert.ok(new Set(snap.map(x=>x.outfit)).size>=5,'visible staff should wear different colors');
+ const again=o.staff.map(e=>o.life.appearance(e));
+ assert.deepEqual(snap.map(x=>x.skin),again.map(x=>x.skin));
+ assert.deepEqual(snap.map(x=>x.hair),again.map(x=>x.hair));
+ const custom=o.life.appearance({id:'custom',name:'Edited worker',skin:'#abc123',hair:'#000000',outfit:'#ffffff',appearanceLocked:true});
+ assert.equal(custom.skin,'#abc123','explicit owner appearance settings remain untouched');
+});

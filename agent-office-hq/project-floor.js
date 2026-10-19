@@ -80,6 +80,26 @@ function place(cid,floor,employeeId,seat,projectId,taskId){
  if(project){project.members??=[];if(!project.members.includes(employeeId))project.members.push(employeeId);}
  save();return {ok:true,message:worker.name+' placed at desk '+(seat+1)+'.'};
 }
+function removePlacement(cid,floor,seat){
+ const p=floor?.placements?.find(p=>p.seat===seat);
+ if(!p)return false;
+ floor.placements=floor.placements.filter(q=>q.seat!==seat);
+ for(const pr of projectsFor(cid))pr.members=(pr.members||[]).filter(id=>id!==p.employeeId);
+ save();return true;
+}
+function commandControls(cid){
+ const {floor}=setup(cid);
+ if(!floor)return '';
+ const floors=floorsFor(cid),available=optionsFor(cid),placed=floor.placements||[];
+ const firstFree=seatList(floor).find(v=>!v.placement);
+ return '<div class="pf-command-controls" aria-label="Live RPG employee management">'+
+  '<label>RPG department level<select id="pfCommandFloor">'+floors.map(f=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+'</option>').join('')+'</select></label>'+
+  '<label>Add existing employee<select id="pfCommandWorker"><option value="">Choose employee</option>'+available.map(e=>'<option value="'+E(e.id)+'">'+E(e.name)+' · '+E(role(e).title||'Staff')+'</option>').join('')+'</select></label>'+
+  '<button class="btn btn-sm" data-pf="command-add"'+(!firstFree||!available.length?' disabled':'')+'>＋ Add to RPG</button>'+
+  '<label>Remove visible employee<select id="pfCommandRemove"><option value="">Choose employee</option>'+placed.map(p=>{const e=state().employees.find(e=>e.id===p.employeeId);return '<option value="'+p.seat+'">'+E(e?.name||'Former employee')+' · Desk '+(p.seat+1)+'</option>';}).join('')+'</select></label>'+
+  '<button class="btn btn-sm" data-pf="command-remove"'+(!placed.length?' disabled':'')+'>× Remove from RPG</button>'+
+  '<p class="tiny muted">Showing '+placed.length+' of 30 desks. Changes also appear in Live RPG Office; employee records and tasks stay safe.</p></div>';
+}
 function onTaskAssigned(task){
  if(!task?.companyId||!task?.ownerId)return;
  const cid=task.companyId,loc=setup(cid),d=loc.d;
@@ -277,8 +297,12 @@ function start(){
 function redraw(){if($('#officeCanvas'))start();}
 function syncFloor(){B.setView('office');}
 document.addEventListener('change',event=>{
- if(!$('#pfFloor'))return;
  const cid=inCompany(),d=data();
+ if(event.target.id==='pfCommandFloor'){
+  const f=floorsFor(cid).find(f=>f.id===event.target.value);
+  if(f){d.selected[cid]={floorId:f.id,projectId:'all'};save();B.setView('command');}return;
+ }
+ if(!$('#pfFloor'))return;
  if(event.target.id==='pfFloor'){
   const chosen=floorsFor(cid).find(f=>f.id===event.target.value);
   if(chosen){d.selected[cid]={floorId:chosen.id,projectId:'all'};save();syncFloor();}
@@ -294,6 +318,22 @@ document.addEventListener('click',event=>{
  const btn=event.target.closest('[data-pf]');if(!btn)return;
  const cid=inCompany();if(!cid)return;
  const {floor,d}=setup(cid),op=btn.dataset.pf;
+ if(op==='command-add'){
+  const employeeId=$('#pfCommandWorker')?.value;
+  const seat=seatList(floor).find(x=>!x.placement)?.seat;
+  if(seat===undefined){popup('This RPG floor is full (30 workers).',true);return;}
+  const result=place(cid,floor,employeeId,seat,'all');
+  if(result.ok){d.selected[cid]={floorId:floor.id,projectId:'all'};save();B.setView('command');}
+  popup(result.message,!result.ok);return;
+ }
+ if(op==='command-remove'){
+  const value=$('#pfCommandRemove')?.value;
+  if(value===''||value==null){popup('Choose someone to remove from the RPG view.',true);return;}
+  const seat=Number(value);
+  if(!Number.isInteger(seat)||!floor.placements.some(p=>p.seat===seat))return;
+  if(!confirm('Remove this avatar from the RPG office and Command Center? The employee and their work are retained.'))return;
+  removePlacement(cid,floor,seat);B.setView('command');popup('RPG avatar removed. Employee record and tasks remain.');return;
+ }
  if(op==='new-floor'){
   const count=floorsFor(cid).length;
   if(count>=30){popup('Maximum 30 levels per company.',true);return;}
@@ -318,9 +358,7 @@ document.addEventListener('click',event=>{
   if(!Number.isInteger(seat))return;
   const p=floor.placements.find(p=>p.seat===seat);if(!p)return;
   if(!confirm('Remove this worker from the RPG floor? Their existing business tasks will NOT be deleted.'))return;
-  floor.placements=floor.placements.filter(p=>p.seat!==seat);
-  for(const pr of projectsFor(cid))pr.members=pr.members.filter(id=>id!==p.employeeId);
-  save();syncFloor();
+  removePlacement(cid,floor,seat);syncFloor();
  }
 });
 document.addEventListener('submit',event=>{
@@ -344,6 +382,6 @@ document.addEventListener('submit',event=>{
   syncFloor();
  }
 });
-window.OfficeHQFloor={render,start,stop,onTaskAssigned,onTaskStatus,data,LIMIT};
+window.OfficeHQFloor={render,start,stop,onTaskAssigned,onTaskStatus,data,commandControls,LIMIT,INITIAL_WORKERS};
 if(['office','command'].includes(location.hash.replace('#/','')))B.setView(location.hash.replace('#/',''));
 })();

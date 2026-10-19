@@ -14,6 +14,7 @@ export const SITES=Object.freeze({
   instagram:{name:'Instagram',url:'https://www.instagram.com/',hosts:['instagram.com'],departments:['Marketing'],mode:'draft'},
   facebook:{name:'Facebook',url:'https://www.facebook.com/',hosts:['facebook.com'],departments:['Marketing'],mode:'draft'},
   tiktok:{name:'TikTok',url:'https://www.tiktok.com/',hosts:['tiktok.com'],departments:['Marketing'],mode:'draft'},
+  suno:{name:'Suno music production',url:'https://suno.com/',hosts:['suno.com'],departments:['Marketing'],mode:'draft'},
   lemon8:{name:'Lemon8',url:'https://www.lemon8-app.com/',hosts:['lemon8-app.com'],departments:['Marketing'],mode:'draft'},
   chatgpt:{name:'ChatGPT website',url:'https://chatgpt.com/',hosts:['chatgpt.com'],departments:['Technology','Leadership','Marketing'],mode:'draft'},
   x:{name:'X (Twitter)',url:'https://x.com/',hosts:['x.com','twitter.com'],departments:['Marketing'],mode:'draft'},

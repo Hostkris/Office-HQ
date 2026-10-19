@@ -17,6 +17,8 @@ function sceneChoices(cid){return SCENE_OPTIONS.map(([id,label])=>'<option value
 const role=e=>e?(B.roleFor(e)||{}):{};
 const inCompany=()=>{const v=$('#companyPicker')?.value;return v&&v!=='all'?v:state().companies[0]?.id};
 const companyStaff=cid=>state().employees.filter(e=>e.companyId===cid&&e.active);
+const eligibleFor=(floor,worker)=>!!worker&&(!floor?.department||role(worker).dept===floor.department);
+const departmentLabel=floor=>window.OfficeHQDepartments?.DEPTS?.find(d=>d.id===floor?.department)?.name||floor?.department||'this level';
 const allTasks=cid=>state().tasks.filter(t=>t.companyId===cid);
 const time=()=>new Date().toISOString();
 function data(){
@@ -35,14 +37,17 @@ function setup(cid){
  window.OfficeHQDepartments?.ensure(cid,d);
  floors=d.floors.filter(f=>f.companyId===cid);
  const chosen=d.selected[cid]||{};
- const floor=floors.find(f=>f.id===chosen.floorId)||floors[0];
+ const existingPlacements=floors.some(f=>(f.placements||[]).length>0);
+ // New workspaces begin with an Operations team, where fifteen matching workers exist.
+ const initial=floors.find(f=>f.department==='Operations')||floors[0];
+ const floor=floors.find(f=>f.id===chosen.floorId)||(existingPlacements?floors[0]:initial);
  d.selected[cid]={floorId:floor.id,projectId:chosen.projectId||'all'};
  // One-time welcome population from real company employees; never refill after
  // the owner removes anyone. Existing placements and tasks are preserved.
  d.initialPopulation??={};
  if(!Object.prototype.hasOwnProperty.call(d.initialPopulation,cid)){
   const existing=new Set(floors.flatMap(f=>(f.placements||[]).map(p=>p.employeeId)));
-  const pool=companyStaff(cid).filter(e=>e.roleKey!=='ceo'&&!existing.has(e.id));
+  const pool=companyStaff(cid).filter(e=>e.roleKey!=='ceo'&&eligibleFor(floor,e)&&!existing.has(e.id));
   const needed=Math.max(0,Math.min(INITIAL_WORKERS-(floor.placements||[]).length,LIMIT-(floor.placements||[]).length));
   for(const worker of pool.slice(0,needed)){
    const seat=Array.from({length:LIMIT},(_,i)=>i).find(i=>!(floor.placements||[]).some(p=>p.seat===i));
@@ -69,12 +74,13 @@ function count(cid){return floorsFor(cid).reduce((n,f)=>n+f.placements.length,0)
 function visible(){const cid=inCompany(),x=currentFor(cid);return {...x,cid};}
 function save(){B.save();}
 function popup(message,error=false){B.toast(message,error?'error':'ok');}
-function optionsFor(cid){const used=new Set(floorsFor(cid).flatMap(f=>f.placements.map(p=>p.employeeId)));
- return companyStaff(cid).filter(e=>!used.has(e.id));}
+function optionsFor(cid,floor){const used=new Set(floorsFor(cid).flatMap(f=>f.placements.map(p=>p.employeeId)));
+ return companyStaff(cid).filter(e=>!used.has(e.id)&&eligibleFor(floor,e));}
 function place(cid,floor,employeeId,seat,projectId,taskId){
  const worker=companyStaff(cid).find(e=>e.id===employeeId);
  if(!worker)return {ok:false,message:'Choose an active employee in this company.'};
  if(!floor||floor.companyId!==cid)return {ok:false,message:'Choose a valid company level.'};
+ if(!eligibleFor(floor,worker))return {ok:false,message:'This employee belongs to '+(role(worker).dept||'another department')+', not '+departmentLabel(floor)+'. Choose a worker from the selected department.'};
  if(!Number.isInteger(seat)||seat<0||seat>=LIMIT)return {ok:false,message:'Choose a desk from 1 to 30.'};
  if(floor.placements.length>=LIMIT)return {ok:false,message:'This floor is full: 30 assigned workers maximum. Add another level.'};
  if(floor.placements.some(p=>p.seat===seat))return {ok:false,message:'This desk is already occupied.'};
@@ -95,7 +101,7 @@ function removePlacement(cid,floor,seat){
 function commandControls(cid){
  const {floor}=setup(cid);
  if(!floor)return '';
- const floors=floorsFor(cid),available=optionsFor(cid),placed=floor.placements||[];
+ const floors=floorsFor(cid),available=optionsFor(cid,floor),placed=floor.placements||[];
  const firstFree=seatList(floor).find(v=>!v.placement);
  return '<div class="pf-command-controls" aria-label="Live RPG employee management">'+
   '<label>Office scenery<select id="pfCommandScene" aria-label="Change command center RPG scenery">'+sceneChoices(cid)+'</select></label>'+
@@ -104,7 +110,7 @@ function commandControls(cid){
   '<button class="btn btn-sm" data-pf="command-add"'+(!firstFree||!available.length?' disabled':'')+'>＋ Add to RPG</button>'+
   '<label>Remove visible employee<select id="pfCommandRemove"><option value="">Choose employee</option>'+placed.map(p=>{const e=state().employees.find(e=>e.id===p.employeeId);return '<option value="'+p.seat+'">'+E(e?.name||'Former employee')+' · Desk '+(p.seat+1)+'</option>';}).join('')+'</select></label>'+
   '<button class="btn btn-sm" data-pf="command-remove"'+(!placed.length?' disabled':'')+'>× Remove from RPG</button>'+
-  '<p class="tiny muted">Showing '+placed.length+' of 30 desks. Changes also appear in Live RPG Office; employee records and tasks stay safe.</p></div>';
+  '<p class="tiny muted">Showing '+placed.length+' of 30 desks · '+E(departmentLabel(floor))+' workers only. Changes also appear in Live RPG Office; employee records and tasks stay safe.</p></div>';
 }
 function onTaskAssigned(task){
  if(!task?.companyId||!task?.ownerId)return;
@@ -114,7 +120,7 @@ function onTaskAssigned(task){
   if(p&&!p.taskId)p.taskId=task.id;save();return;
  }
  const dept=role(state().employees.find(e=>e.id===task.ownerId)).dept;
- let floor=window.OfficeHQDepartments?.deptFloor(cid,dept)||loc.floor;
+ let floor=floorsFor(cid).find(f=>f.department===dept&&f.placements.length<LIMIT)||window.OfficeHQDepartments?.deptFloor(cid,dept)||loc.floor;
  if(!floor||floor.placements.length>=LIMIT){popup('Task saved, but the '+(dept||'selected')+' department office is full. Add an overflow level or free a desk.',true);return;}
  const chosen=d.selected[cid]?.projectId,project=projectsFor(cid).find(p=>p.id===chosen);
  let auto=project;
@@ -142,7 +148,7 @@ function onTaskStatus(task){
 function render(){
  const cid=inCompany(),{floor,project}=setup(cid),floors=floorsFor(cid),projects=projectsFor(cid);
  const placement=seatList(floor);
- const available=optionsFor(cid);
+ const available=optionsFor(cid,floor);
  const active=placement.filter(x=>x.placement&&display(x.placement,project));
  const options=available.map(e=>'<option value="'+E(e.id)+'">'+E(e.name)+' · '+E(role(e).title||'Worker')+'</option>').join('');
  const projOptions='<option value="all">All desks / placed workers</option>'+projects.map(p=>'<option value="'+E(p.id)+'"'+(project?.id===p.id?' selected':'')+'>'+E(p.name)+'</option>').join('');
@@ -162,7 +168,7 @@ function render(){
  '<label class="pf-janitor"><input type="checkbox" id="pfJanitor"'+(floor.janitor?' checked':'')+'> Assign a janitor to this level <small>(separate from the 30 worker spaces)</small></label>'+
  '</section>'+
  '<div class="grid two-col pf-bottom"><section class="card"><div class="section-top"><h2>Place an employee</h2><span class="pill-stat">Manual placement</span></div>'+
- '<p class="muted small">Fifteen of your existing employees appear once on the live floor and Command Center. Add or remove people whenever you want; new tasks can also place their owner, up to 30.</p>'+
+ '<p class="muted small">Only '+E(departmentLabel(floor))+' employees can be placed here. Each floor has 30 desks; extra floors keep their department. Employee assignments stay attached to their profiles.</p>'+
  '<form id="pfPlaceForm" class="pf-place-form">'+
  '<label>Employee<select id="pfEmployee" required><option value="">Choose an available employee</option>'+options+'</select></label>'+
  '<label>Desk<select id="pfSeat" required>'+placement.filter(x=>!x.placement).map(x=>'<option value="'+x.seat+'">Desk '+(x.seat+1)+'</option>').join('')+'</select></label>'+
@@ -347,7 +353,7 @@ document.addEventListener('click',event=>{
  if(op==='new-floor'){
   const count=floorsFor(cid).length;
   if(count>=30){popup('Maximum 30 levels per company.',true);return;}
-  const next={id:B.uid('floor'),companyId:cid,name:'Level '+(count+1),janitor:false,placements:[],createdAt:time()};
+  const next={id:B.uid('floor'),companyId:cid,name:floor.department?departmentLabel(floor)+' · overflow '+floorsFor(cid).filter(f=>f.department===floor.department).length:'Level '+(count+1),department:floor.department||null,janitor:false,placements:[],createdAt:time()};
   d.floors.push(next);d.selected[cid]={floorId:next.id,projectId:'all'};save();syncFloor();
  }
  if(op==='new-project'){

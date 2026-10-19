@@ -181,3 +181,8 @@
  .pf-command-controls label{min-width:0;flex-basis:135px}
  .pf-command-controls .btn{flex:1 1 125px}
 }
+
+/* Assignment creation directly from an employee's existing profile modal. */
+.pf-assignment-empty{display:flex;align-items:center;justify-content:center;min-height:88px;width:100%;padding:17px;border:1px dashed #60888d;border-radius:11px;background:#1a333f;color:#c3e1dd;font:inherit;font-size:14px;cursor:pointer;text-align:center;line-height:1.6;touch-action:manipulation}
+.pf-assignment-empty:not(:disabled):hover,.pf-assignment-empty:not(:disabled):focus-visible{border-color:#60d0c9;background:#214551;color:#f5fff8;outline:2px solid #72d4cc;outline-offset:2px}
+.pf-assignment-empty:disabled{opacity:.57;cursor:not-allowed}

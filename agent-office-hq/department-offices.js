@@ -124,7 +124,7 @@ function flowMarkup(cid){
  const tasks=S().tasks.filter(t=>t.companyId===cid&&t.ownerId).slice(0,100);
  const list=routes(cid).slice(0,18);
  return '<section class="card pf-dept-routing"><div class="section-top"><h2>12 department offices · handoff chain</h2><span class="pill-stat">CEO decides last</span></div>'+
- '<p class="muted small">Each department has its own floor, a department head, and up to 10 placed workers. Packets move only when the owner confirms a department head reviewed them.</p>'+
+ '<p class="muted small">Each department has its own floor, a department head, and up to 30 placed workers. Packets move only when the owner confirms a department head reviewed them.</p>'+
  '<div class="pf-dept-list">'+DEPTS.map(d=>{
   const f=deptFloor(cid,d.id),head=headFor(cid,d.id);
   return '<button type="button" class="pf-dept-tile" data-dept-action="visit" data-floor="'+E(f?.id||'')+'"><strong>'+E(d.name)+'</strong>'+

@@ -35,8 +35,8 @@ test('published site skips nonexistent localhost AI endpoint unless served local
  assert.match(app,/endpoint\.startsWith\('\/'\).*location\.hostname/);
 });
 
-test('local status label reads Loco Mode without demo wording',async()=>{
+test('local status label reads Local Mode without demo wording',async()=>{
  const app=await readFile(join(root,'agent-office-hq/app.js'),'utf8');
- assert.match(app,/connectedAI\?'AI drafting connected':'Loco Mode'/);
+ assert.match(app,/connectedAI\?'AI drafting connected':'Local Mode'/);
  assert.doesNotMatch(app,/Local demo mode/i);
 });

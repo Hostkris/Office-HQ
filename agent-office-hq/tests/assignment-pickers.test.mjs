@@ -7,11 +7,12 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const rolesText=await readFile(path.join(root,'assignment-library.js'),'utf8');
 const app=await readFile(path.join(root,'app.js'),'utf8');
 test('all 168 roles have three sub-jobs',()=>{
- const keys=[...rolesText.matchAll(/^([a-z_]+)\|[^\n]+/gm)].map(m=>m[1]);
- assert.equal(keys.length,167);
- assert.ok(rolesText.includes('const rows=`ceo|'),'CEO first role should be included');
- assert.equal(new Set(keys).size,167);
- for(const line of rolesText.split('\n').filter(line=>/^[a-z_]+\|/.test(line))){assert.equal(line.split('|').length,4);}
+ const roleData=rolesText.split('const rows=`')[1]?.split('`.trim().split(')[0];
+ assert.ok(roleData,'assignment rows must be present');
+ const rows=roleData.trim().split('\n').map(line=>line.split('|'));
+ assert.equal(rows.length,168);
+ assert.equal(new Set(rows.map(row=>row[0])).size,168);
+ for(const row of rows){assert.equal(row.length,4,'expected a role key and three choices for '+row[0]);assert.ok(row.slice(1).every(Boolean));}
 });
 test('assignment and employee editors include saved custom directions',()=>{
  for(const id of ['taskPresetTitle','taskPresetCriteria','taskExtraCommands','employeeJobDescription'])assert.ok(app.includes('id="'+id+'"'));

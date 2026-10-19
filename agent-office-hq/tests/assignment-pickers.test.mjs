@@ -9,6 +9,7 @@ const app=await readFile(path.join(root,'app.js'),'utf8');
 test('all 168 roles have three sub-jobs',()=>{
  const keys=[...rolesText.matchAll(/^([a-z_]+)\|[^\n]+/gm)].map(m=>m[1]);
  assert.equal(keys.length,167);
+ assert.ok(rolesText.includes('const rows=`ceo|'),'CEO first role should be included');
  assert.equal(new Set(keys).size,168);
  for(const line of rolesText.split('\n').filter(line=>/^[a-z_]+\|/.test(line))){assert.equal(line.split('|').length,4);}
 });

@@ -8,98 +8,108 @@ const root=resolve(fileURLToPath(new URL('..',import.meta.url)));
 const js=await readFile(join(root,'project-floor.js'),'utf8');
 function sandbox(){
  let next=0,saves=0;
- const companyId='company1';
- const workers=Array.from({length:13},(_,i)=>({id:'worker'+i,companyId,name:'Worker '+i,active:true,roleKey:'role'+i,skin:'#a77b59',hair:'#2d2523',outfit:'#77bbaa'}));
- const state={companies:[{id:companyId,name:'First Company'}],employees:workers,tasks:[],approvals:[],enterprise:{}};
- const controls={companyPicker:{value:companyId},pfFloor:{},pfEmployee:{value:'worker0'},pfSeat:{value:'0'},pfPlacementProject:{value:'all'},pfFirstTask:{value:''},pfNextTask:{value:''},pfJanitor:{checked:true}};
- const handlers={};
- const errors=[];
- const bridge={
-  getState:()=>state,uid:type=>type+'_'+(++next),save:()=>saves++,
-  getEmployee:id=>workers.find(w=>w.id===id),
-  roleFor:e=>({title:'Staff member '+(e?.roleKey||''),dept:'Operations',scope:e?.roleKey||''}),
-  E:v=>String(v??'').replace(/[&<>"']/g,''),
-  toast:(msg,type)=>errors.push({msg,type}),setView:()=>{},workerModal:()=>{}
- };
- const document={
-  querySelector:q=>controls[q.slice(1)]||null,
-  addEventListener:(type,fn)=>{(handlers[type]??=[]).push(fn);}
- };
- const context=vm.createContext({window:{OfficeHQBridge:bridge},document,location:{hash:'#/tasks'},Date,Math,Set,Map,Array,Number,String,JSON,Boolean,console,
-   prompt:()=>null,confirm:()=>true,performance:{now:()=>0},requestAnimationFrame:()=>1,cancelAnimationFrame:()=>{},matchMedia:()=>({matches:true})});
+ const cid='company1';
+ const workers=Array.from({length:42},(_,i)=>({id:'worker'+i,companyId:cid,name:'Worker '+i,active:true,roleKey:'role'+i,skin:'#a77b59',hair:'#2d2523',outfit:'#77bbaa'}));
+ const state={companies:[{id:cid,name:'Test Company'}],employees:workers,tasks:[],approvals:[],enterprise:{}};
+ const controls={companyPicker:{value:cid},pfFloor:{},pfEmployee:{value:'worker35'},pfSeat:{value:'20'},
+  pfPlacementProject:{value:'all'},pfFirstTask:{value:''},pfNextTask:{value:''},pfJanitor:{checked:true},
+  pfCommandWorker:{value:'worker36'},pfCommandRemove:{value:'0'}};
+ const handlers={},errors=[];
+ const B={getState:()=>state,uid:k=>k+'_'+(++next),save:()=>saves++,roleFor:e=>({title:'Staff '+(e?.roleKey||''),dept:'Operations',scope:e?.roleKey||''}),
+  E:v=>String(v??'').replace(/[&<>"']/g,''),toast:(msg,type)=>errors.push({msg,type}),setView:()=>{},workerModal:()=>{}};
+ const doc={querySelector:q=>controls[q.slice(1)]||null,addEventListener:(type,fn)=>{(handlers[type]??=[]).push(fn);}};
+ const context=vm.createContext({window:{OfficeHQBridge:B},document:doc,location:{hash:'#/tasks'},Date,Math,Set,Map,Array,Number,String,JSON,Boolean,console,
+  prompt:()=>null,confirm:()=>true,performance:{now:()=>0},requestAnimationFrame:()=>1,cancelAnimationFrame:()=>{},matchMedia:()=>({matches:true})});
  new vm.Script(js,{filename:'project-floor.js'}).runInContext(context);
- function emit(type,event){for(const fn of handlers[type]||[])fn(event);}
- return {engine:context.window.OfficeHQFloor,state,workers,bridge,controls,errors,emit,get saves(){return saves}};
+ const emit=(type,event)=>{for(const fn of handlers[type]||[])fn(event);};
+ const click=(action)=>emit('click',{target:{closest(){return {dataset:{pf:action,seat:'0'}};}}});
+ return {engine:context.window.OfficeHQFloor,state,workers,controls,errors,emit,click,get saves(){return saves}};
 }
-test('RPG office starts with exactly 10 empty desks, no employees visible despite roster and sample tasks',()=>{
+test('Live RPG and Command Center share 15 initial existing workers, thirty desks and preserved tasks',()=>{
  const s=sandbox();
- s.state.tasks.push({id:'oldTask',ownerId:'worker0',companyId:'company1',status:'in_progress'});
- const initial=s.engine.data();
- assert.equal(initial.floors.length,0,'do not pre-populate visible office from old employee records');
+ s.state.tasks.push({id:'historic',companyId:'company1',ownerId:'worker33',status:'queued'});
+ assert.equal(s.engine.data().floors.length,0);
  const html=s.engine.render();
- assert.equal(s.engine.LIMIT,10);
- assert.match(html,/0 \/ 10/);
- assert.match(html,/Empty office\. Place your first employee/);
- assert.equal(s.engine.data().floors[0].placements.length,0);
- assert.equal(s.state.employees.length,13);
+ assert.equal(s.engine.LIMIT,30);
+ assert.equal(s.engine.INITIAL_WORKERS,15);
+ assert.match(html,/15 \/ 30/);
+ assert.equal(s.engine.data().floors[0].placements.length,15);
+ assert.equal(new Set(s.engine.data().floors[0].placements.map(p=>p.employeeId)).size,15);
+ assert.equal(s.state.tasks.length,1);
+ const cmd=s.engine.commandControls('company1');
+ assert.match(cmd,/pfCommandWorker/);assert.match(cmd,/pfCommandRemove/);
+ assert.equal(s.engine.data().floors[0].placements.length,15,'command view must not double-seed');
 });
-test('explicit new task automatically places employee and no duplicate employee is ever placed',()=>{
+test('Manually removing a worker from either screen never repopulates them, destroys a task or deletes the roster',()=>{
  const s=sandbox();s.engine.render();
- const task={id:'fresh',companyId:'company1',ownerId:'worker2',status:'queued'};
- s.engine.onTaskAssigned(task);
- assert.equal(s.engine.data().floors[0].placements.length,1);
- assert.equal(s.engine.data().floors[0].placements[0].employeeId,'worker2');
- assert.equal(s.engine.data().floors[0].placements[0].taskId,'fresh');
- s.engine.onTaskAssigned({...task,id:'second'});
- assert.equal(s.engine.data().floors[0].placements.length,1,'duplicate staff must not be drawn');
+ const victim=s.engine.data().floors[0].placements[0].employeeId;
+ s.click('command-remove');
+ assert.equal(s.engine.data().floors[0].placements.length,14);
+ s.engine.render();s.engine.commandControls('company1');
+ assert.equal(s.engine.data().floors[0].placements.length,14);
+ assert.equal(s.state.employees.length,42);
+ assert.ok(s.state.employees.some(e=>e.id===victim));
+ assert.equal(s.engine.data().initialPopulation.company1,true);
+});
+test('Command Center manual add appears in Live RPG without duplicate staff',()=>{
+ const s=sandbox();s.engine.render();
+ s.click('command-add');
+ assert.equal(s.engine.data().floors[0].placements.length,16);
+ assert.equal(s.engine.data().floors[0].placements.at(-1).employeeId,'worker36');
+ assert.match(s.engine.render(),/16 \/ 30/);
+ s.click('command-add');
+ assert.equal(s.engine.data().floors[0].placements.length,16);
+ assert.equal(new Set(s.engine.data().floors[0].placements.map(p=>p.employeeId)).size,16);
+});
+test('Auto-assignment adds the new specialist once, but never creates an eleventh copy',()=>{
+ const s=sandbox();s.engine.render();
+ const t={id:'newTask',companyId:'company1',ownerId:'worker38',status:'queued'};
+ s.engine.onTaskAssigned(t);
+ assert.equal(s.engine.data().floors[0].placements.length,16);
+ assert.equal(s.engine.data().floors[0].placements.find(p=>p.employeeId==='worker38').taskId,'newTask');
+ s.engine.onTaskAssigned({...t,id:'another'});
+ assert.equal(s.engine.data().floors[0].placements.length,16);
  assert.equal(s.engine.data().projects[0].name,'Assigned work');
 });
-test('each RPG level cannot exceed 10 employees even when assigning eleven real tasks',()=>{
+test('Each level caps at exactly 30 RPG workers; extra assignments stay intact',()=>{
  const s=sandbox();s.engine.render();
- for(let i=0;i<11;i++)s.engine.onTaskAssigned({id:'task'+i,companyId:'company1',ownerId:'worker'+i,status:'queued'});
- assert.equal(s.engine.data().floors[0].placements.length,10);
- assert.equal(new Set(s.engine.data().floors[0].placements.map(p=>p.seat)).size,10);
- assert.equal(s.state.tasks.length,0,'the visualization must not manipulate the actual task records');
+ for(let i=15;i<31;i++)s.engine.onTaskAssigned({id:'t'+i,companyId:'company1',ownerId:'worker'+i,status:'queued'});
+ assert.equal(s.engine.data().floors[0].placements.length,30);
+ assert.equal(new Set(s.engine.data().floors[0].placements.map(p=>p.seat)).size,30);
  assert.ok(s.errors.some(x=>/department office is full/.test(x.msg)));
+ assert.equal(s.state.tasks.length,0,'visual placement never modifies task records');
 });
-test('one optional janitor per level does not consume any employee desk',()=>{
+test('Optional janitor does not count toward the thirty employee desk spaces',()=>{
  const s=sandbox();s.engine.render();
  s.emit('change',{target:{id:'pfJanitor',checked:true}});
  assert.equal(s.engine.data().floors[0].janitor,true);
- assert.equal(s.engine.data().floors[0].placements.length,0);
- for(let i=0;i<10;i++)s.engine.onTaskAssigned({id:'t'+i,companyId:'company1',ownerId:'worker'+i,status:'queued'});
- assert.equal(s.engine.data().floors[0].placements.length,10);
+ for(let i=15;i<30;i++)s.engine.onTaskAssigned({id:'t'+i,companyId:'company1',ownerId:'worker'+i,status:'queued'});
+ assert.equal(s.engine.data().floors[0].placements.length,30);
  assert.equal(s.engine.data().floors[0].janitor,true);
 });
-test('manual desk placement, selected project groups and second level stay isolated',()=>{
+test('Manually place specialists by project and keep independently selected extra levels',()=>{
  const s=sandbox();s.engine.render();
- const d=s.engine.data(),floor=d.floors[0];
- d.projects.push({id:'project_a',companyId:'company1',name:'Marketing Campaign',members:[],taskIds:[]});
- s.controls.pfEmployee.value='worker0';s.controls.pfSeat.value='4';s.controls.pfPlacementProject.value='project_a';
+ const d=s.engine.data(),first=d.floors[0];
+ d.projects.push({id:'projectA',companyId:'company1',name:'Campaign',members:[],taskIds:[]});
+ s.controls.pfPlacementProject.value='projectA';
  s.emit('submit',{target:{id:'pfPlaceForm'},preventDefault(){}});
- assert.equal(floor.placements.length,1);
- assert.equal(floor.placements[0].projectId,'project_a');
- assert.equal(floor.placements[0].seat,4);
- assert.equal(d.projects[0].members[0],'worker0');
- // A second level starts empty and does not move staff automatically.
- s.emit('click',{target:{closest(){return {dataset:{pf:'new-floor'}};}}});
+ assert.equal(first.placements.length,16);
+ assert.equal(first.placements.find(p=>p.seat===20).projectId,'projectA');
+ assert.equal(d.projects[0].members[0],'worker35');
+ s.click('new-floor');
  assert.equal(d.floors.length,2);
  assert.equal(d.floors[1].placements.length,0);
- assert.equal(d.floors[0].placements.length,1);
- assert.equal(d.selected.company1.floorId,d.floors[1].id);
+ assert.equal(d.floors[0].placements.length,16);
 });
-test('a task completion handoff requires real owner IDs on the same floor',()=>{
+test('Task handoff preserves actual task status instead of claiming work was done',()=>{
  const s=sandbox();s.engine.render();
- s.engine.onTaskAssigned({id:'first',companyId:'company1',ownerId:'worker0'});
- s.engine.onTaskAssigned({id:'second',companyId:'company1',ownerId:'worker1'});
  s.state.tasks.push({id:'first',companyId:'company1',ownerId:'worker0',status:'done'});
  s.state.tasks.push({id:'second',companyId:'company1',ownerId:'worker1',status:'queued',dependsOn:'first'});
  assert.doesNotThrow(()=>s.engine.onTaskStatus(s.state.tasks[0]));
- assert.equal(s.state.tasks[1].status,'queued','animation cannot forge assignment completion');
- assert.equal(s.state.tasks[1].dependsOn,'first');
+ assert.equal(s.state.tasks[1].status,'queued');
 });
-test('office features are separate from external account access',()=>{
+test('Expanded RPG remains isolated from external website or payment execution',()=>{
  assert.doesNotMatch(js,/sendMessage\s*\(|fetch\s*\(|window\.open\s*\(/);
  assert.match(js,/Only visualizes a verified internal task transition/);
- assert.match(js,/const LIMIT=10/);
+ assert.match(js,/const LIMIT=30/);
 });

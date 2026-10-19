@@ -243,7 +243,7 @@ function renderFloor(c,now){
   }
  }
  if(floor.janitor){
-  // One separate support character per floor; does not consume any of the ten desks.
+  // One separate support character per floor; does not consume any of the thirty desks.
   const sweep=Math.sin(now/1650)*19;
   c.fillStyle='#aa916f';c.fillRect(884+sweep,348,2,24);
   sprite(c,{employeeId:'__janitor__',seat:10},880+sweep,354,now);

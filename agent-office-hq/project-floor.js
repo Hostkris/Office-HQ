@@ -173,7 +173,7 @@ function render(){
  const options=available.map(e=>'<option value="'+E(e.id)+'">'+E(e.name)+' · '+E(role(e).title||'Worker')+'</option>').join('');
  const projOptions='<option value="all">All desks / placed workers</option>'+projects.map(p=>'<option value="'+E(p.id)+'"'+(project?.id===p.id?' selected':'')+'>'+E(p.name)+'</option>').join('');
  return '<div class="page-head"><div><div class="eyebrow">LIVE RPG OFFICE · ASSIGNED STAFF ONLY</div><h1>Project Floor</h1><p class="subtitle">A small, professional office with desks and computers. Fifteen employees start moving in the RPG office. Choose, add, or remove them at any time; their actual work stays unchanged.</p></div>'+
- '<div class="head-actions"><button class="btn" data-view="approvals">🏛 CEO approvals ('+(state().approvals||[]).filter(a=>a.companyId===cid&&a.status==='pending').length+')</button><button class="btn btn-primary" data-action="newTask">＋ Assign task</button></div></div>'+
+ '<div class="head-actions"><button class="btn" type="button" data-pf="watch-office">◀ View Live RPG Office</button><button class="btn" data-view="approvals">🏛 CEO approvals ('+(state().approvals||[]).filter(a=>a.companyId===cid&&a.status==='pending').length+')</button><button class="btn btn-primary" data-action="newTask">＋ Assign task</button></div></div>'+
  '<section class="card pf-toolbar"><div class="pf-tools">'+
  '<label>Level<select id="pfFloor">'+floors.map((f,i)=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+(f.department?' · Department':' · Extra level')+'</option>').join('')+'</select></label>'+
  '<label>Project / group<select id="pfProject">'+projOptions+'</select></label>'+
@@ -355,6 +355,7 @@ document.addEventListener('click',event=>{
  const cid=inCompany();if(!cid)return;
  const {floor,d}=setup(cid),op=btn.dataset.pf;
  if(op==='manage-office'){setManageOffice(true);B.setView('office');return;}
+ if(op==='watch-office'){setManageOffice(false);B.setView('office');return;}
  if(op==='command-add'){
   const employeeId=$('#pfCommandWorker')?.value;
   const seat=seatList(floor).find(x=>!x.placement)?.seat;

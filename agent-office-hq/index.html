@@ -7,6 +7,7 @@
   <meta name="description" content="Agent Office HQ: a multi-business AI workforce command center and animated virtual office." />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <script src="theme.js"></script>
   <link rel="stylesheet" href="styles.css" />
   <title>Agent Office HQ — Workforce Control Center</title>
 </head>
@@ -44,6 +45,7 @@
     </aside>
     <main class="main">
       <header class="topbar"><button id="menuToggle" class="icon-button mobile-menu" aria-label="Toggle navigation">☰</button><div class="breadcrumb" id="breadcrumb">WORKSPACE / COMMAND CENTER</div><div class="top-actions"><span id="liveClock" class="clock"></span>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Night mode active. Switch to day mode" title="Switch to day mode"><span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Night Mode</span></button>
         <button type="button" id="officePhoneBtn" class="office-phone-btn" data-ops="phone-open" aria-label="Open company messages" aria-controls="officePhoneDrawer" title="CEO messages and approval requests">📱<span id="officePhoneCount" class="office-phone-count" hidden></span></button>
         <button id="helpButton" class="top-help" title="About this app">ⓘ Help</button><button class="avatar-you" id="userAvatar" title="Owner account">YOU</button></div></header>
       <div id="view" class="view" aria-live="polite"></div>

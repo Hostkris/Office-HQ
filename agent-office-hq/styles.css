@@ -186,3 +186,69 @@
 .pf-assignment-empty{display:flex;align-items:center;justify-content:center;min-height:88px;width:100%;padding:17px;border:1px dashed #60888d;border-radius:11px;background:#1a333f;color:#c3e1dd;font:inherit;font-size:14px;cursor:pointer;text-align:center;line-height:1.6;touch-action:manipulation}
 .pf-assignment-empty:not(:disabled):hover,.pf-assignment-empty:not(:disabled):focus-visible{border-color:#60d0c9;background:#214551;color:#f5fff8;outline:2px solid #72d4cc;outline-offset:2px}
 .pf-assignment-empty:disabled{opacity:.57;cursor:not-allowed}
+
+
+/* Office HQ manual appearance: original night palette remains the default. */
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;min-width:102px;padding:7px 11px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);color:var(--text);font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 2px 7px #0002;cursor:pointer}
+.theme-toggle:hover{border-color:var(--turq)}
+.theme-toggle .theme-icon{font-size:19px;line-height:1}
+@media(max-width:850px){.theme-toggle{min-width:40px;padding:7px 9px}.theme-toggle .theme-label{display:none}}
+@media(max-width:400px){.theme-toggle{min-width:36px;padding:6px 7px}}
+:root[data-theme="night"]{color-scheme:dark}
+:root[data-theme="day"]{
+  color-scheme:light;
+  --bg:#f4f8fa;--panel:#ffffff;--panel2:#e7f0f4;--border:#c8d8e0;
+  --text:#1c3542;--muted:#516c79;--turq:#096f73;--sage:#3b7157;
+  --orange:#a55b25;--gold:#82620e;--red:#b54148;
+  --shadow:0 12px 38px rgba(25,53,66,.09);
+}
+[data-theme="day"] .sidebar{background:#e7f0f3;border-color:#c7d8df}
+[data-theme="day"] .topbar{background:#f9fcfd;border-color:#ccdce2}
+[data-theme="day"] .brand strong{color:#193843}
+[data-theme="day"] .brand small,[data-theme="day"] .nav-icon,[data-theme="day"] .eyebrow{color:#126d71}
+[data-theme="day"] .workspace-label,[data-theme="day"] .nav-label,[data-theme="day"] .sidebar-bottom,[data-theme="day"] .side-foot,[data-theme="day"] .breadcrumb,[data-theme="day"] .clock{color:#486876}
+[data-theme="day"] .nav-btn{color:#2b4d5a}
+[data-theme="day"] .nav-btn:hover,[data-theme="day"] .nav-btn.active{background:#d0e7e8;color:#123844}
+[data-theme="day"] .top-help,[data-theme="day"] .small-square,[data-theme="day"] .icon-button,[data-theme="day"] .theme-toggle,[data-theme="day"] .office-phone-btn{background:#ecf4f6;color:#175d69;border-color:#b8cdd5}
+[data-theme="day"] .top-help:hover,[data-theme="day"] .office-phone-btn:hover{background:#dcecef}
+[data-theme="day"] :is(select,input,textarea){background:#fff;border-color:#b9cdd6;color:#1d3946}
+[data-theme="day"] select option{background:#fff;color:#1d3946}
+[data-theme="day"] :is(input,textarea)::placeholder{color:#627b86}
+[data-theme="day"] :is(.btn,.segmented button){background:#e5f0f3;color:#244855;border-color:#b9cfd7}
+[data-theme="day"] .btn-primary,[data-theme="day"] .segmented button.active{background:#0a777c;border-color:#0a777c;color:#fff}
+[data-theme="day"] .btn-gold{background:#e9cc77;color:#3b321c;border-color:#d6b660}
+[data-theme="day"] .btn-danger{background:#fbe9e8;color:#96363b;border-color:#ddabab}
+[data-theme="day"] .btn-plain{background:transparent;color:#096f73;border-color:transparent}
+[data-theme="day"] :is(.card,.metric,.employee-card,.org-node,.modal,.brief,.approval,.ops-job,.office-connector,.desktop-job,.desktop-grant,.office-guide){background:var(--panel);color:var(--text);border-color:var(--border)}
+[data-theme="day"] :is(.worker-mini,.task-card,.lane,.empty,.notice,.info-box,.brief-entry,.attention-item,.office-box,.ops-message,.office-plan-form,.office-phone-drawer,.office-phone-header,.office-phone-footer,.desktop-intro,.desktop-start pre,.desktop-summary,.desktop-approval,.ios-guide,.pf-dept-tile,.pf-route-builder,.pf-route-item,.pf-route-dept-picks label,.pf-assignment-empty){background:#edf4f6;color:#1c3542;border-color:#c3d7df}
+[data-theme="day"] :is(.worker-mini,.task-card,.brief-entry,.attention-item,.pf-dept-tile):hover{background:#e3eef1}
+[data-theme="day"] :is(.metric .metric-icon,.feed-dot,.lane-count,.segmented,.pill-stat,.chart-bar){background:#d7e8eb;color:#0c666c}
+[data-theme="day"] :is(th,.table-wrap){background:#edf4f6;border-color:#cadbe1;color:#315564}
+[data-theme="day"] td{border-color:#d8e4e8}
+[data-theme="day"] tr:hover td{background:#e8f3f5}
+[data-theme="day"] :is(.tag,.badge,.ops-tag){background:#e4f1ef;color:#166b63;border-color:#b5d6d0}
+[data-theme="day"] :is(.tag.gold,.badge.gold){background:#f9f0d7;color:#775607;border-color:#e5d29f}
+[data-theme="day"] :is(.tag.orange,.badge.orange){background:#fff0e5;color:#98501a;border-color:#edcbaa}
+[data-theme="day"] :is(.tag.red,.badge.red){background:#ffebec;color:#9e393e;border-color:#ecc5c6}
+[data-theme="day"] :is(.tag.sage,.badge.sage){background:#e5f4e8;color:#2a6642;border-color:#bcdbc7}
+[data-theme="day"] :is(.tag.slate,.badge.slate){background:#e8eef4;color:#345366;border-color:#cad9e0}
+[data-theme="day"] :is(.metric .metric-label,.metric .metric-detail,.feed-sub,.worker-job,.task-card .task-meta,.employee-card .role-line,.employee-card .dept-line,.org-node small,.field-hint,.approval .details,.timeline-event small,.subtitle,.section-hint,.footer-note,.office-legend,.ops-job p,.ops-job small,.desktop-job small,.desktop-label,.desktop-check,.desktop-grant small,.pf-dept-tile small,.pf-person small,.pf-janitor small,.pf-footnote,.pf-life-note,.office-connector p,.office-phone-disclaimer){color:#506c78}
+[data-theme="day"] :is(.desktop-label select,.desktop-label textarea,.office-plan-form input,.office-plan-form select,.ops-grid form input,.ops-grid form textarea,.ops-grid form select,.ops-toolbar input,.pf-tools select,.pf-place-form select,.pf-handoff-form select,.pf-command-controls select,#pfDepartmentRouteForm input:not([type=checkbox]),#pfDepartmentRouteForm select){background:#fff;color:#23414e;border-color:#b6cfd9}
+[data-theme="day"] :is(.pf-tools label,.pf-place-form label,.pf-handoff-form label,.pf-command-controls label,.pf-route-builder summary,.pf-route-item summary,.pf-route-title,.pf-route-history p,.pf-route-chain .pf-arrow,.pf-assignment-empty){color:#294c5b}
+[data-theme="day"] .pf-route-chain>span:not(.pf-arrow){background:#d9eaee;color:#305665}
+[data-theme="day"] .pf-route-chain>span.now{background:#f8e9b7;color:#6c510e}
+[data-theme="day"] .pf-route-chain>span.done{background:#d2eddb;color:#286543}
+[data-theme="day"] .pf-assignment-empty:hover{background:#dbecee;color:#14575f}
+[data-theme="day"] .office-phone-drawer{background:#fff;color:var(--text)}
+[data-theme="day"] .office-phone-shade{background:rgba(22,46,61,.3)}
+[data-theme="day"] .ops-message.ops-own{background:#dceded;color:#1c4148}
+[data-theme="day"] .ops-dismiss,[data-theme="day"] .task-dismiss{background:#fff1e9;color:#934b2d;border-color:#d7b9a7}
+[data-theme="day"] .desktop-thought{background:#e4f2ed;color:#2b6148}
+[data-theme="day"] .desktop-approval{background:#fff2dc;color:#6f511b}
+[data-theme="day"] .desktop-summary{background:#e3f4ef;color:#1a554c}
+[data-theme="day"] .warning{background:#fff1dc;color:#885927;border-color:#efd7ab}
+[data-theme="day"] .toast{background:#fff;color:#21414d;border-color:#c1d3da}
+[data-theme="day"] .toast.error{background:#ffe7e8;color:#903b41}
+[data-theme="day"] .office-connector-icon{background:#e5f1f1;color:#096f73}
+[data-theme="day"] .app-refresh-button{background:#f8fcfc;color:#145d69;border-color:#b4cbd3}
+[data-theme="day"] .app-refresh-status:not(:empty){background:#e7f3f4;color:#315b65;border-color:#bcd4d8}

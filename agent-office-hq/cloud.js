@@ -210,7 +210,7 @@ document.addEventListener('submit',e=>{
  guard(async()=>{
   if(f.id==='cloudLogin'){
    const s=await authRequest('token?grant_type=password',{email:p.email,password:p.password});
-   storeSession(s);state.user=await authUser();state.tab='companies';msg('Secure sign-in successful.');await reload();return;
+   storeSession(s);state.user=await authUser();state.tab=location.hash==='#executive-inbox'?'executive-inbox':'companies';msg('Secure sign-in successful.');await reload();return;
   }
   if(f.id==='cloudSignUp'){
    const redirect=window.location.origin+window.location.pathname;

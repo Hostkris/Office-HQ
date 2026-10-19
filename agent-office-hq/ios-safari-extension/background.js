@@ -11,6 +11,7 @@ const SITES={
  instagram:{hosts:['instagram.com'],url:'https://www.instagram.com/',roles:['Marketing']},
  facebook:{hosts:['facebook.com'],url:'https://www.facebook.com/',roles:['Marketing']},
  tiktok:{hosts:['tiktok.com'],url:'https://www.tiktok.com/',roles:['Marketing']},
+ suno:{hosts:['suno.com'],url:'https://suno.com/',roles:['Marketing']},
  lemon8:{hosts:['lemon8-app.com'],url:'https://www.lemon8-app.com/',roles:['Marketing']},
  x:{hosts:['x.com','twitter.com'],url:'https://x.com/',roles:['Marketing']},
  shopify:{hosts:['shopify.com','myshopify.com'],url:'https://admin.shopify.com/',roles:['Sales','Product','Marketing','Customer','Operations','Finance']},

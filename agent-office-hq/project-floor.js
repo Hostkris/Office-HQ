@@ -9,6 +9,7 @@ const INITIAL_WORKERS=15;
 const CANVAS_W=1240,CANVAS_H=1135;
 let raf=0,scene=null,lastProject='',handoff=null,delay=0,ctx=null;
 const clamp=(v,n=130)=>String(v??'').slice(0,n);
+const sceneColor=color=>window.OfficeHQTheme?.sceneColor?.(color)??color;
 const role=e=>e?(B.roleFor(e)||{}):{};
 const inCompany=()=>{const v=$('#companyPicker')?.value;return v&&v!=='all'?v:state().companies[0]?.id};
 const companyStaff=cid=>state().employees.filter(e=>e.companyId===cid&&e.active);
@@ -179,21 +180,21 @@ function render(){
  (window.OfficeHQDepartments?.flowMarkup(cid)||'');
 }
 function toCtx(c){ctx=c;return c;}
-function background(c){c.clearRect(0,0,960,436);c.fillStyle='#1b3544';c.fillRect(0,0,960,436);
+function background(c){c.clearRect(0,0,960,436);c.fillStyle=sceneColor('#1b3544');c.fillRect(0,0,960,436);
  for(let y=0;y<436;y+=28){for(let x=0;x<960;x+=28){c.fillStyle=(Math.floor(x/28)+Math.floor(y/28))%2?'#244858':'#294d5b';c.fillRect(x+1,y+1,26,26);}}
- c.fillStyle='#102e3d';c.fillRect(0,0,960,65);
- c.fillStyle='#e0f4ef';c.font='bold 20px system-ui';c.fillText('OFFICE HQ  /  LIVE PROJECT FLOOR',28,33);
- c.fillStyle='#89c6c0';c.font='12px system-ui';c.fillText('30 DESKS MAX · SELECTED STAFF ONLY',30,53);
- c.fillStyle='#365867';c.fillRect(13,394,934,33);
- c.fillStyle='#e7cd80';c.font='12px system-ui';c.fillText('PAPERWORK HANDOFFS  ·  AUTHORIZED ASSIGNMENTS',28,415);
+ c.fillStyle=sceneColor('#102e3d');c.fillRect(0,0,960,65);
+ c.fillStyle=sceneColor('#e0f4ef');c.font='bold 20px system-ui';c.fillText('OFFICE HQ  /  LIVE PROJECT FLOOR',28,33);
+ c.fillStyle=sceneColor('#89c6c0');c.font='12px system-ui';c.fillText('30 DESKS MAX · SELECTED STAFF ONLY',30,53);
+ c.fillStyle=sceneColor('#365867');c.fillRect(13,394,934,33);
+ c.fillStyle=sceneColor('#e7cd80');c.font='12px system-ui';c.fillText('PAPERWORK HANDOFFS  ·  AUTHORIZED ASSIGNMENTS',28,415);
 }
 function workstation(c,seat,person,focused,now,x=coords(seat).x,y=coords(seat).y){
  c.save();c.translate(x,y);
- c.fillStyle=focused?'#345d60':'#2a505d';c.fillRect(-76,-48,148,91);
- c.fillStyle='#936f54';c.fillRect(-67,-29,123,36);c.fillStyle='#c39b6d';c.fillRect(-62,-25,113,7);
- c.fillStyle='#1a2939';c.fillRect(-33,-47,60,36);c.fillStyle='#69c4c4';c.fillRect(-29,-43,52,27);c.fillStyle='#315c64';c.fillRect(-24,-40,38,18);
- c.fillStyle='#243844';c.fillRect(-7,-11,9,9);c.fillStyle='#192833';c.fillRect(-16,-2,27,5);
- c.fillStyle='#466973';c.fillRect(-23,22,44,17);c.fillStyle='#9bb8b7';c.font='11px system-ui';c.fillText('DESK '+(seat+1),-68,36);
+ c.fillStyle=sceneColor(focused?'#345d60':'#2a505d');c.fillRect(-76,-48,148,91);
+ c.fillStyle=sceneColor('#936f54');c.fillRect(-67,-29,123,36);c.fillStyle=sceneColor('#c39b6d');c.fillRect(-62,-25,113,7);
+ c.fillStyle=sceneColor('#1a2939');c.fillRect(-33,-47,60,36);c.fillStyle=sceneColor('#69c4c4');c.fillRect(-29,-43,52,27);c.fillStyle=sceneColor('#315c64');c.fillRect(-24,-40,38,18);
+ c.fillStyle=sceneColor('#243844');c.fillRect(-7,-11,9,9);c.fillStyle=sceneColor('#192833');c.fillRect(-16,-2,27,5);
+ c.fillStyle=sceneColor('#466973');c.fillRect(-23,22,44,17);c.fillStyle=sceneColor('#9bb8b7');c.font='11px system-ui';c.fillText('DESK '+(seat+1),-68,36);
  if(!person){c.strokeStyle='#76a6a6';c.setLineDash([3,4]);c.strokeRect(-65,9,34,24);c.setLineDash([]);}
  c.restore();
 }
@@ -201,16 +202,16 @@ function sprite(c,person,x,y,now,moving=false){
  const e=state().employees.find(a=>a.id===person.employeeId);if(!e)return;
  const idle=moving?0:(Math.sin(now/450+person.seat)*.7);
  c.save();c.translate(x,y+idle);
- c.fillStyle='#314b59';c.fillRect(-5,6,5,9);c.fillRect(2,6,5,9);
+ c.fillStyle=sceneColor('#314b59');c.fillRect(-5,6,5,9);c.fillRect(2,6,5,9);
  c.fillStyle=e.outfit||'#69b9b3';c.fillRect(-8,-14,16,21);
  c.fillStyle=e.skin||'#b98764';c.fillRect(-7,-28,14,15);
  c.fillStyle=e.hair||'#1b2531';c.fillRect(-8,-31,16,6);
- c.fillStyle='#26333b';c.fillRect(-5,-19,2,2);c.fillRect(3,-19,2,2);
+ c.fillStyle=sceneColor('#26333b');c.fillRect(-5,-19,2,2);c.fillRect(3,-19,2,2);
  c.fillStyle=e.skin||'#b98764';c.fillRect(-11,-10,3,12);c.fillRect(8,-10,3,12);
  c.restore();
 }
 function label(c,text,x,y,color='#f0e1aa'){
- c.fillStyle='#16323dea';c.fillRect(x-61,y-16,122,21);c.fillStyle=color;c.textAlign='center';c.font='11px system-ui';
+ c.fillStyle=sceneColor('#16323dea');c.fillRect(x-61,y-16,122,21);c.fillStyle=sceneColor(color);c.textAlign='center';c.font='11px system-ui';
  c.fillText(clamp(text,19),x,y-2);c.textAlign='left';
 }
 function renderFloor(c,now){
@@ -225,7 +226,7 @@ function renderFloor(c,now){
  background(c);
  if(handoff&&handoff.cid===cid&&handoff.floorId===floor.id&&handoff.until===null)handoff.until=Date.now()+6500;
  const title=project?.name||floor.name;
- c.fillStyle='#eac887';c.font='bold 13px system-ui';c.textAlign='right';c.fillText(clamp(title,45),928,34);c.textAlign='left';
+ c.fillStyle=sceneColor('#eac887');c.font='bold 13px system-ui';c.textAlign='right';c.fillText(clamp(title,45),928,34);c.textAlign='left';
  for(const {seat,placement} of seatList(floor)){
   const show=placement&&display(placement,project);
   workstation(c,seat,placement,!!show,now);
@@ -234,7 +235,7 @@ function renderFloor(c,now){
    const pt=coords(seat);
    const isCarrying=handoff&&handoff.cid===cid&&handoff.floorId===floor.id&&handoff.from===seat&&handoff.until!==null&&Date.now()<handoff.until;
    if(!isCarrying)sprite(c,placement,pt.x+27,pt.y+24,now);
-   c.textAlign='center';c.fillStyle='#e2efec';c.font='11px system-ui';
+   c.textAlign='center';c.fillStyle=sceneColor('#e2efec');c.font='11px system-ui';
    c.fillText(clamp(e?.name?.split(' ')[0]||'Worker',13),pt.x,pt.y+52);
    c.textAlign='left';
    const active=state().tasks.find(t=>t.ownerId===placement.employeeId&&t.status==='in_progress');
@@ -245,12 +246,12 @@ function renderFloor(c,now){
  if(floor.janitor){
   // One separate support character per floor; does not consume any of the thirty desks.
   const sweep=Math.sin(now/1650)*19;
-  c.fillStyle='#aa916f';c.fillRect(884+sweep,348,2,24);
+  c.fillStyle=sceneColor('#aa916f');c.fillRect(884+sweep,348,2,24);
   sprite(c,{employeeId:'__janitor__',seat:10},880+sweep,354,now);
   // Draw the janitor independently of the business workforce roster.
-  c.fillStyle='#d0a666';c.fillRect(867+sweep,335,13,19);
-  c.fillStyle='#b7815d';c.fillRect(868+sweep,326,10,10);
-  c.fillStyle='#e4d18e';c.font='10px system-ui';c.fillText('JANITOR',846,384);
+  c.fillStyle=sceneColor('#d0a666');c.fillRect(867+sweep,335,13,19);
+  c.fillStyle=sceneColor('#b7815d');c.fillRect(868+sweep,326,10,10);
+  c.fillStyle=sceneColor('#e4d18e');c.font='10px system-ui';c.fillText('JANITOR',846,384);
  }
  if(handoff&&handoff.cid===cid&&handoff.floorId===floor.id&&Date.now()<handoff.until){
   const from=floor.placements.find(p=>p.seat===handoff.from),to=floor.placements.find(p=>p.seat===handoff.to);
@@ -263,12 +264,12 @@ function renderFloor(c,now){
    else if(progress<.62){pt=dest;t=1;}
    else{t=(progress-.62)/.38;pt={x:dest.x+(start.x-dest.x)*t,y:dest.y+(start.y-dest.y)*t};}
    sprite(c,from,pt.x,pt.y,now,true);
-   c.fillStyle='#f5e8c6';c.fillRect(pt.x+6,pt.y-12,10,12);
+   c.fillStyle=sceneColor('#f5e8c6');c.fillRect(pt.x+6,pt.y-12,10,12);
    if(progress>.43&&progress<.62)label(c,'File delivered ✓',dest.x,dest.y-39,'#b7ecc0');
   }
  }else if(handoff&&Date.now()>=handoff.until)handoff=null;
  if(!floor.placements.length){
-  c.fillStyle='#e0e9e2';c.font='bold 17px system-ui';c.textAlign='center';
+  c.fillStyle=sceneColor('#e0e9e2');c.font='bold 17px system-ui';c.textAlign='center';
   c.fillText('Your office is empty — place a worker to begin.',480,388);c.textAlign='left';
  }
 }
@@ -381,6 +382,10 @@ document.addEventListener('submit',event=>{
   popup('Handoff linked. Animation starts only when the first task is actually completed.');
   syncFloor();
  }
+});
+// Canvas animation repaints on its own; reduced-motion and inactive frames need a direct repaint.
+if(typeof window.addEventListener==='function')window.addEventListener('officehq:themechange',()=>{
+ if(ctx&&$('#officeCanvas'))renderFloor(ctx,performance.now());
 });
 window.OfficeHQFloor={render,start,stop,onTaskAssigned,onTaskStatus,data,commandControls,LIMIT,INITIAL_WORKERS};
 if(['office','command'].includes(location.hash.replace('#/','')))B.setView(location.hash.replace('#/',''));

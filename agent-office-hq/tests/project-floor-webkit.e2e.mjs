@@ -24,6 +24,8 @@ async function pageFor(device='iPhone 13'){
  const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base+'/#/office',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-pf="manage-office"]').waitFor({timeout:15000});
+ await page.locator('[data-pf="manage-office"]').click();
  await page.locator('h1').filter({hasText:'Project Floor'}).waitFor({timeout:15000});
  return {page,context,errors};
 }

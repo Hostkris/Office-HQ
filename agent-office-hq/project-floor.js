@@ -10,6 +10,10 @@ const CANVAS_W=1240,CANVAS_H=1135;
 let raf=0,scene=null,lastProject='',handoff=null,delay=0,ctx=null;
 const clamp=(v,n=130)=>String(v??'').slice(0,n);
 const sceneColor=color=>window.OfficeHQTheme?.sceneColor?.(color)??color;
+const SCENE_OPTIONS=Object.freeze([['classic','🏢 Classic office'],['western','🤠 Western desert'],['mountain-sunrise','🌄 Mountain sunrise'],['mountain-sunset','🌇 Mountain sunset']]);
+function sceneFor(cid=inCompany()){const choice=data().scenes?.[cid];return SCENE_OPTIONS.some(([id])=>id===choice)?choice:'classic';}
+function setScene(cid,choice){if(!cid||!SCENE_OPTIONS.some(([id])=>id===choice))return false;const d=data();d.scenes??={};d.scenes[cid]=choice;save();return true;}
+function sceneChoices(cid){return SCENE_OPTIONS.map(([id,label])=>'<option value="'+E(id)+'"'+(sceneFor(cid)===id?' selected':'')+'>'+E(label)+'</option>').join('');}
 const role=e=>e?(B.roleFor(e)||{}):{};
 const inCompany=()=>{const v=$('#companyPicker')?.value;return v&&v!=='all'?v:state().companies[0]?.id};
 const companyStaff=cid=>state().employees.filter(e=>e.companyId===cid&&e.active);
@@ -94,7 +98,8 @@ function commandControls(cid){
  const floors=floorsFor(cid),available=optionsFor(cid),placed=floor.placements||[];
  const firstFree=seatList(floor).find(v=>!v.placement);
  return '<div class="pf-command-controls" aria-label="Live RPG employee management">'+
-  '<label>RPG department level<select id="pfCommandFloor">'+floors.map(f=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+'</option>').join('')+'</select></label>'+
+  '<label>Office scenery<select id="pfCommandScene" aria-label="Change command center RPG scenery">'+sceneChoices(cid)+'</select></label>'+
+   '<label>RPG department level<select id="pfCommandFloor">'+floors.map(f=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+'</option>').join('')+'</select></label>'+
   '<label>Add existing employee<select id="pfCommandWorker"><option value="">Choose employee</option>'+available.map(e=>'<option value="'+E(e.id)+'">'+E(e.name)+' · '+E(role(e).title||'Staff')+'</option>').join('')+'</select></label>'+
   '<button class="btn btn-sm" data-pf="command-add"'+(!firstFree||!available.length?' disabled':'')+'>＋ Add to RPG</button>'+
   '<label>Remove visible employee<select id="pfCommandRemove"><option value="">Choose employee</option>'+placed.map(p=>{const e=state().employees.find(e=>e.id===p.employeeId);return '<option value="'+p.seat+'">'+E(e?.name||'Former employee')+' · Desk '+(p.seat+1)+'</option>';}).join('')+'</select></label>'+
@@ -146,12 +151,14 @@ function render(){
  '<section class="card pf-toolbar"><div class="pf-tools">'+
  '<label>Level<select id="pfFloor">'+floors.map((f,i)=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+(f.department?' · Department':' · Extra level')+'</option>').join('')+'</select></label>'+
  '<label>Project / group<select id="pfProject">'+projOptions+'</select></label>'+
+  '<label class="pf-scene-control">🌄 Office scenery<select id="pfScene" aria-label="Change Live RPG Office scenery">'+sceneChoices(cid)+'</select></label>'+
  '<button class="btn btn-sm" data-pf="new-floor">＋ Add level</button>'+
  '<button class="btn btn-sm" data-pf="new-project">＋ New project</button></div>'+
  '<div class="pf-status"><strong>'+floor.placements.length+' / '+LIMIT+'</strong> worker desks occupied on this level · <strong>'+active.length+'</strong> shown for the selected project'+
  ' · Janitor <strong>'+(floor.janitor?'on duty':'off duty')+'</strong></div>'+
  '<div class="office-box pf-stage"><canvas class="office-canvas" id="officeCanvas" width="1240" height="1135" role="img" aria-label="Living RPG office with thirty desks, employee names and thought bubbles, CEO office and staggered break-room activity."></canvas></div>'+
- '<div class="office-legend"><span>▣ Empty desk</span><span>● Assigned worker</span><span>📁 Handoff only after a linked task is completed</span></div>'+
+ '<p class="pf-local-note">📱 Scenery choices, desk placements and assignments save on this device. Export a backup in Settings to protect your work.</p>'+
+  '<div class="office-legend"><span>▣ Empty desk</span><span>● Assigned worker</span><span>📁 Handoff only after a linked task is completed</span></div>'+
  '<label class="pf-janitor"><input type="checkbox" id="pfJanitor"'+(floor.janitor?' checked':'')+'> Assign a janitor to this level <small>(separate from the 30 worker spaces)</small></label>'+
  '</section>'+
  '<div class="grid two-col pf-bottom"><section class="card"><div class="section-top"><h2>Place an employee</h2><span class="pill-stat">Manual placement</span></div>'+
@@ -299,7 +306,9 @@ function redraw(){if($('#officeCanvas'))start();}
 function syncFloor(){B.setView('office');}
 document.addEventListener('change',event=>{
  const cid=inCompany(),d=data();
- if(event.target.id==='pfCommandFloor'){
+ if(event.target.id==='pfCommandScene'){if(setScene(cid,event.target.value))B.setView('command');return;}
+  if(event.target.id==='pfScene'){if(setScene(cid,event.target.value))B.setView('office');return;}
+  if(event.target.id==='pfCommandFloor'){
   const f=floorsFor(cid).find(f=>f.id===event.target.value);
   if(f){d.selected[cid]={floorId:f.id,projectId:'all'};save();B.setView('command');}return;
  }
@@ -387,6 +396,6 @@ document.addEventListener('submit',event=>{
 if(typeof window.addEventListener==='function')window.addEventListener('officehq:themechange',()=>{
  if(ctx&&$('#officeCanvas'))renderFloor(ctx,performance.now());
 });
-window.OfficeHQFloor={render,start,stop,onTaskAssigned,onTaskStatus,data,commandControls,LIMIT,INITIAL_WORKERS};
+window.OfficeHQFloor={render,start,stop,onTaskAssigned,onTaskStatus,data,commandControls,sceneFor,setScene,SCENE_OPTIONS,LIMIT,INITIAL_WORKERS};
 if(['office','command'].includes(location.hash.replace('#/','')))B.setView(location.hash.replace('#/',''));
 })();

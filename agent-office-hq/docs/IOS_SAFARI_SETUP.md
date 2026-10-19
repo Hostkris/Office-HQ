@@ -14,6 +14,8 @@ The iOS page supports:
 
 Guided task records are stored locally in the Office HQ site's browser storage. They do not sync to the separate Secure Cloud HQ or to another device and may be lost if Safari storage is cleared.
 
+The Live RPG Office's Western Desert, Mountain Sunrise, Mountain Sunset and Classic scenery selection is also stored in the local workspace, separately for each company, and shared with the Command Center preview. Employee profiles, assignments, desk placements and scenery selections persist after a normal reload on the same browser and device. Clearing Safari website data, using private browsing, or changing devices can remove or hide local records. Export the JSON backup in Settings regularly; local storage is not an iPhone Files backup or cloud sync.
+
 ## Optional Apple Safari web extension (source code included, NOT distributed yet)
 
 To go beyond guided tasks without cloud browser hosting, the repository includes a source-only **Safari Web Extension** under `agent-office-hq/ios-safari-extension/`:

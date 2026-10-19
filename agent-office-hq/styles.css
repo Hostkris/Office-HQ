@@ -173,6 +173,11 @@
 .pf-command-controls select{background:#142d3a;color:#e4efe8;border:1px solid #53747b;border-radius:8px;min-height:43px;padding:7px;width:100%;font-size:14px}
 .pf-command-controls .btn{min-height:43px;flex:0 0 auto}
 .pf-command-controls>p{flex:1 0 100%;line-height:1.6}
+/* Per-company scenic theme selection, saved to the same local workspace as the RPG floor. */
+.pf-scene-control{margin-left:auto;min-width:190px}
+.pf-scene-control select{min-height:43px;border-radius:9px;cursor:pointer}
+.pf-local-note{font-size:12px;line-height:1.5;color:var(--muted);margin:10px 2px 0}
+@media(max-width:760px){.pf-scene-control{margin-left:0;flex:1 1 165px}}
 @media(max-width:760px){
  .pf-stage{max-height:630px}
  .pf-stage canvas{width:1050px!important;min-width:1050px!important}

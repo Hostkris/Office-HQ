@@ -185,3 +185,39 @@ test('iPad: all 12 department offices exist, a head forwards a packet and CEO ap
   assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
+
+test('iPhone Command Center shares same 15 employees and supports safe remove, add and reload',async()=>{
+ const {page,context,errors}=await pageFor();
+ page.on('dialog',dialog=>dialog.accept());
+ try{
+  const first=await page.evaluate(()=>{
+   const B=window.OfficeHQBridge,s=B.getState(),cid=s.companies[0].id;
+   B.setView('command');
+   return {cid,ids:s.enterprise.projectFloor.floors.find(f=>f.companyId===cid).placements.map(p=>p.employeeId)};
+  });
+  assert.equal(first.ids.length,15);
+  assert.equal(await page.locator('#officeCanvas').getAttribute('width'),'1240');
+  assert.equal(await page.locator('#officeCanvas').getAttribute('height'),'1135');
+  const before=await page.locator('#pfCommandRemove option').count();
+  assert.equal(before,16);
+  await page.locator('#pfCommandRemove').selectOption({index:1});
+  await page.locator('[data-pf="command-remove"]').click();
+  const removed=await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.projectFloor.floors[0].placements.length);
+  assert.equal(removed,14);
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#pfCommandWorker').waitFor();
+  assert.equal(await page.locator('#pfCommandRemove option').count(),15,'worker must not auto-respawn after reload');
+  await page.locator('#pfCommandWorker').selectOption({index:1});
+  await page.locator('[data-pf="command-add"]').click();
+  assert.equal(await page.locator('#pfCommandRemove option').count(),16);
+  await page.evaluate(()=>window.OfficeHQBridge.setView('office'));
+  assert.match(await page.locator('.pf-status').innerText(),/15 \/ 30/);
+  assert.equal(await page.locator('#officeCanvas').getAttribute('width'),'1240');
+  const state=await page.evaluate(()=>{
+   const s=window.OfficeHQBridge.getState(),cid=s.companies[0].id;
+   return {count:s.enterprise.projectFloor.floors[0].placements.length,unique:new Set(s.enterprise.projectFloor.floors[0].placements.map(p=>p.employeeId)).size,roster:s.employees.filter(e=>e.companyId===cid).length};
+  });
+  assert.equal(state.count,15);assert.equal(state.unique,15);assert.ok(state.roster>=15);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});

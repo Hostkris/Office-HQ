@@ -94,16 +94,30 @@ function sprite(c,e,x,y,t,mode){
  rect(c,-8,-38,3,3,'#18313c');rect(c,5,-38,3,3,'#18313c');
  c.restore();
 }
+function wrap(s,max=25){
+ const words=String(s||'').split(/\s+/).filter(Boolean),lines=[];
+ let row='';
+ for(let w of words){
+  while(w.length>max){if(row){lines.push(row);row='';}lines.push(w.slice(0,max));w=w.slice(max);}
+  if(!w)continue;
+  if(row.length+w.length+1>max){if(row)lines.push(row);row=w;}
+  else row=row?row+' '+w:w;
+ }
+ if(row)lines.push(row);
+ return lines.length?lines:[''];
+}
 function speech(c,p,one,two){
- // Thought + name/title remain continuously visible for all placed workers.
+ // Names, unabridged job titles and thoughts remain present even when idle.
  const x=Math.max(88,Math.min(W-88,p.x));
- const y=Math.max(197,Math.min(H-108,p.y));
- const bubble=shorten(one,24);
- rounded(c,x-78,y-110,156,27,7,'#122d3dea');
- text(c,bubble,x,y-92,11,'#f1dc9d');
- rounded(c,x-76,y+30,152,31,5,'#122d3df0');
- text(c,shorten(p.name,23),x,y+42,11,'#e8f5ec','center',820);
- text(c,shorten(two,25),x,y+54,10,'#b3d8d2','center',560);
+ const y=Math.max(197,Math.min(H-110,p.y));
+ const thinking=wrap(one,25).slice(0,2);
+ const bh=thinking.length*13+10;
+ rounded(c,x-84,y-73-bh,168,bh,6,'#122d3dea');
+ thinking.forEach((line,i)=>text(c,line,x,y-73-bh+17+i*13,10,'#f1dc9d'));
+ const names=wrap(p.name,25),titles=wrap(two,25);
+ const rows=[...names.map(v=>[v,11,'#e8f5ec',820]),...titles.map(v=>[v,10,'#b3d8d2',560])];
+ rounded(c,x-84,y+30,168,rows.length*13+11,5,'#122d3df0');
+ rows.forEach(([v,sz,color,weight],i)=>text(c,v,x,y+43+i*13,sz,color,'center',weight));
 }
 function deskFor(seat){return DESKS[seat]||DESKS[0];}
 function point(p){const d=deskFor(p.seat);return {x:d.x+24,y:d.y+23};}

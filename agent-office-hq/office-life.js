@@ -31,9 +31,11 @@ function appearance(e){
 }
 function role(B,e){return e?(B.roleFor(e)?.title||'Office worker'):'Office worker';}
 const show=(p,project)=>!project||p.projectId===project.id;
-function rect(c,x,y,w,h,color){c.fillStyle=color;c.fillRect(x,y,w,h);}
-function rounded(c,x,y,w,h,r,color){c.fillStyle=color;c.beginPath();c.roundRect(x,y,w,h,r);c.fill();}
-function text(c,v,x,y,size=11,color='#f0f4ea',align='center',weight=650){c.fillStyle=color;c.font=weight+' '+size+'px system-ui';c.textAlign=align;c.fillText(String(v),x,y);c.textAlign='left';}
+// Read the current manual theme on each frame: no page reload and no new staff state.
+function sceneColor(color){return window.OfficeHQTheme?.sceneColor?.(color)??color;}
+function rect(c,x,y,w,h,color){c.fillStyle=sceneColor(color);c.fillRect(x,y,w,h);}
+function rounded(c,x,y,w,h,r,color){c.fillStyle=sceneColor(color);c.beginPath();c.roundRect(x,y,w,h,r);c.fill();}
+function text(c,v,x,y,size=11,color='#f0f4ea',align='center',weight=650){c.fillStyle=sceneColor(color);c.font=weight+' '+size+'px system-ui';c.textAlign=align;c.fillText(String(v),x,y);c.textAlign='left';}
 function shorten(s,n){s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s;}
 function backdrop(c,name,projectName,department,head){
  const isCEO=!department||department==='Leadership';

@@ -193,7 +193,8 @@ test('iPhone Command Center shares same 15 employees and supports safe remove, a
   const first=await page.evaluate(()=>{
    const B=window.OfficeHQBridge,s=B.getState(),cid=s.companies[0].id;
    B.setView('command');
-   return {cid,ids:s.enterprise.projectFloor.floors.find(f=>f.companyId===cid).placements.map(p=>p.employeeId)};
+   const d=s.enterprise.projectFloor,f=d.floors.find(f=>f.id===d.selected[cid].floorId);
+    return {cid,ids:f.placements.map(p=>p.employeeId),floorId:f.id};
   });
   assert.equal(first.ids.length,15);
   assert.equal(await page.locator('#officeCanvas').getAttribute('width'),'1240');
@@ -202,7 +203,7 @@ test('iPhone Command Center shares same 15 employees and supports safe remove, a
   assert.equal(before,16);
   await page.locator('#pfCommandRemove').selectOption({index:1});
   await page.locator('[data-pf="command-remove"]').click();
-  const removed=await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.projectFloor.floors[0].placements.length);
+  const removed=await page.evaluate(()=>{const s=window.OfficeHQBridge.getState(),d=s.enterprise.projectFloor,cid=s.companies[0].id;return d.floors.find(f=>f.id===d.selected[cid].floorId).placements.length;});
   assert.equal(removed,14);
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('#pfCommandWorker').waitFor();
@@ -215,7 +216,8 @@ test('iPhone Command Center shares same 15 employees and supports safe remove, a
   assert.equal(await page.locator('#officeCanvas').getAttribute('width'),'1240');
   const state=await page.evaluate(()=>{
    const s=window.OfficeHQBridge.getState(),cid=s.companies[0].id;
-   return {count:s.enterprise.projectFloor.floors[0].placements.length,unique:new Set(s.enterprise.projectFloor.floors[0].placements.map(p=>p.employeeId)).size,roster:s.employees.filter(e=>e.companyId===cid).length};
+   const d=s.enterprise.projectFloor,placements=d.floors.find(f=>f.id===d.selected[cid].floorId).placements;
+    return {count:placements.length,unique:new Set(placements.map(p=>p.employeeId)).size,roster:s.employees.filter(e=>e.companyId===cid).length};
   });
   assert.equal(state.count,15);assert.equal(state.unique,15);assert.ok(state.roster>=15);
   assert.deepEqual(errors,[]);

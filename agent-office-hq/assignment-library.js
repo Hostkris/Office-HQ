@@ -1,4 +1,4 @@
-/* Role-specific assignment choices. Each role offers three distinct authorized sub-jobs. */
+/* Role-specific assignment choices. Role-specific assignment templates, including authorized Executive Assistant email management. */
 (()=>{
  'use strict';
  const rows=`ceo|Review company-wide strategic priorities|Approve executive decision recommendations|Prepare quarterly corporate objectives
@@ -52,7 +52,7 @@ internal_auditor|Review operational control evidence|Identify unauthorized recor
 analytics|Build KPI dashboard outline|Review performance data anomalies|Prepare cross-functional analytics brief
 product_mgr|Prioritize product roadmap items|Review upcoming product releases|Prepare product development requirements
 catalog|Draft product descriptions|Review catalog data completeness|Prepare proposed catalog corrections
-exec_assistant|Prepare executive calendar brief|Coordinate meeting agenda|Track executive follow-up items
+exec_assistant|Prepare executive calendar brief|Coordinate meeting agenda|Track executive follow-up items|Check authorized Gmail inbox and flag urgent messages|Prepare daily CEO email briefing and follow-up list|Draft email replies for CEO approval
 exec_ops|Monitor CEO directive completion|Coordinate executive operating review|Escalate overdue executive actions
 corporate_secretary|Draft board meeting minutes|Organize governance resolutions|Prepare board record checklist
 strategy_analyst|Evaluate strategic scenarios|Prepare opportunity assessment|Compare strategic investment options
@@ -190,8 +190,9 @@ meeting_coordinator|Prepare meeting agenda|Draft meeting minutes|Track meeting a
     'Acceptance criteria: (1) shows relevant findings; (2) separates evidence from assumptions; (3) identifies risks or discrepancies; (4) recommends role-appropriate next actions.',
     'Acceptance criteria: (1) lists concrete action items and deliverables; (2) identifies owners or handoffs as needed; (3) notes outstanding information; (4) documents human approval requirements.'
    ];
+   const emailRules=role.key==='exec_assistant'&&index>=3?('\n\nExecutive email safety and reporting: Use only the company Gmail account explicitly connected and authorized by the CEO. Summarize sender, subject, date, key details and recommended action; categorize Urgent, Important, Routine or Suspicious. Escalate urgent matters to the Chief of Staff and report to the CEO through Company Messages. Draft replies for review only. Never send, forward, delete, unsubscribe, change mailbox settings, follow suspicious links or open suspicious attachments without the CEO\'s authorization. If Gmail is not connected or the worker execution service is not active, report that the assignment is waiting for integration instead of claiming emails were checked.'):'';
    return {id:role.key+'-'+(index+1), title,
-     description:'Assignment: '+title+'.\nJob responsibility: '+role.description+'\n\n'+contexts[index]+'\n\n'+criteria[index]+'\n\nStay within the '+role.title+' specialty. Do not access connected services without authorized integration and owner permission, or perform a different role\'s work.'};
+     description:'Assignment: '+title+'.\nJob responsibility: '+role.description+'\n\n'+contexts[index%contexts.length]+'\n\n'+criteria[index%criteria.length]+emailRules+'\n\nStay within the '+role.title+' specialty. Do not access connected services without authorized integration and owner permission, or perform a different role\'s work.'};
   });
  }
  window.OfficeHQAssignmentLibrary={library,titles,keys:Object.keys(titles)};

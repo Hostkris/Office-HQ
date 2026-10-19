@@ -25,7 +25,7 @@ const catalog=[
   {name:'Google Drive',icon:'△',method:'Google OAuth 2.0',desc:'Access only approved files and folders.',docs:'https://developers.google.com/workspace/drive/api/guides/about-auth',warning:'Keep Drive scopes as narrow as possible.'}
 ];
 const templates=[
-  {id:'inbox',label:'Gmail · Inbox assistant',provider:'Gmail',dept:['Customer','Leadership','Marketing','Sales','PMO'],trigger:'New authorized email',steps:'Read → Summarize → Draft reply → CEO review → Send when permitted'},
+  {id:'inbox',label:'Gmail · Executive Assistant email management',provider:'Gmail',dept:['Leadership'],trigger:'Authorized inbox review (when server integration is enabled)',steps:'Check unread → Flag urgent messages → Prepare CEO summary → Escalate to Chief of Staff → Draft for CEO approval (no sending or deleting)'},
   {id:'shopify',label:'Shopify · Order operations',provider:'Shopify',dept:['Operations','Customer','Sales'],trigger:'New order webhook',steps:'Verify order → Check inventory → Prepare fulfillment → Escalate exceptions'},
   {id:'etsy',label:'Etsy · Inventory sync',provider:'Etsy',dept:['Operations','Product','Sales'],trigger:'Stock or order change',steps:'Verify quantity → Draft adjustments → Obtain authorization → Apply supported changes'},
   {id:'social',label:'Instagram · Social publishing',provider:'Instagram',dept:['Marketing'],trigger:'Approved scheduled content',steps:'Prepare post → Review → Publish if allowed → Report results'},
@@ -45,7 +45,7 @@ const record=()=>{
 const tmpl=id=>templates.find(t=>t.id===id);
 function availableEmployees(template,cid){
   if(!template||!cid)return [];
-  return state().employees.filter(e=>e.companyId===cid&&e.active&&template.dept.includes(B.roleFor(e)?.dept));
+  return state().employees.filter(e=>e.companyId===cid&&e.active&&template.dept.includes(B.roleFor(e)?.dept)&&(template.id!=='inbox'||e.roleKey==='exec_assistant'));
 }
 function html(){
   const cid=companyId();
@@ -64,7 +64,7 @@ function html(){
     </section>
     <section class="card" style="margin:18px 0">
       <h2>Automated employee workflows</h2>
-      <p class="muted">Design the task, choose an AI employee and save your CEO approval policy. Every plan remains <strong>disabled</strong> until a real OAuth integration, secure job runner and server-enforced permissions are installed.</p>
+      <p class="muted">Design the task, choose an AI employee and save your CEO approval policy. Every plan remains <strong>disabled</strong> until a real Gmail authorization, secure job runner and server-enforced permissions are installed. Inbox work belongs to the Executive Assistant, with urgent matters escalated to the Chief of Staff; email sending and deletion stay disabled.</p>
       <form id="officePlanForm" class="office-plan-form">
         <label>Workflow template<select name="template" id="officePlanTemplate">${templates.map(t=>`<option value="${esc(t.id)}">${esc(t.label)}</option>`).join('')}</select></label>
         <label>AI employee<select name="employeeId" id="officePlanEmployee" required></select></label>

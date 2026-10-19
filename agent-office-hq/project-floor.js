@@ -183,7 +183,7 @@ function background(c){c.clearRect(0,0,960,436);c.fillStyle='#1b3544';c.fillRect
  for(let y=0;y<436;y+=28){for(let x=0;x<960;x+=28){c.fillStyle=(Math.floor(x/28)+Math.floor(y/28))%2?'#244858':'#294d5b';c.fillRect(x+1,y+1,26,26);}}
  c.fillStyle='#102e3d';c.fillRect(0,0,960,65);
  c.fillStyle='#e0f4ef';c.font='bold 20px system-ui';c.fillText('OFFICE HQ  /  LIVE PROJECT FLOOR',28,33);
- c.fillStyle='#89c6c0';c.font='12px system-ui';c.fillText('10 DESKS MAX · SELECTED STAFF ONLY',30,53);
+ c.fillStyle='#89c6c0';c.font='12px system-ui';c.fillText('30 DESKS MAX · SELECTED STAFF ONLY',30,53);
  c.fillStyle='#365867';c.fillRect(13,394,934,33);
  c.fillStyle='#e7cd80';c.font='12px system-ui';c.fillText('PAPERWORK HANDOFFS  ·  AUTHORIZED ASSIGNMENTS',28,415);
 }

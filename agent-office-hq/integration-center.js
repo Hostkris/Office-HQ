@@ -51,7 +51,7 @@ function html(){
   return `<div class="office-integration-center">
     <section class="card">
       <div class="section-top"><h2>Account Connection Center</h2><span class="ops-tag">Secure OAuth gateway deployed</span></div>
-      <p class="notice"><strong>Setup phase — no accounts connected.</strong> The primary option opens the iPhone/iPad Safari workstation on iOS or a visible local computer browser on desktop. You sign in yourself and choose an employee. iOS offers guided tasks immediately; real third-party webpage controls require installing a separately packaged Safari extension. No developer account for each website is required for manual login. OAuth remains optional.</p>
+      <p class="notice"><strong>Setup phase — no accounts connected.</strong> The primary option opens the iPhone/iPad Safari workstation on iOS or a visible local computer browser on desktop. You can sign in yourself without selecting an employee; choose a worker later in the separate assignment section. iOS offers guided tasks immediately; real third-party webpage controls require installing a separately packaged Safari extension. No developer account for each website is required for manual login. OAuth remains optional.</p>
       <div class="office-connector-grid">${catalog.map(p=>`<article class="office-connector">
         <div class="office-connector-heading"><span class="office-connector-icon" aria-hidden="true">${esc(p.icon)}</span><strong>${esc(p.name)}</strong></div>
         <p>${esc(p.desc)}</p><span class="ops-tag">Manual desktop login available · local runner required</span>
@@ -95,7 +95,7 @@ function showGuide(provider){
   if(!p||!box)return;
   box.innerHTML=`<h3>${esc(p.name)} — ${esc(p.method)}</h3>
     <p>${esc(p.desc)}</p>
-    <p><strong>Recommended: on-computer browser.</strong> Open Desktop AI Workstations from the card, launch the visible browser on your computer, sign in manually on the actual website, and authorize a specific employee. No separate platform developer account is needed for this login. This process runs only while your desktop service is running.</p><p><strong>Optional: official API/OAuth.</strong> If you later prefer API integrations, developer app registration, authorized scopes and server-side credentials may be required.</p>
+    <p><strong>Recommended: on-computer browser.</strong> Open Desktop AI Workstations from the card, launch the visible browser on your computer, sign in manually on the actual website, and authorize an eligible employee later when you create an assignment. No separate platform developer account is needed for this login. This process runs only while your desktop service is running.</p><p><strong>Optional: official API/OAuth.</strong> If you later prefer API integrations, developer app registration, authorized scopes and server-side credentials may be required.</p>
     <p class="notice">${esc(p.warning)}</p><a href="${esc(p.docs)}" class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Open official setup ↗</a>
     <p class="tiny muted">Select Open secure connection to sign in to Cloud HQ and attempt the official provider OAuth flow. Some services have no supported OAuth API. Login credentials and tokens are never entered here.</p>`;
   box.scrollIntoView({block:'nearest',behavior:'smooth'});

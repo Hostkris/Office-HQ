@@ -29,7 +29,7 @@ test('Executive Assistant offers email checking and reporting as their own edita
     description:'Manage executive schedule and authorized Gmail email monitoring.'};
   const presets=assignments.library(role);
   assert.equal(presets.length,6);
-  assert.deepEqual(presets.slice(3).map(p=>p.title),[
+  assert.deepEqual(Array.from(presets.slice(3),p=>p.title),[
     'Check authorized Gmail inbox and flag urgent messages',
     'Prepare daily CEO email briefing and follow-up list',
     'Draft email replies for CEO approval'

@@ -1,10 +1,12 @@
-/* Live RPG Office: owner-controlled 10-desk levels, project groups, janitor and verified handoffs.
+/* Live RPG Office: owner-controlled 30-desk levels, project groups, janitor and verified handoffs.
    Visual status does not imply real third-party account actions. */
 (()=>{
 'use strict';
 const B=window.OfficeHQBridge;if(!B)return;
 const E=B.E,$=s=>document.querySelector(s),state=()=>B.getState();
-const LIMIT=10;
+const LIMIT=30;
+const INITIAL_WORKERS=15;
+const CANVAS_W=1240,CANVAS_H=1135;
 let raf=0,scene=null,lastProject='',handoff=null,delay=0,ctx=null;
 const clamp=(v,n=130)=>String(v??'').slice(0,n);
 const role=e=>e?(B.roleFor(e)||{}):{};
@@ -30,7 +32,22 @@ function setup(cid){
  const chosen=d.selected[cid]||{};
  const floor=floors.find(f=>f.id===chosen.floorId)||floors[0];
  d.selected[cid]={floorId:floor.id,projectId:chosen.projectId||'all'};
- // Do NOT migrate the roster into floor placements; new/old workspaces start empty.
+ // One-time welcome population from real company employees; never refill after
+ // the owner removes anyone. Existing placements and tasks are preserved.
+ d.initialPopulation??={};
+ if(!Object.prototype.hasOwnProperty.call(d.initialPopulation,cid)){
+  const existing=new Set(floors.flatMap(f=>(f.placements||[]).map(p=>p.employeeId)));
+  const pool=companyStaff(cid).filter(e=>e.roleKey!=='ceo'&&!existing.has(e.id));
+  const needed=Math.max(0,Math.min(INITIAL_WORKERS-(floor.placements||[]).length,LIMIT-(floor.placements||[]).length));
+  for(const worker of pool.slice(0,needed)){
+   const seat=Array.from({length:LIMIT},(_,i)=>i).find(i=>!(floor.placements||[]).some(p=>p.seat===i));
+   if(seat===undefined)break;
+   floor.placements.push({seat,employeeId:worker.id,projectId:null,taskId:null,placedAt:time(),demoPresence:true});
+  }
+  d.initialPopulation[cid]=true;
+  d.selected[cid]={floorId:floor.id,projectId:'all'};
+  B.save();
+ }
  floor.placements=Array.isArray(floor.placements)?floor.placements.filter(p=>p&&p.employeeId&&Number.isInteger(p.seat)&&p.seat>=0&&p.seat<LIMIT).slice(0,LIMIT):[];
  const ids=new Set(),seats=new Set();
  floor.placements=floor.placements.filter(p=>{if(ids.has(p.employeeId)||seats.has(p.seat))return false;ids.add(p.employeeId);seats.add(p.seat);return true;});
@@ -40,7 +57,7 @@ const floorsFor=cid=>data().floors.filter(f=>f.companyId===cid);
 const projectsFor=cid=>data().projects.filter(p=>p.companyId===cid);
 function selected(cid){const x=setup(cid);return x.d.selected[cid]||{};}
 function seatList(floor){return Array.from({length:LIMIT},(_,i)=>({seat:i,placement:floor?.placements.find(p=>p.seat===i)}));}
-function coords(seat){return {x:112+(seat%5)*175,y:222+Math.floor(seat/5)*182};}
+function coords(seat){return {x:130+(seat%6)*200,y:289+Math.floor(seat/6)*182};}
 function currentFor(cid){const {floor,project}=setup(cid);return {floor,project,select:selected(cid)};}
 function display(placement,proj){return !proj||placement.projectId===proj.id;}
 function count(cid){return floorsFor(cid).reduce((n,f)=>n+f.placements.length,0);}
@@ -53,8 +70,8 @@ function place(cid,floor,employeeId,seat,projectId,taskId){
  const worker=companyStaff(cid).find(e=>e.id===employeeId);
  if(!worker)return {ok:false,message:'Choose an active employee in this company.'};
  if(!floor||floor.companyId!==cid)return {ok:false,message:'Choose a valid company level.'};
- if(!Number.isInteger(seat)||seat<0||seat>=LIMIT)return {ok:false,message:'Choose a desk from 1 to 10.'};
- if(floor.placements.length>=LIMIT)return {ok:false,message:'This floor is full: 10 assigned workers maximum. Add another level.'};
+ if(!Number.isInteger(seat)||seat<0||seat>=LIMIT)return {ok:false,message:'Choose a desk from 1 to 30.'};
+ if(floor.placements.length>=LIMIT)return {ok:false,message:'This floor is full: 30 assigned workers maximum. Add another level.'};
  if(floor.placements.some(p=>p.seat===seat))return {ok:false,message:'This desk is already occupied.'};
  if(floorsFor(cid).some(f=>f.placements.some(p=>p.employeeId===employeeId)))return {ok:false,message:'This employee already occupies a desk. Remove them before moving floors.'};
  const project=projectId&&projectId!=='all'?projectsFor(cid).find(p=>p.id===projectId):null;
@@ -103,7 +120,7 @@ function render(){
  const active=placement.filter(x=>x.placement&&display(x.placement,project));
  const options=available.map(e=>'<option value="'+E(e.id)+'">'+E(e.name)+' · '+E(role(e).title||'Worker')+'</option>').join('');
  const projOptions='<option value="all">All desks / placed workers</option>'+projects.map(p=>'<option value="'+E(p.id)+'"'+(project?.id===p.id?' selected':'')+'>'+E(p.name)+'</option>').join('');
- return '<div class="page-head"><div><div class="eyebrow">LIVE RPG OFFICE · ASSIGNED STAFF ONLY</div><h1>Project Floor</h1><p class="subtitle">A small, professional office with desks and computers. Nobody appears until you place a worker or assign a new task.</p></div>'+
+ return '<div class="page-head"><div><div class="eyebrow">LIVE RPG OFFICE · ASSIGNED STAFF ONLY</div><h1>Project Floor</h1><p class="subtitle">A small, professional office with desks and computers. Fifteen employees start moving in the RPG office. Choose, add, or remove them at any time; their actual work stays unchanged.</p></div>'+
  '<div class="head-actions"><button class="btn" data-view="approvals">🏛 CEO approvals ('+(state().approvals||[]).filter(a=>a.companyId===cid&&a.status==='pending').length+')</button><button class="btn btn-primary" data-action="newTask">＋ Assign task</button></div></div>'+
  '<section class="card pf-toolbar"><div class="pf-tools">'+
  '<label>Level<select id="pfFloor">'+floors.map((f,i)=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+(f.department?' · Department':' · Extra level')+'</option>').join('')+'</select></label>'+
@@ -112,19 +129,19 @@ function render(){
  '<button class="btn btn-sm" data-pf="new-project">＋ New project</button></div>'+
  '<div class="pf-status"><strong>'+floor.placements.length+' / '+LIMIT+'</strong> worker desks occupied on this level · <strong>'+active.length+'</strong> shown for the selected project'+
  ' · Janitor <strong>'+(floor.janitor?'on duty':'off duty')+'</strong></div>'+
- '<div class="office-box pf-stage"><canvas class="office-canvas" id="officeCanvas" width="960" height="584" role="img" aria-label="Living RPG office with ten desks, names and thought bubbles, CEO office and staggered break-room activity."></canvas></div>'+
+ '<div class="office-box pf-stage"><canvas class="office-canvas" id="officeCanvas" width="1240" height="1135" role="img" aria-label="Living RPG office with thirty desks, employee names and thought bubbles, CEO office and staggered break-room activity."></canvas></div>'+
  '<div class="office-legend"><span>▣ Empty desk</span><span>● Assigned worker</span><span>📁 Handoff only after a linked task is completed</span></div>'+
- '<label class="pf-janitor"><input type="checkbox" id="pfJanitor"'+(floor.janitor?' checked':'')+'> Assign a janitor to this level <small>(separate from the 10 worker spaces)</small></label>'+
+ '<label class="pf-janitor"><input type="checkbox" id="pfJanitor"'+(floor.janitor?' checked':'')+'> Assign a janitor to this level <small>(separate from the 30 worker spaces)</small></label>'+
  '</section>'+
  '<div class="grid two-col pf-bottom"><section class="card"><div class="section-top"><h2>Place an employee</h2><span class="pill-stat">Manual placement</span></div>'+
- '<p class="muted small">Only employees you select appear. Tasks assigned through Office HQ can automatically place their employee in an open desk, up to 10.</p>'+
+ '<p class="muted small">Fifteen of your existing employees appear once on the live floor and Command Center. Add or remove people whenever you want; new tasks can also place their owner, up to 30.</p>'+
  '<form id="pfPlaceForm" class="pf-place-form">'+
  '<label>Employee<select id="pfEmployee" required><option value="">Choose an available employee</option>'+options+'</select></label>'+
  '<label>Desk<select id="pfSeat" required>'+placement.filter(x=>!x.placement).map(x=>'<option value="'+x.seat+'">Desk '+(x.seat+1)+'</option>').join('')+'</select></label>'+
  '<label>Assign to group<select id="pfPlacementProject">'+
  '<option value="all">Unassigned / general floor</option>'+projects.map(p=>'<option value="'+E(p.id)+'"'+(project?.id===p.id?' selected':'')+'>'+E(p.name)+'</option>').join('')+'</select></label>'+
  '<button type="submit" class="btn btn-primary"'+(!available.length||floor.placements.length>=LIMIT?' disabled':'')+'>＋ Place at desk</button></form>'+
- '<div class="section-top" style="margin-top:18px"><h3>Workers on this floor</h3><span>'+floor.placements.length+' of 10</span></div>'+
+ '<div class="section-top" style="margin-top:18px"><h3>Workers on this floor</h3><span>'+floor.placements.length+' of 30</span></div>'+
  '<div class="pf-placed">'+(floor.placements.length?floor.placements.sort((a,b)=>a.seat-b.seat).map(p=>{
  const w=state().employees.find(e=>e.id===p.employeeId),grp=projects.find(x=>x.id===p.projectId);
  return '<div class="pf-person"><span><strong>Desk '+(p.seat+1)+': '+E(w?.name||'Former employee')+'</strong><small>'+E(role(w).title||'')+' · '+E(grp?.name||'General')+'</small></span><button class="btn btn-sm" data-pf="remove" data-seat="'+p.seat+'">Remove</button></div>';

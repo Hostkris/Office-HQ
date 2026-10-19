@@ -18,6 +18,7 @@ function office(){
  const context=vm.createContext({window:{OfficeHQBridge:B},document:dom,location:{hash:'#/command'},Date,Math,Array,Number,String,Boolean,Set,Map,JSON,console,
   requestAnimationFrame:()=>1,cancelAnimationFrame:()=>{},performance:{now:()=>0},matchMedia:()=>({matches:true})});
  vm.runInContext(floorCode,context);
+ context.window.OfficeHQFloor.setManageOffice(true);
  return {floor:context.window.OfficeHQFloor,state,stores,context};
 }
 test('RPG scene selector is independently saved for each company and both RPG views',()=>{

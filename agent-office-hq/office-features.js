@@ -238,6 +238,7 @@
         const pending=S().approvals.find(a=>a.id===id&&a.status==='pending'&&inScope(a));
         if(pending&&confirm('Reject this pending request and remove it from your inbox? No approval will be granted.'))approve(id,'rejected');
       }
+      else if(op==='review-work'){closePhone();window.OfficeHQDeliverables?.openTask(id);}
       else if(op==='phone-open')openPhone();
       else if(op==='phone-close')closePhone();
       else if(op==='approve-request'||op==='deny-request')approve(id,op==='approve-request'?'approved':'rejected');

@@ -214,6 +214,7 @@ test('iPhone Command Center shares same 15 employees and supports safe remove, a
   await page.locator('[data-pf="command-add"]').click();
   assert.equal(await page.locator('#pfCommandRemove option').count(),16);
   await page.evaluate(()=>window.OfficeHQBridge.setView('office'));
+  await page.locator('[data-pf="manage-office"]').click();
   assert.match(await page.locator('.pf-status').innerText(),/15 \/ 30/);
   assert.equal(await page.locator('#officeCanvas').getAttribute('width'),'1240');
   const state=await page.evaluate(()=>{

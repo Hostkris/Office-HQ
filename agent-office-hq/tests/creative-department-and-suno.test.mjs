@@ -68,6 +68,7 @@ function sandbox(){
 }
 test('Department pickers exclude all unrelated roles in both RPG Office and Command Center',()=>{
  const s=sandbox();
+ s.engine.setManageOffice(true);
  const html=s.engine.render();
  const options=html.match(/<select id="pfEmployee"[^>]*>([\s\S]*?)<\/select>/)[1];
  assert.match(options,/Marketing worker/);

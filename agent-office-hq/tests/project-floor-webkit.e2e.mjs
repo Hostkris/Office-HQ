@@ -24,6 +24,8 @@ async function pageFor(device='iPhone 13'){
  const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base+'/#/office',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-pf="manage-office"]').waitFor({timeout:15000});
+ await page.locator('[data-pf="manage-office"]').click();
  await page.locator('h1').filter({hasText:'Project Floor'}).waitFor({timeout:15000});
  return {page,context,errors};
 }
@@ -212,6 +214,7 @@ test('iPhone Command Center shares same 15 employees and supports safe remove, a
   await page.locator('[data-pf="command-add"]').click();
   assert.equal(await page.locator('#pfCommandRemove option').count(),16);
   await page.evaluate(()=>window.OfficeHQBridge.setView('office'));
+  await page.locator('[data-pf="manage-office"]').click();
   assert.match(await page.locator('.pf-status').innerText(),/15 \/ 30/);
   assert.equal(await page.locator('#officeCanvas').getAttribute('width'),'1240');
   const state=await page.evaluate(()=>{

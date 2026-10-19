@@ -145,7 +145,27 @@ function onTaskStatus(task){
  handoff=event;
  // Only visualizes a verified internal task transition; does not execute the next task.
 }
+let manageOffice=false;
+function setManageOffice(value){manageOffice=!!value;}
+function isImmersive(){return !manageOffice;}
+function renderImmersive(){
+ const cid=inCompany(),{floor,project}=setup(cid);
+ if(!floor)return '<p class="muted">Choose a company to enter the live office.</p>';
+ const floors=floorsFor(cid);
+ return '<section class="hq-immersive-shell" aria-label="Dedicated live RPG office">'+
+  '<div class="hq-immersive-toolbar"><button class="btn btn-sm" type="button" data-view="command">← Back to HQ</button>'+
+  '<span class="hq-immersive-title">LIVE RPG OFFICE</span>'+
+  '<button class="btn btn-sm btn-primary" type="button" data-pf="manage-office">⚙ Manage Office</button>'+
+  '<details class="hq-immersive-options"><summary>View options</summary><div class="hq-immersive-selectors">'+
+  '<label>Department floor<select id="pfFloor">'+floors.map(f=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+'</option>').join('')+'</select></label>'+
+  '<label>Scenery<select id="pfScene">'+sceneChoices(cid)+'</select></label>'+
+  '<label>Project<select id="pfProject"><option value="all">All workers</option>'+projectsFor(cid).map(p=>'<option value="'+E(p.id)+'"'+(project?.id===p.id?' selected':'')+'>'+E(p.name)+'</option>').join('')+'</select></label>'+
+  '</div></details></div>'+
+  '<div class="office-box pf-stage hq-immersive-stage"><canvas class="office-canvas" id="officeCanvas" width="1240" height="1135" role="img" aria-label="Animated RPG office with 30 desks, department workers, names and thought bubbles. Tap a worker to open their profile."></canvas></div>'+
+  '<p class="hq-immersive-hint">'+E(floor.name)+' · '+(floor.placements||[]).length+' of 30 desks in use · Tap an employee for their profile</p></section>';
+}
 function render(){
+ if(!manageOffice)return renderImmersive();
  const cid=inCompany(),{floor,project}=setup(cid),floors=floorsFor(cid),projects=projectsFor(cid);
  const placement=seatList(floor);
  const available=optionsFor(cid,floor);
@@ -153,7 +173,7 @@ function render(){
  const options=available.map(e=>'<option value="'+E(e.id)+'">'+E(e.name)+' · '+E(role(e).title||'Worker')+'</option>').join('');
  const projOptions='<option value="all">All desks / placed workers</option>'+projects.map(p=>'<option value="'+E(p.id)+'"'+(project?.id===p.id?' selected':'')+'>'+E(p.name)+'</option>').join('');
  return '<div class="page-head"><div><div class="eyebrow">LIVE RPG OFFICE · ASSIGNED STAFF ONLY</div><h1>Project Floor</h1><p class="subtitle">A small, professional office with desks and computers. Fifteen employees start moving in the RPG office. Choose, add, or remove them at any time; their actual work stays unchanged.</p></div>'+
- '<div class="head-actions"><button class="btn" data-view="approvals">🏛 CEO approvals ('+(state().approvals||[]).filter(a=>a.companyId===cid&&a.status==='pending').length+')</button><button class="btn btn-primary" data-action="newTask">＋ Assign task</button></div></div>'+
+ '<div class="head-actions"><button class="btn" type="button" data-pf="watch-office">◀ View Live RPG Office</button><button class="btn" data-view="approvals">🏛 CEO approvals ('+(state().approvals||[]).filter(a=>a.companyId===cid&&a.status==='pending').length+')</button><button class="btn btn-primary" data-action="newTask">＋ Assign task</button></div></div>'+
  '<section class="card pf-toolbar"><div class="pf-tools">'+
  '<label>Level<select id="pfFloor">'+floors.map((f,i)=>'<option value="'+E(f.id)+'"'+(f.id===floor.id?' selected':'')+'>'+E(f.name)+(f.department?' · Department':' · Extra level')+'</option>').join('')+'</select></label>'+
  '<label>Project / group<select id="pfProject">'+projOptions+'</select></label>'+
@@ -334,6 +354,8 @@ document.addEventListener('click',event=>{
  const btn=event.target.closest('[data-pf]');if(!btn)return;
  const cid=inCompany();if(!cid)return;
  const {floor,d}=setup(cid),op=btn.dataset.pf;
+ if(op==='manage-office'){setManageOffice(true);B.setView('office');return;}
+ if(op==='watch-office'){setManageOffice(false);B.setView('office');return;}
  if(op==='command-add'){
   const employeeId=$('#pfCommandWorker')?.value;
   const seat=seatList(floor).find(x=>!x.placement)?.seat;
@@ -402,6 +424,6 @@ document.addEventListener('submit',event=>{
 if(typeof window.addEventListener==='function')window.addEventListener('officehq:themechange',()=>{
  if(ctx&&$('#officeCanvas'))renderFloor(ctx,performance.now());
 });
-window.OfficeHQFloor={render,start,stop,onTaskAssigned,onTaskStatus,data,commandControls,sceneFor,setScene,SCENE_OPTIONS,LIMIT,INITIAL_WORKERS};
+window.OfficeHQFloor={render,start,stop,setManageOffice,isImmersive,onTaskAssigned,onTaskStatus,data,commandControls,sceneFor,setScene,SCENE_OPTIONS,LIMIT,INITIAL_WORKERS};
 if(['office','command'].includes(location.hash.replace('#/','')))B.setView(location.hash.replace('#/',''));
 })();

@@ -23,6 +23,7 @@ function sandbox(){
  new vm.Script(js,{filename:'project-floor.js'}).runInContext(context);
  const emit=(type,event)=>{for(const fn of handlers[type]||[])fn(event);};
  const click=(action)=>emit('click',{target:{closest(){return {dataset:{pf:action,seat:'0'}};}}});
+ context.window.OfficeHQFloor.setManageOffice(true);
  return {engine:context.window.OfficeHQFloor,state,workers,controls,errors,emit,click,get saves(){return saves}};
 }
 test('Live RPG and Command Center share 15 initial existing workers, thirty desks and preserved tasks',()=>{

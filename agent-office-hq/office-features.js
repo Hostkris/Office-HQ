@@ -51,7 +51,7 @@
      <h3>${E(a.title)}</h3><p>${E(a.note||'Awaiting your decision.')}</p>
      ${a.provider?`<p class="tiny">Service: <strong>${E(a.provider)}</strong></p>`:''}
      ${canEdit?`<label class="ops-amount-label" for="amount_${E(a.id)}">Approved spending cap ($)</label><div class="ops-amount-row"><input id="amount_${E(a.id)}" type="number" step="0.01" min="0" max="100000" value="${amount.toFixed(2)}" aria-label="Proposed amount in dollars">${button('save-amount','Save amount',a.id)}</div>`:''}
-     <div class="ops-actions">${button('approve-request','✓ Approve',a.id,'btn-primary')}${button('deny-request','✕ Deny',a.id,'btn-danger')}${button('view-request','More details',a.id)}</div>
+     <div class="ops-actions">${a.kind==='task'&&a.taskId?button('review-work','Open finished work & decide',a.taskId,'btn-primary'):button('approve-request','✓ Approve',a.id,'btn-primary')+button('deny-request','✕ Deny',a.id,'btn-danger')}${button('view-request','More details',a.id)}</div>
      <div class="tiny muted">Approval does not connect an account, send a text, publish media, or charge a card.</div></article>`;
   }
   function recentMessages(){
@@ -193,6 +193,7 @@
     const a=S().approvals.find(x=>x.id===id&&x.status==='pending');
     if(!a)return;
     const initialView=location.hash.replace('#/','');
+    if(a.kind==='task'&&a.taskId){closePhone();window.OfficeHQDeliverables?.openTask(a.taskId);return;}
     B.decideApproval(id,decision);
     // CEO decisions made inside the phone or company thread should remain there.
     if(initialView&&initialView!=='approvals')B.setView(initialView);
@@ -237,6 +238,7 @@
         const pending=S().approvals.find(a=>a.id===id&&a.status==='pending'&&inScope(a));
         if(pending&&confirm('Reject this pending request and remove it from your inbox? No approval will be granted.'))approve(id,'rejected');
       }
+      else if(op==='review-work'){closePhone();window.OfficeHQDeliverables?.openTask(id);}
       else if(op==='phone-open')openPhone();
       else if(op==='phone-close')closePhone();
       else if(op==='approve-request'||op==='deny-request')approve(id,op==='approve-request'?'approved':'rejected');

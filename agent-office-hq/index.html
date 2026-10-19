@@ -17,29 +17,44 @@
       <a class="brand" href="#/command" aria-label="Agent Office HQ home"><div class="brand-mark">▦<span>✦</span></div><div><strong>AGENT OFFICE</strong><small>HQ · Workforce OS</small></div></a>
       <div class="workspace-label">YOUR WORKSPACE</div>
       <div class="company-picker-wrap"><select id="companyPicker" aria-label="Choose company"></select><button id="addCompany" class="small-square" title="Add company" aria-label="Add company">＋</button></div>
-      <div class="nav-label">OPERATIONS</div>
-      <nav id="nav">
-        <button data-view="command" class="nav-btn"><span class="nav-icon">◈</span> Command center</button>
-        <button data-view="office" class="nav-btn"><span class="nav-icon">▦</span> Live RPG office <span class="nav-pill">LIVE</span></button>
-        <button data-view="tasks" class="nav-btn"><span class="nav-icon">☷</span> Task board</button>
-        <button data-view="workforce" class="nav-btn"><span class="nav-icon">♟</span> AI workforce</button>
-        <button data-view="jobs" class="nav-btn"><span class="nav-icon">▣</span> All company jobs</button>
-        <button data-view="workflows" class="nav-btn"><span class="nav-icon">⇥</span> Task handoffs</button>
-        <button data-view="health" class="nav-btn"><span class="nav-icon">♡</span> Agent health</button>
-        <button data-view="org" class="nav-btn"><span class="nav-icon">◇</span> Org & authority</button>
-        <button data-view="approvals" class="nav-btn"><span class="nav-icon">✓</span> Approvals <span id="approvalNavCount" class="nav-count" hidden></span></button>
-        <button data-view="thread" class="nav-btn"><span class="nav-icon">▣</span> CEO message thread <span id="opsNavThreadCount" class="nav-count" hidden></span></button>
-        <button data-view="meetings" class="nav-btn"><span class="nav-icon">♧</span> Executive meetings</button>
-        <div class="nav-label">BUSINESS SYSTEMS</div>
-        <button data-view="finance" class="nav-btn"><span class="nav-icon">＄</span> Finance & budget</button>
-        <button data-view="inventory" class="nav-btn"><span class="nav-icon">▤</span> Inventory</button>
-        <button data-view="audit" class="nav-btn"><span class="nav-icon">⌕</span> Audit trail</button>
-        <button data-view="reports" class="nav-btn"><span class="nav-icon">▥</span> Reports & briefs</button>
-        <div class="nav-label">SYSTEM</div>
-        <a href="./cloud.html" class="nav-btn" style="display:block;text-decoration:none" aria-label="Open Secure Cloud HQ backed by Supabase"><span class="nav-icon">☁</span> Secure Cloud HQ <span class="nav-pill">CLOUD</span></a>
-        <button data-view="connections" class="nav-btn"><span class="nav-icon">◈</span> Social & business accounts</button>
-        <button data-view="workstations" class="nav-btn"><span class="nav-icon">▣</span> Desktop AI workstations <span class="nav-pill">LOCAL</span></button>
-        <button data-view="settings" class="nav-btn"><span class="nav-icon">⚙</span> Settings</button>
+      <div class="nav-label">QUICK ACCESS</div>
+      <nav id="nav" aria-label="Office HQ sections">
+        <button data-view="command" class="nav-btn"><span class="nav-icon">◈</span> Command Center</button>
+        <button data-view="office" class="nav-btn"><span class="nav-icon">▦</span> Live RPG Office <span class="nav-pill">LIVE</span></button>
+        <button data-view="tasks" class="nav-btn"><span class="nav-icon">☷</span> Assignments</button>
+        <button data-view="workforce" class="nav-btn"><span class="nav-icon">♟</span> Employees</button>
+        <button data-view="approvals" class="nav-btn"><span class="nav-icon">✓</span> CEO Approvals <span id="approvalNavCount" class="nav-count" hidden></span></button>
+        <button data-view="files" class="nav-btn"><span class="nav-icon">▤</span> Completed Work &amp; Files</button>
+        <div class="nav-label nav-more-label">MORE WORKSPACES</div>
+        <details class="hq-nav-group">
+          <summary>♧ People &amp; coordination <span class="hq-nav-chevron" aria-hidden="true">⌄</span></summary>
+          <div class="hq-nav-children">
+            <button data-view="jobs" class="nav-btn"><span class="nav-icon">▣</span> All company jobs</button>
+            <button data-view="workflows" class="nav-btn"><span class="nav-icon">⇥</span> Task handoffs</button>
+            <button data-view="health" class="nav-btn"><span class="nav-icon">♡</span> Agent health</button>
+            <button data-view="org" class="nav-btn"><span class="nav-icon">◇</span> Org &amp; authority</button>
+            <button data-view="thread" class="nav-btn"><span class="nav-icon">▣</span> CEO message thread <span id="opsNavThreadCount" class="nav-count" hidden></span></button>
+            <button data-view="meetings" class="nav-btn"><span class="nav-icon">♧</span> Executive meetings</button>
+          </div>
+        </details>
+        <details class="hq-nav-group">
+          <summary>▤ Business management <span class="hq-nav-chevron" aria-hidden="true">⌄</span></summary>
+          <div class="hq-nav-children">
+            <button data-view="finance" class="nav-btn"><span class="nav-icon">＄</span> Finance &amp; budget</button>
+            <button data-view="inventory" class="nav-btn"><span class="nav-icon">▤</span> Inventory</button>
+            <button data-view="audit" class="nav-btn"><span class="nav-icon">⌕</span> Audit trail</button>
+            <button data-view="reports" class="nav-btn"><span class="nav-icon">▥</span> Reports &amp; briefs</button>
+          </div>
+        </details>
+        <details class="hq-nav-group">
+          <summary>⚙ Connections &amp; settings <span class="hq-nav-chevron" aria-hidden="true">⌄</span></summary>
+          <div class="hq-nav-children">
+            <a href="./cloud.html" class="nav-btn nav-link" aria-label="Open Secure Cloud HQ backed by Supabase"><span class="nav-icon">☁</span> Secure Cloud HQ <span class="nav-pill">CLOUD</span></a>
+            <button data-view="connections" class="nav-btn"><span class="nav-icon">◈</span> Social &amp; business accounts</button>
+            <button data-view="workstations" class="nav-btn"><span class="nav-icon">▣</span> AI workstations <span class="nav-pill">LOCAL</span></button>
+            <button data-view="settings" class="nav-btn"><span class="nav-icon">⚙</span> Settings &amp; backups</button>
+          </div>
+        </details>
       </nav>
       <div class="sidebar-bottom"><span class="connected-dot"></span><span id="modeLabel">Local workspace active</span><div class="side-foot">Your data stays on this device until connected.</div></div>
     </aside>
@@ -67,6 +82,7 @@
   <script src="office-life.js" defer></script>
   <script src="department-offices.js" defer></script>
   <script src="project-floor.js" defer></script>
+  <script src="deliverables.js" defer></script>
   <script src="integration-center.js" defer></script>
   <script src="desktop-workstations.js" defer></script>
   <script src="ios-workstations.js" defer></script>

@@ -67,7 +67,28 @@ async function scan(owner:string,companyId:string){
    items.push({owner_id:owner,company_id:companyId,connection_id:connection.id,gmail_id:String(m.id).slice(0,100),thread_id:String(m.threadId||m.id).slice(0,100),sender,subject,snippet,priority,reason,received_at:m.internalDate?new Date(Number(m.internalDate)).toISOString():null,reviewed_at:new Date().toISOString()});
   }
  }
- if(items.length){const {error}=await admin.from("hq_exec_email_reviews").upsert(items,{onConflict:"connection_id,gmail_id"});if(error)throw Error("Could not securely save the Executive Assistant email review.");}
+ let newImportant:Record<string,unknown>[]=[];
+ if(items.length){
+  // Notify the CEO only about previously unseen important or urgent inbox messages.
+  const {data:known,error:knownError}=await admin.from("hq_exec_email_reviews")
+   .select("gmail_id").eq("connection_id",connection.id)
+   .in("gmail_id",items.map(i=>String(i.gmail_id)));
+  if(knownError)throw Error("Could not check prior inbox reviews.");
+  const seen=new Set((known||[]).map(r=>String(r.gmail_id)));
+  newImportant=items.filter(i=>i.priority!=="routine"&&!seen.has(String(i.gmail_id)));
+  const {error}=await admin.from("hq_exec_email_reviews").upsert(items,{onConflict:"connection_id,gmail_id"});
+  if(error)throw Error("Could not securely save the Executive Assistant email review.");
+  if(newImportant.length){
+   const alerts=newImportant.slice(0,5).map(i=>({
+    owner_id:owner,company_id:companyId,sender:"Executive Assistant",
+    body:("Email "+String(i.priority).toUpperCase()+": "+String(i.subject)+" | From: "+String(i.sender)+
+      ". Review the original in Executive Assistant → Gmail inbox. No reply was sent.").slice(0,1590)
+   }));
+   // Reports are already safely stored if an optional internal notification fails.
+   const {error:notifyError}=await admin.from("hq_messages").insert(alerts);
+   if(notifyError)console.error("Internal inbox alert could not be written.");
+  }
+ }
  const {data:existing}=await admin.from("hq_exec_email_settings").select("enabled").eq("owner_id",owner).eq("company_id",companyId).maybeSingle();
  const settings={owner_id:owner,company_id:companyId,role_key:"exec_assistant",enabled:!!existing?.enabled,last_scan_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()};
  const {error:sErr}=await admin.from("hq_exec_email_settings").upsert(settings,{onConflict:"owner_id,company_id"});if(sErr)throw Error("Could not save inbox scan status.");

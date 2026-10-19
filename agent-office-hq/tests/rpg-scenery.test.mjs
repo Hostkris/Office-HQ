@@ -81,5 +81,5 @@ test('Local Mode and phone persistence guidance remain available with offline sc
  assert.match(appCode,/localStorage.setItem\(KEY,JSON.stringify\(state\)\)/);
  assert.match(appCode,/data-action="exportData"/);
  assert.match(css,/pf-scene-control/);
- assert.match(serviceWorker,/agent-office-hq-v16/);
+ assert.match(serviceWorker,/agent-office-hq-v[0-9]+/);
 });

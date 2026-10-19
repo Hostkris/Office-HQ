@@ -40,12 +40,13 @@ function render(){
     '<div class="desktop-grid"><section class="card"><h2>① Open a website and sign in</h2>'+
     controlLabel('<select id="deskSite">'+sites.map(p=>'<option value="'+E(p[0])+'"'+(preferred===p[0]?' selected':'')+'>'+E(p[1])+'</option>').join('')+'</select>','Website')+
     '<button class="btn btn-primary" type="button" data-desk="open">🌐 Open website in desktop browser</button>'+
-    '<p class="small muted">Sign in normally in the browser window. If asked for a password or verification code, enter it yourself. The bot never needs it.</p>'+
-    controlLabel('<select id="deskWorker"></select>','Which employee may use this website?')+
-    '<label class="desktop-check"><input id="deskOwnerConfirm" type="checkbox"> I personally signed in and authorize the selected employee to use this browser for assigned work.</label>'+
+    '<p class="small muted">Sign in now or return later. No employee selection is needed. Enter your password or verification code directly on the real website.</p>'+
+    '<p class="tiny muted">No employee is authorized merely by signing in. You can prepare several browser sessions before assigning any employee.</p></section>'+
+    '<section class="card"><h2>② Choose an eligible employee and assign work</h2>'+
+     controlLabel('<select id="deskWorker"></select>','Which employee may use this website?')+
+    '<label class="desktop-check"><input id="deskOwnerConfirm" type="checkbox"> I personally signed in, reviewed this assignment, and approve access for the selected employee. You can revoke access below.</label>'+
     '<button class="btn" type="button" data-desk="authorize">✓ Authorize this employee</button>'+
-    '<p class="tiny muted">Only employees from permitted departments are shown. This is a single-owner local desktop permission, not a multi-user enterprise authentication system.</p></section>'+
-    '<section class="card"><h2>② Assign work to an authorized employee</h2>'+
+    
     controlLabel('<select id="deskGrant"></select>','Authorized employee and website')+
     controlLabel('<select id="deskMode"><option value="observe">Review / gather information</option><option value="draft">Prepare draft text (no automatic submission)</option></select>','Type of assignment')+
     controlLabel('<textarea id="deskPrompt" maxlength="1600" placeholder="Example: Open my Etsy shop dashboard, check the visible order list, and summarize which orders need my attention. Do not purchase, refund or change account settings."></textarea>','Job instructions')+

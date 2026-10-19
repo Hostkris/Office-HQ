@@ -12,7 +12,7 @@ test('all 174 roles have three sub-jobs',()=>{
  const rows=roleData.trim().split('\n').map(line=>line.split('|'));
  assert.equal(rows.length,174);
  assert.equal(new Set(rows.map(row=>row[0])).size,174);
- for(const row of rows){assert.equal(row.length,4,'expected a role key and three choices for '+row[0]);assert.ok(row.slice(1).every(Boolean));}
+ for(const row of rows){assert.equal(row.length,row[0]==='exec_assistant'?7:4,'expected valid role-specific assignment choices for '+row[0]);assert.ok(row.slice(1).every(Boolean));}
 });
 test('assignment and employee editors include saved custom directions',()=>{
  for(const id of ['taskPresetTitle','taskPresetCriteria','taskExtraCommands','employeeJobDescription'])assert.ok(app.includes('id="'+id+'"'));

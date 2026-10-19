@@ -52,7 +52,7 @@ internal_auditor|Review operational control evidence|Identify unauthorized recor
 analytics|Build KPI dashboard outline|Review performance data anomalies|Prepare cross-functional analytics brief
 product_mgr|Prioritize product roadmap items|Review upcoming product releases|Prepare product development requirements
 catalog|Draft product descriptions|Review catalog data completeness|Prepare proposed catalog corrections
-exec_assistant|Prepare executive calendar brief|Coordinate meeting agenda|Track executive follow-up items
+exec_assistant|Monitor connected Gmail and flag priority emails|Prepare CEO email priority report|Track important email follow-ups
 exec_ops|Monitor CEO directive completion|Coordinate executive operating review|Escalate overdue executive actions
 corporate_secretary|Draft board meeting minutes|Organize governance resolutions|Prepare board record checklist
 strategy_analyst|Evaluate strategic scenarios|Prepare opportunity assessment|Compare strategic investment options
@@ -190,7 +190,15 @@ meeting_coordinator|Prepare meeting agenda|Draft meeting minutes|Track meeting a
     'Acceptance criteria: (1) shows relevant findings; (2) separates evidence from assumptions; (3) identifies risks or discrepancies; (4) recommends role-appropriate next actions.',
     'Acceptance criteria: (1) lists concrete action items and deliverables; (2) identifies owners or handoffs as needed; (3) notes outstanding information; (4) documents human approval requirements.'
    ];
-   return {id:role.key+'-'+(index+1), title,
+   if(role.key==='exec_assistant'){
+     const details=[
+      'Read only from an owner-authorized Gmail account in Secure Cloud HQ, flag urgent messages and suspicious requests, and escalate CEO decisions to the Chief of Staff. No mailbox changes.',
+      'Prepare a concise priority report with sender, subject, time, reason for urgency, Gmail link, and proposed next action. Mark keyword assessments as preliminary.',
+      'Track important unanswered email and approaching deadlines, prepare reply suggestions for CEO review, and never send, delete or forward email automatically.'
+     ];
+     return {id:role.key+'-'+(index+1),title,description:'Assignment: '+title+'.\nExecutive Leadership · reports to Chief of Staff.\n\n'+details[index]+'\n\nRequires an approved, secure Gmail connection and a running inbox worker. Saving the assignment does not itself authorize access.'};
+    }
+    return {id:role.key+'-'+(index+1), title,
      description:'Assignment: '+title+'.\nJob responsibility: '+role.description+'\n\n'+contexts[index]+'\n\n'+criteria[index]+'\n\nStay within the '+role.title+' specialty. Do not access connected services without authorized integration and owner permission, or perform a different role\'s work.'};
   });
  }

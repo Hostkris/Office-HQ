@@ -12,7 +12,7 @@ function run(){
  const context={window:{},Date:FakeDate,Math,Array,Map,Set,String,Number,console};
  vm.runInNewContext(source,context,{filename:'office-life.js'});
  const life=context.window.OfficeHQOfficeLife;
- const staff=Array.from({length:10},(_,i)=>({id:'agent'+i,name:'Employee '+i,skin:'#b87957',hair:'#32303a',outfit:'#52baba'}));
+ const staff=Array.from({length:15},(_,i)=>({id:'agent'+i,name:'Employee '+i,skin:'#b87957',hair:'#32303a',outfit:'#52baba'}));
  const floor={id:'level1',name:'Level 1',janitor:true,placements:staff.map((e,i)=>({employeeId:e.id,seat:i,projectId:null}))};
  const c={
   save(){},restore(){},translate(){},fillRect(){},beginPath(){},roundRect(){},fill(){},
@@ -24,13 +24,13 @@ function run(){
  return {life,staff,floor,draw,get labels(){return labels},clear(){labels=[]},setNow:v=>now=v,get now(){return now}};
 }
 test('RPG life scene includes named workers, job titles, thought bubbles and CEO room',()=>{
- const o=run();assert.equal(o.life.DESKS.length,10);
+ const o=run();assert.equal(o.life.DESKS.length,30);
  o.draw();
  assert.ok(o.labels.includes('CEO OFFICE'));assert.ok(o.labels.includes('APPROVAL DESK'));
  assert.ok(o.labels.includes('Employee 0'));
  assert.ok(o.labels.some(x=>x.includes('Customer Relations')));
  assert.ok(o.labels.some(l=>/Just checking|Stretching|Ready for|schedule|Standing|break/i.test(l)));
- assert.equal(o.life.activitySnapshot('company1:level1:all').length,10);
+ assert.equal(o.life.activitySnapshot('company1:level1:all').length,15);
  assert.equal(o.life.activityTypes.includes('restroom'),true);
  assert.equal(o.life.activityTypes.includes('lunch'),true);
  assert.equal(o.life.activityTypes.includes('chat'),true);
@@ -42,7 +42,7 @@ test('all placed workers may take varied breaks but at most two are away and no 
  for(let j=0;j<110;j++){
   o.setNow(o.now+7600);o.clear();o.draw();
   const snap=o.life.activitySnapshot('company1:level1:all');
-  assert.equal(snap.length,10);
+  assert.equal(snap.length,15);
   const roaming=snap.filter(x=>!['desk','stand','stretch'].includes(x.kind));
   assert.ok(roaming.length<=2,'At most two visitors are away from desks');
   for(const k of ['coffee','restroom','lunch','ceo'])assert.ok(snap.filter(x=>x.kind===k).length<=1,'No crowd at '+k);
@@ -61,6 +61,18 @@ test('real in-progress assignments keep a worker on-task, no false completed wor
 test('workers stay invisible until placed and room hit-testing can open CEO approvals',()=>{
  const o=run();o.floor.placements=[];o.draw();
  assert.ok(!o.labels.includes('Employee 0'));
- const hit=o.life.hitTest(851,105);
+ const hit=o.life.hitTest(1090,105);
  assert.equal(hit.kind,'approvals');
+});
+
+test('RPG characters use stable varied skin, hair and outfit colors, without changing while they animate',()=>{
+ const o=run(),snap=o.staff.map(e=>o.life.appearance(e));
+ assert.ok(new Set(snap.map(x=>x.skin)).size>=5,'visible staff should have varied skin tones');
+ assert.ok(new Set(snap.map(x=>x.hair)).size>=4,'visible staff should have varied hair colors');
+ assert.ok(new Set(snap.map(x=>x.outfit)).size>=5,'visible staff should wear different colors');
+ const again=o.staff.map(e=>o.life.appearance(e));
+ assert.deepEqual(snap.map(x=>x.skin),again.map(x=>x.skin));
+ assert.deepEqual(snap.map(x=>x.hair),again.map(x=>x.hair));
+ const custom=o.life.appearance({id:'custom',name:'Edited worker',skin:'#abc123',hair:'#000000',outfit:'#ffffff',appearanceLocked:true});
+ assert.equal(custom.skin,'#abc123','explicit owner appearance settings remain untouched');
 });

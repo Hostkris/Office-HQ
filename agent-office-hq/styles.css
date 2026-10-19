@@ -161,3 +161,23 @@
 @media(max-width:860px){.pf-dept-list{grid-template-columns:repeat(3,minmax(0,1fr))}.pf-route-dept-picks{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:540px){.pf-dept-list{grid-template-columns:repeat(2,minmax(0,1fr))}.pf-route-dept-picks{grid-template-columns:1fr}.pf-dept-routing{padding:13px}.pf-dept-tile{padding:10px;min-height:75px}.pf-dept-tile small{font-size:10px}.pf-route-item{padding:10px}.pf-route-chain{gap:3px}}
 @media(max-width:345px){.pf-dept-list{grid-template-columns:1fr}}
+
+/* Expanded Live RPG office: 30 desks, comfortable pan/zoom and command floor roster. */
+.pf-stage,.pf-command-stage{overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.pf-stage{max-height:780px}
+.pf-stage canvas{display:block;width:1240px!important;max-width:none!important;min-width:1240px!important;height:auto!important;touch-action:pan-x pan-y}
+.pf-command-stage{max-height:480px}
+.pf-command-stage canvas{display:block;width:1050px!important;min-width:1050px!important;max-width:none!important;height:auto!important;touch-action:pan-x pan-y}
+.pf-command-controls{border-top:1px solid #405e65;margin-top:10px;padding:12px 1px;display:flex;flex-wrap:wrap;gap:9px;align-items:end}
+.pf-command-controls label{display:grid;gap:5px;min-width:125px;max-width:240px;flex:1 1 142px;color:#bbd9d2;font-size:11px}
+.pf-command-controls select{background:#142d3a;color:#e4efe8;border:1px solid #53747b;border-radius:8px;min-height:43px;padding:7px;width:100%;font-size:14px}
+.pf-command-controls .btn{min-height:43px;flex:0 0 auto}
+.pf-command-controls>p{flex:1 0 100%;line-height:1.6}
+@media(max-width:760px){
+ .pf-stage{max-height:630px}
+ .pf-stage canvas{width:1050px!important;min-width:1050px!important}
+ .pf-command-stage{max-height:440px}
+ .pf-command-stage canvas{width:900px!important;min-width:900px!important}
+ .pf-command-controls label{min-width:0;flex-basis:135px}
+ .pf-command-controls .btn{flex:1 1 125px}
+}

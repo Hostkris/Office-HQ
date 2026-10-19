@@ -1,20 +1,34 @@
 /* Office HQ: presentation-only living RPG scene.
-   Runs only for manually placed workers (at most 10 per floor).
+   Runs for owner-selected staff: 30 desks per level and 15 initial staff.
    Idle activities are simulated, never represented as real website or task execution. */
 (()=>{
 'use strict';
-const W=960,H=584;
-const DESKS=Array.from({length:10},(_,seat)=>({seat,x:112+(seat%5)*175,y:222+Math.floor(seat/5)*182}));
+const W=1240,H=1135;
+const DESKS=Array.from({length:30},(_,seat)=>({seat,x:130+(seat%6)*200,y:289+Math.floor(seat/6)*182}));
 const ZONES={
- coffee:{x:467,y:130,label:'Getting coffee',bubble:'☕ Coffee break'},
- restroom:{x:700,y:133,label:'Restroom break',bubble:'🚻 Quick restroom break'},
- lunch:{x:242,y:130,label:'Taking lunch',bubble:'🍱 Lunch break'},
- ceo:{x:858,y:144,label:'At CEO office',bubble:'📋 Asking CEO for approval'}
+ coffee:{x:660,y:141,label:'Getting coffee',bubble:'☕ Coffee break'},
+ restroom:{x:921,y:140,label:'Restroom break',bubble:'🚻 Quick restroom break'},
+ lunch:{x:247,y:140,label:'Taking lunch',bubble:'🍱 Lunch break'},
+ ceo:{x:1139,y:150,label:'At CEO office',bubble:'📋 Asking CEO for approval'}
 };
 const idleText=['Just checking in','Stretching a little','Ready for the next assignment','Reviewing my schedule','Standing by','Taking a short break'];
 const stateByFloor=new Map();let lastHit=[];
 const nowMs=()=>Date.now();
 function rand(){return Math.random();}
+const SKINS=['#f5d6bd','#eac2a3','#dcad89','#d49a73','#bf825e','#ad704f','#985e42','#7f513d','#6d4534','#57382b','#3c281f'];
+const HAIRS=['#1d1b22','#28252b','#3f302d','#5c4034','#744d37','#885c3e','#ab815e','#d1b58d','#5c4d53','#a39aa0'];
+const OUTFITS=['#5ca8a3','#6393bb','#8b6cad','#c07860','#699368','#c5a75c','#c67f99','#3f8887','#5071a5','#9f7a59','#b06a7c','#658b7f'];
+function appearance(e){
+ // Stable employee-ID-derived variation; never change colors while animated.
+ // Explicit owner-customized appearances (when present) take priority.
+ const id=String(e.id||e.name||'worker');
+ let h=2166136261;
+ for(let i=0;i<id.length;i++){h^=id.charCodeAt(i);h=Math.imul(h,16777619);}
+ h>>>=0;
+ if(e.appearanceLocked||e.customAppearance)return e;
+ return {...e,skin:SKINS[h%SKINS.length],hair:HAIRS[Math.floor(h/11)%HAIRS.length],
+  outfit:OUTFITS[Math.floor(h/113)%OUTFITS.length]};
+}
 function role(B,e){return e?(B.roleFor(e)?.title||'Office worker'):'Office worker';}
 const show=(p,project)=>!project||p.projectId===project.id;
 function rect(c,x,y,w,h,color){c.fillStyle=color;c.fillRect(x,y,w,h);}
@@ -25,31 +39,31 @@ function backdrop(c,name,projectName,department,head){
  const isCEO=!department||department==='Leadership';
  rect(c,0,0,W,H,'#243c4a');
  for(let y=0;y<H;y+=27)for(let x=0;x<W;x+=27)rect(c,x+1,y+1,25,25,((x/27+y/27)|0)%2?'#2a4553':'#2d4b59');
- rounded(c,8,7,944,50,9,'#102c3b');
+ rounded(c,8,7,W-16,50,9,'#102c3b');
  text(c,'OFFICE HQ  /  LIVE RPG  /  '+shorten(name,28),24,28,15,'#e7f4ef','left',800);
- text(c,'10 DESKS MAX · SELECTED STAFF ONLY',24,46,10,'#91cfbe','left',700);
- text(c,shorten(projectName,22),930,34,12,'#e7c87d','right',750);
+ text(c,'30 DESKS MAX · 15 WELCOME STAFF · YOUR CHOICE',24,46,10,'#91cfbe','left',700);
+ text(c,shorten(projectName,22),W-30,34,12,'#e7c87d','right',750);
  // Four unmistakable shared office rooms with non-overlapping arrival points.
- rounded(c,20,70,313,96,9,'#193541');
- text(c,'BREAK ROOM  ·  LUNCH',175,89,12,'#f6dfab','center',750);
+ rounded(c,20,70,372,110,9,'#193541');
+ text(c,'BREAK ROOM  ·  LUNCH',207,89,12,'#f6dfab','center',750);
  rounded(c,99,108,43,22,4,'#957458');rounded(c,153,106,57,23,4,'#957458');
  rect(c,130,130,61,8,'#e2b97f');
- rounded(c,355,70,250,96,9,'#193541');
- text(c,'COFFEE STATION',481,89,12,'#f6dfab','center',750);
- rounded(c,427,102,67,39,4,'#446573');rect(c,438,110,22,18,'#171f28');rect(c,445,130,16,6,'#c3a97e');
- rounded(c,640,70,128,96,8,'#193541');
- text(c,'RESTROOM',704,90,11,'#f6dfab','center',740);
- rect(c,664,111,77,43,'#3c6070');text(c,'🚻',702,138,22,'#d2e8e6');
- rounded(c,786,70,166,111,9,'#244957');
- text(c,isCEO?'CEO OFFICE':'DEPARTMENT HEAD',869,91,isCEO?13:11,'#f4dc96','center',850);
- rect(c,808,119,108,28,'#936f52');rect(c,821,122,60,17,'#192e3c');
- text(c,isCEO?'APPROVAL DESK':'HEAD OFFICE',868,161,10,'#c3d9d3');
+ rounded(c,425,70,300,110,9,'#193541');
+ text(c,'COFFEE STATION',568,89,12,'#f6dfab','center',750);
+ rounded(c,563,102,67,39,4,'#446573');rect(c,574,110,22,18,'#171f28');rect(c,581,130,16,6,'#c3a97e');
+ rounded(c,752,70,179,110,8,'#193541');
+ text(c,'RESTROOM',838,90,11,'#f6dfab','center',740);
+ rect(c,797,111,77,43,'#3c6070');text(c,'🚻',836,138,22,'#d2e8e6');
+ rounded(c,963,70,263,111,9,'#244957');
+ text(c,isCEO?'CEO OFFICE':'DEPARTMENT HEAD',1093,91,isCEO?13:11,'#f4dc96','center',850);
+ rect(c,1035,119,108,28,'#936f52');rect(c,1048,122,60,17,'#192e3c');
+ text(c,isCEO?'APPROVAL DESK':'HEAD OFFICE',1094,161,10,'#c3d9d3');
  if(isCEO){
-  sprite(c,{skin:'#b78360',hair:'#24313c',outfit:'#c8ae72'},855,119,0,'work');
-  text(c,'CEO',885,113,10,'#f1dfb0','center',850);
- }else text(c,shorten(head?.name||'Head office',23),869,174,10,'#f1dfb0');
- rounded(c,12,565,936,12,4,'#193440');
- // Ten reserved workstations remain present even when no agents are placed.
+  sprite(c,{skin:'#b78360',hair:'#24313c',outfit:'#c8ae72'},1082,119,0,'work');
+  text(c,'CEO',1112,113,10,'#f1dfb0','center',850);
+ }else text(c,shorten(head?.name||'Head office',23),1095,174,10,'#f1dfb0');
+ rounded(c,12,H-19,W-24,12,4,'#193440');
+ // Thirty reserved workstations remain present even if only fifteen avatars are placed.
  for(const d of DESKS){
   rounded(c,d.x-75,d.y-44,145,109,8,'#294d5a');
   rect(c,d.x-57,d.y-35,114,38,'#987858');
@@ -60,7 +74,7 @@ function backdrop(c,name,projectName,department,head){
   rounded(c,d.x-26,d.y+30,56,20,6,'#436572');
   text(c,'DESK '+(d.seat+1),d.x,d.y+61,11,'#c1d7d8');
  }
- lastHit.push({kind:isCEO?'approvals':'department-head',id:head?.id||null,x:786,y:70,w:166,h:111});
+ lastHit.push({kind:isCEO?'approvals':'department-head',id:head?.id||null,x:963,y:70,w:263,h:111});
 }
 function sprite(c,e,x,y,t,mode){
  const actor=String(e.id||e.name||e.outfit||'worker');
@@ -80,16 +94,30 @@ function sprite(c,e,x,y,t,mode){
  rect(c,-8,-38,3,3,'#18313c');rect(c,5,-38,3,3,'#18313c');
  c.restore();
 }
+function wrap(s,max=25){
+ const words=String(s||'').split(/\s+/).filter(Boolean),lines=[];
+ let row='';
+ for(let w of words){
+  while(w.length>max){if(row){lines.push(row);row='';}lines.push(w.slice(0,max));w=w.slice(max);}
+  if(!w)continue;
+  if(row.length+w.length+1>max){if(row)lines.push(row);row=w;}
+  else row=row?row+' '+w:w;
+ }
+ if(row)lines.push(row);
+ return lines.length?lines:[''];
+}
 function speech(c,p,one,two){
- // Thought + name/title remain continuously visible for all placed workers.
- const x=Math.max(73,Math.min(887,p.x));
- const y=Math.max(197,Math.min(500,p.y));
- const bubble=shorten(one,24);
- rounded(c,x-78,y-110,156,27,7,'#122d3dea');
- text(c,bubble,x,y-92,11,'#f1dc9d');
- rounded(c,x-76,y+30,152,31,5,'#122d3df0');
- text(c,shorten(p.name,23),x,y+42,11,'#e8f5ec','center',820);
- text(c,shorten(two,25),x,y+54,10,'#b3d8d2','center',560);
+ // Names, unabridged job titles and thoughts remain present even when idle.
+ const x=Math.max(88,Math.min(W-88,p.x));
+ const y=Math.max(197,Math.min(H-110,p.y));
+ const thinking=wrap(one,25).slice(0,2);
+ const bh=thinking.length*13+10;
+ rounded(c,x-84,y-73-bh,168,bh,6,'#122d3dea');
+ thinking.forEach((line,i)=>text(c,line,x,y-73-bh+17+i*13,10,'#f1dc9d'));
+ const names=wrap(p.name,25),titles=wrap(two,25);
+ const rows=[...names.map(v=>[v,11,'#e8f5ec',820]),...titles.map(v=>[v,10,'#b3d8d2',560])];
+ rounded(c,x-84,y+30,168,rows.length*13+11,5,'#122d3df0');
+ rows.forEach(([v,sz,color,weight],i)=>text(c,v,x,y+43+i*13,sz,color,'center',weight));
 }
 function deskFor(seat){return DESKS[seat]||DESKS[0];}
 function point(p){const d=deskFor(p.seat);return {x:d.x+24,y:d.y+23};}
@@ -184,7 +212,8 @@ function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}
  tasksByIdForApproval=new Map(tasks.filter(t=>t.companyId===cid).map(t=>[t.id,t.ownerId]));
  planNext(group,mapped,tasks,approvals,nowMs());
  for(const p of mapped){
-  const e=staff.find(x=>x.id===p.employeeId);if(!e)continue;
+  const original=staff.find(x=>x.id===p.employeeId);if(!original)continue;
+  const e=appearance(original);
   const a=group.activities.get(p.employeeId)||{kind:'desk',since:nowMs(),duration:12000};
   const work=busyTask(tasks,p);
   const approval=approvals.some(q=>q.status==='pending'&&q.companyId===cid&&q.taskId&&tasksByIdForApproval.get(q.taskId)===p.employeeId);
@@ -198,7 +227,7 @@ function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}
   lastHit.push({kind:'worker',id:p.employeeId,x:pos.x-40,y:pos.y-65,w:82,h:102});
  }
  if(floor.janitor){
-  const x=877+Math.sin(now/950)*18,y=530;
+  const x=80+Math.sin(now/950)*18,y=1087;
   const jan={skin:'#bd8964',hair:'#2d3540',outfit:'#c9ac70'};
   sprite(c,jan,x,y,now,'walk');
   text(c,'JANITOR',x,y+37,10,'#eed08d');
@@ -223,14 +252,14 @@ function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}
  const packet=window.OfficeHQDepartments?.visitFor(floor.id);
  if(packet){
   const elapsed=Date.now()-packet.at;
-  const source=mapped.find(p=>p.employeeId===packet.employeeId),from=source?point(source):{x:800,y:540};
+  const source=mapped.find(p=>p.employeeId===packet.employeeId),from=source?point(source):{x:1060,y:1060};
   const progress=ease(Math.min(1,Math.max(0,elapsed/2800)));
-  const x=lerp(from.x,853,progress),y=lerp(from.y,144,progress);
+  const x=lerp(from.x,1093,progress),y=lerp(from.y,144,progress);
   rect(c,x-8,y-11,16,21,'#f0e1c2');text(c,'📁 Department file',x,y-23,10,'#f8e7b5');
  }
- if(!mapped.length){text(c,'Empty project floor — assign a worker to appear.',480,543,16,'#d9ece4','center',750);}
- lastHit.push({kind:floor.department==='Leadership'||!floor.department?'approvals':'department-head',id:head?.id||null,x:786,y:70,w:166,h:111});
+ if(!mapped.length){text(c,'Empty project floor — choose a worker from your roster.',W/2,H-42,16,'#d9ece4','center',750);}
+ lastHit.push({kind:floor.department==='Leadership'||!floor.department?'approvals':'department-head',id:head?.id||null,x:963,y:70,w:263,h:111});
 }
 function hitTest(x,y){return [...lastHit].reverse().find(h=>x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h)||null;}
-window.OfficeHQOfficeLife={draw,hitTest,DESKS,activityTypes:['desk','stretch','stand','coffee','restroom','lunch','chat','ceo'],activitySnapshot:key=>[...(stateByFloor.get(key)?.activities||new Map())].map(([id,a])=>({id,kind:a.kind,since:a.since}))};
+window.OfficeHQOfficeLife={draw,hitTest,DESKS,appearance,activityTypes:['desk','stretch','stand','coffee','restroom','lunch','chat','ceo'],activitySnapshot:key=>[...(stateByFloor.get(key)?.activities||new Map())].map(([id,a])=>({id,kind:a.kind,since:a.since}))};
 })();

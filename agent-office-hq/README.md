@@ -10,7 +10,7 @@
 
 ### Living RPG office actions and cleanable CEO threads
 
-The 10 assigned RPG workers per level are drawn slightly larger and always display a **thought bubble, full employee name (shortened on canvas as needed) and job title**. Assigned-but-idle employees animate with different staggered activities: desk movement, standing/stretching, coffee, restroom, lunch and colleague conversations. Up to two workers are away from desks at once; coffee/restroom/lunch stations cannot be crowded by multiple workers simultaneously. **Only manually placed or newly task-assigned workers** take part in this simulation, not the entire 168-person directory at once. Every eligible employee can be placed on a floor over time; the 10-seat cap remains.
+The up-to-30 assigned RPG workers per level are drawn slightly larger and always display a **thought bubble, full employee name (shortened on canvas as needed) and job title**. Assigned-but-idle employees animate with different staggered activities: desk movement, standing/stretching, coffee, restroom, lunch and colleague conversations. Up to two workers are away from desks at once; coffee/restroom/lunch stations cannot be crowded by multiple workers simultaneously. **Only manually placed or newly task-assigned workers** take part in this simulation, not the entire 168-person directory at once. Every eligible employee can be placed on a floor over time; the 30-seat cap remains.
 
 Each Live RPG floor includes a distinct **CEO office and approval desk**, with an always-visible CEO avatar outside the 10-seat business-worker count. A worker with a matching pending CEO request can walk to that office; tapping the CEO office or its Approvals button takes the owner to real internal approval controls. Thought bubbles that say coffee, chatting or reviewing are **simulation states**, not evidence of external task execution. Handoffs still require existing internal task completion, and connected AI thought updates take precedence while working.
 
@@ -18,13 +18,17 @@ Every **task card and task detail modal** now has a visible × delete action wit
 
 Each in-app **phone message and full company thread message** has a separate × delete action; the full thread also has a **Clear messages** action. Pending CEO request cards retain Approve/Deny buttons directly in both phone and full thread. Removing a pending request through its × requires confirmation and records a **rejection**, not a silent approval or disappearance. This does not send texts or enact real payments.
 
-## Live RPG Office floors — 10 workers and optional janitor
+## Live RPG Office floors — 30 workers and optional janitor
 
-The **Live RPG Office** now starts with **10 empty desk-and-computer stations on Level 1**. Employees remain in their existing roles/roster but none appear in the RPG unless the owner places them or assigns new work. Owners can select individual active workers, choose a desk, create named project teams, view one project's staff at a time, and add more levels when needed. **Exactly 10 business workers maximum per level.** Each level has an independent optional janitor, which is visual support and does not use a worker seat.
+The **Live RPG Office** provides **30 desk-and-computer stations on every department level**, with a one-time starting group of 15 active employee avatars drawn from the existing company roster. The same selected workers move in the Command Center preview. Removing one from the RPG does not delete their employee record or real assignments, and that worker will not be automatically re-added. Owners can select individual active workers, choose a desk, create named project teams, view one project's staff at a time, and add more levels when needed. **Exactly 30 business workers maximum per level.** Each level has an independent optional janitor, which is visual support and does not use a worker seat.
 
 Creating a standard new Office HQ task (or sequential workflow stage) automatically puts its single assigned specialist at an available desk if that worker was not already placed; historical/sample tasks do not auto-populate the floor. If all levels are full, the task remains assigned but the user is prompted to add another level. A person cannot occupy multiple desks. Completing a genuinely linked and approved internal task animates a brief paper-folder handoff to the next selected worker on that same level, without simulating or implying external website actions. Characters are small and do not wander randomly.
 
 **iPhone/iPad Safari:** All visible floor/project/seat/janitor controls are touch-friendly and the Command Center office preview follows the same placements. See [Live RPG Floor requirements and tests](docs/LIVE_RPG_FLOOR_SPEC.md). No other management, account connection or automation feature was redesigned.
+
+
+### Shared RPG roster and stable appearance
+The **Command Center** now includes a department-level selector and compact **Add to RPG / Remove from RPG** controls. These edit exactly the same placements as the **Live RPG Office** desk list. The 15 starting avatars are placed **only once per company** and never respawn automatically after removal. A new task can still add its assigned specialist when an appropriate department has a free desk. Up to 30 visible staff avatars per department level; the separate janitor and department head station do not consume a desk. Workers have consistent ID-derived skin tones, hair colors and outfit colors, keeping the same look whenever the scene refreshes. Names, complete role titles and changing idle/work thought bubbles remain above the visible workers. Larger 6-by-5 desk maps can be panned in Safari on iPhone or iPad.
 
 ## iPhone and iPad Safari workstations (now included)
 

@@ -37,10 +37,68 @@ function rect(c,x,y,w,h,color){c.fillStyle=sceneColor(color);c.fillRect(x,y,w,h)
 function rounded(c,x,y,w,h,r,color){c.fillStyle=sceneColor(color);c.beginPath();c.roundRect(x,y,w,h,r);c.fill();}
 function text(c,v,x,y,size=11,color='#f0f4ea',align='center',weight=650){c.fillStyle=sceneColor(color);c.font=weight+' '+size+'px system-ui';c.textAlign=align;c.fillText(String(v),x,y);c.textAlign='left';}
 function shorten(s,n){s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s;}
-function backdrop(c,name,projectName,department,head){
+
+let activeScenery='classic';
+function landscapeShape(c,color,points){
+ c.beginPath();c.moveTo(points[0][0],points[0][1]);
+ for(const point of points.slice(1))c.lineTo(point[0],point[1]);
+ c.closePath();c.fillStyle=color;c.fill();
+}
+function drawScenery(c,choice){
+ const day=window.OfficeHQTheme?.get?.()==='day';
+ const palettes={
+  western:day?
+   {top:'#f9d7a3',bottom:'#eeb076',ground:'#d9b181',far:'#bd7552',near:'#9c5540',sun:'#ffe5a5',flora:'#3b6b4e',grid:'#a87859'}:
+   {top:'#514462',bottom:'#b36e64',ground:'#936b59',far:'#875d68',near:'#784a50',sun:'#f6cb92',flora:'#314f48',grid:'#72564f'},
+  'mountain-sunrise':day?
+   {top:'#bddbe9',bottom:'#ffe0ad',ground:'#b9d7c8',far:'#8daebe',near:'#638d97',sun:'#fff1b3',flora:'#44796b',grid:'#93b7aa'}:
+   {top:'#556d93',bottom:'#db9c98',ground:'#7e9c9b',far:'#667e9b',near:'#4b6b7e',sun:'#ffdda8',flora:'#395f61',grid:'#678b8b'},
+  'mountain-sunset':day?
+   {top:'#6e7c9c',bottom:'#f4ad7b',ground:'#b4a1a3',far:'#937c93',near:'#655b78',sun:'#ffdb9e',flora:'#506778',grid:'#937d91'}:
+   {top:'#493f66',bottom:'#ba7286',ground:'#79677c',far:'#705e84',near:'#504e6e',sun:'#f6bb8d',flora:'#415369',grid:'#695970'}
+ };
+ const p=palettes[choice];if(!p)return;
+ c.save();
+ const sky=c.createLinearGradient(0,58,0,550);
+ sky.addColorStop(0,p.top);sky.addColorStop(1,p.bottom);
+ c.fillStyle=sky;c.fillRect(0,58,W,H-58);
+ c.fillStyle=p.sun;c.beginPath();c.arc(choice==='western'?1004:950,choice==='mountain-sunset'?263:231,choice==='western'?53:64,0,Math.PI*2);c.fill();
+ if(choice==='western'){
+  // Desert mesas, a low horizon and distinctive cactus silhouettes.
+  landscapeShape(c,p.far,[[0,335],[85,320],[128,246],[205,246],[250,327],[416,345],[473,276],[560,276],[622,349],[826,340],[897,267],[1026,267],[1097,333],[W,316],[W,550],[0,550]]);
+  landscapeShape(c,p.near,[[0,440],[180,392],[300,444],[510,405],[706,441],[914,391],[W,454],[W,590],[0,590]]);
+  c.fillStyle=p.flora;
+  for(const [x,y,s] of [[72,430,1],[1165,447,.95],[570,472,.65]]){
+   c.fillRect(x,y-92*s,14*s,96*s);
+   c.fillRect(x-20*s,y-64*s,22*s,12*s);c.fillRect(x-20*s,y-83*s,12*s,23*s);
+   c.fillRect(x+11*s,y-54*s,23*s,10*s);c.fillRect(x+24*s,y-75*s,10*s,25*s);
+  }
+ }else{
+  // Layered distant ridgelines with a wide valley between mountain peaks.
+  landscapeShape(c,p.far,[[0,415],[132,230],[239,346],[358,192],[515,389],[680,221],[802,385],[967,180],[1118,347],[W,250],[W,590],[0,590]]);
+  landscapeShape(c,p.near,[[0,520],[174,342],[284,474],[445,310],[615,499],[797,305],[948,473],[1060,337],[W,497],[W,610],[0,610]]);
+  c.fillStyle=p.flora;
+  for(const [x,y,s] of [[34,510,1],[1187,530,1.2],[642,544,.6]]){
+   landscapeShape(c,p.flora,[[x,y-83*s],[x-33*s,y],[x+33*s,y]]);
+   c.fillRect(x-4*s,y-12*s,8*s,25*s);
+  }
+ }
+ c.fillStyle=p.ground;c.fillRect(0,548,W,H-548);
+ // A subdued patterned office floor stays behind all desks and staff.
+ c.globalAlpha=.3;c.fillStyle=p.grid;
+ for(let x=0;x<W;x+=200)c.fillRect(x,549,2,H-549);
+ for(let y=550;y<H;y+=181)c.fillRect(0,y,W,2);
+ c.globalAlpha=1;
+ c.fillStyle=day?'#294252':'#fff0d4';c.font='700 13px system-ui';c.textAlign='center';
+ c.fillText(choice==='western'?'WESTERN DESERT · OPEN-SKY OFFICE':choice==='mountain-sunrise'?'MOUNTAIN SUNRISE · SCENIC OFFICE':'MOUNTAIN SUNSET · SCENIC OFFICE',W/2,211);
+ c.textAlign='left';c.restore();
+}
+
+function backdrop(c,name,projectName,department,head,scenery){
  const isCEO=!department||department==='Leadership';
  rect(c,0,0,W,H,'#243c4a');
  for(let y=0;y<H;y+=27)for(let x=0;x<W;x+=27)rect(c,x+1,y+1,25,25,((x/27+y/27)|0)%2?'#2a4553':'#2d4b59');
+  if(scenery!=='classic')drawScenery(c,scenery);
  rounded(c,8,7,W-16,50,9,'#102c3b');
  text(c,'OFFICE HQ  /  LIVE RPG  /  '+shorten(name,28),24,28,15,'#e7f4ef','left',800);
  text(c,'30 DESKS MAX · 15 WELCOME STAFF · YOUR CHOICE',24,46,10,'#91cfbe','left',700);
@@ -92,6 +150,10 @@ function sprite(c,e,x,y,t,mode){
  rect(c,12,-19,5,18+(mode==='stretch'?8:0),e.skin||'#bd8c69');
  rounded(c,-14,-51,28,29,4,e.skin||'#bd8c69');
  rect(c,-15,-52,30,9,e.hair||'#28323b');
+  if(activeScenery==='western'){
+   // Every avatar wears a Western hat when the owner selects the desert scene.
+   rect(c,-25,-57,50,5,'#765038');rect(c,-14,-71,28,16,'#a8734c');rect(c,-14,-58,28,3,'#e2b576');
+  }
  rect(c,-10,-45,5,6,e.hair||'#28323b');
  rect(c,-8,-38,3,3,'#18313c');rect(c,5,-38,3,3,'#18313c');
  c.restore();
@@ -207,7 +269,8 @@ function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}
  if(!floor)return;
  lastHit=[];
  const head=window.OfficeHQDepartments?.headFor(cid,floor.department);
- backdrop(c,floor.name,project?.name||'All placed workers',floor.department,head);
+ activeScenery=window.OfficeHQFloor?.sceneFor?.(cid)||'classic';
+  backdrop(c,floor.name,project?.name||'All placed workers',floor.department,head,activeScenery);
  const visible=(floor.placements||[]).filter(p=>show(p,project)&&staff.some(e=>e.id===p.employeeId));
  const mapped=visible.map(p=>({...p,companyId:cid}));
  const group=ensurePlan(cid+':'+floor.id+':'+(project?.id||'all'),mapped);

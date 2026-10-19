@@ -14,6 +14,7 @@ const SITES=[
  ['instagram','Instagram','https://www.instagram.com/',['Marketing']],
  ['facebook','Facebook','https://www.facebook.com/',['Marketing']],
  ['tiktok','TikTok','https://www.tiktok.com/',['Marketing']],
+ ['suno','Suno music production','https://suno.com/',['Marketing']],
  ['x','X (Twitter)','https://x.com/',['Marketing']],
  ['shopify','Shopify','https://admin.shopify.com/',['Sales','Product','Marketing','Customer','Operations','Finance']],
  ['etsy','Etsy','https://www.etsy.com/',['Sales','Product','Marketing','Customer','Operations']],

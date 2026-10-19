@@ -261,5 +261,5 @@ function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}
  lastHit.push({kind:floor.department==='Leadership'||!floor.department?'approvals':'department-head',id:head?.id||null,x:963,y:70,w:263,h:111});
 }
 function hitTest(x,y){return [...lastHit].reverse().find(h=>x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h)||null;}
-window.OfficeHQOfficeLife={draw,hitTest,DESKS,activityTypes:['desk','stretch','stand','coffee','restroom','lunch','chat','ceo'],activitySnapshot:key=>[...(stateByFloor.get(key)?.activities||new Map())].map(([id,a])=>({id,kind:a.kind,since:a.since}))};
+window.OfficeHQOfficeLife={draw,hitTest,DESKS,appearance,activityTypes:['desk','stretch','stand','coffee','restroom','lunch','chat','ceo'],activitySnapshot:key=>[...(stateByFloor.get(key)?.activities||new Map())].map(([id,a])=>({id,kind:a.kind,since:a.since}))};
 })();

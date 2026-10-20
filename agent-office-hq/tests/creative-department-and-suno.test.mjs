@@ -21,7 +21,8 @@ test('Six new creative-production employees have exclusive Marketing scopes and 
   assert.ok(role[5].length>3);
   assert.match(library,new RegExp('^'+role[0]+'\\|', 'm'));
  }
- assert.match(app,/ensureCreativeProductionWorkers\(\)/);
+ assert.match(app,/function ensureCreativeProductionWorkers\(\)/);
+  assert.doesNotMatch(app,/ensureCreativeProductionWorkers\(\);/);
  const rows=library.split('const rows=`')[1].split('`.trim().split(')[0].trim().split('\n');
  assert.equal(rows.length,174);
 });
@@ -78,10 +79,10 @@ test('Department pickers exclude all unrelated roles in both RPG Office and Comm
  assert.match(eligible,/Marketing worker/);
  assert.doesNotMatch(eligible,/Finance worker|Operations worker/);
  s.events.submit[0]({target:{id:'pfPlaceForm'},preventDefault(){}});
- assert.equal(s.engine.data().floors[1].placements.length,0,'manual forged finance placement must be rejected');
+ assert.equal(s.engine.data().floors.find(f=>f.department==='Marketing').placements.length,0,'manual forged finance placement must be rejected');
  s.elements.pfEmployee.value='marketing';
  s.events.submit[0]({target:{id:'pfPlaceForm'},preventDefault(){}});
- assert.equal(s.engine.data().floors[1].placements.length,1);
+ assert.equal(s.engine.data().floors.find(f=>f.department==='Marketing').placements.length,1);
  assert.equal(s.state.tasks.length,1,'role restrictions never delete business assignments');
 });
 

@@ -4,11 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#101d29" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Office HQ" />
   <meta name="description" content="Agent Office HQ: a multi-business AI workforce command center and animated virtual office." />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="icon.svg" />
   <script src="theme.js"></script>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="officehq-voice.css" />
   <title>Agent Office HQ — Workforce Control Center</title>
 </head>
 <body>
@@ -52,7 +55,7 @@
             <a href="./cloud.html" class="nav-btn nav-link" aria-label="Open Secure Cloud HQ backed by Supabase"><span class="nav-icon">☁</span> Secure Cloud HQ <span class="nav-pill">CLOUD</span></a>
             <button data-view="connections" class="nav-btn"><span class="nav-icon">◈</span> Social &amp; business accounts</button>
             <button data-view="workstations" class="nav-btn"><span class="nav-icon">▣</span> AI workstations <span class="nav-pill">LOCAL</span></button>
-            <button data-view="openmaus" class="nav-btn"><span class="nav-icon">✧</span> 40 Agent Runtimes <span class="nav-pill">LOCAL</span></button>
+            <button data-view="openmaus" class="nav-btn"><span class="nav-icon">✧</span> Native AI agent engine <span class="nav-pill">LOCAL</span></button>
             <button data-view="research" class="nav-btn"><span class="nav-icon">⌕</span> Agent Reach &amp; Public APIs</button>
             <button data-view="settings" class="nav-btn"><span class="nav-icon">⚙</span> Settings &amp; backups</button>
           </div>
@@ -89,9 +92,9 @@
   <script src="integration-center.js" defer></script>
   <script src="desktop-workstations.js" defer></script>
   <script src="openmausbot.js" defer></script>
-  <script src="workforce-runtime.js" defer></script>
   <script src="research-center.js" defer></script>
   <script src="ios-workstations.js" defer></script>
+  <script src="officehq-voice.js" defer></script>
   <script src="refresh.js" defer></script>
 </body>
 </html>

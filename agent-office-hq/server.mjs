@@ -5,6 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createDesktopService} from './desktop/runner.mjs';
 import {createOpenMausBridge} from './native-engine/bridge.mjs';
+import {createOfficeBrain} from './native-engine/office-brain.mjs';
 import {createMacSyncService} from './device-sync/mac-worker.mjs';
 import {createWorkforceEngine} from './openmaus/workforce-engine.mjs';
 import {createReachBridge} from './research/reach-bridge.mjs';
@@ -16,6 +17,7 @@ const apiKey=process.env.OPENAI_API_KEY;
 const model=process.env.OPENAI_MODEL||'gpt-4.1-mini';
 const desktop=createDesktopService({root,apiKey,model});
 const openmaus=createOpenMausBridge({root});
+const brain=createOfficeBrain();
 const deviceSync=createMacSyncService({bridge:openmaus});
 const workforceEngine=createWorkforceEngine({root});
 const research=createReachBridge({root});
@@ -78,6 +80,16 @@ const server=http.createServer(async(req,res)=>{try{
   if(url.pathname==='/api/agent-workforce/action'&&req.method==='POST'){
     try{const payload=await parseJson(req);send(res,200,JSON.stringify(await workforceEngine.action(payload)));}
     catch(err){send(res,Number(err.status)||400,JSON.stringify({error:String(err.message||'Workforce action failed.').slice(0,260)}));}
+    return;
+  }
+  if(url.pathname==='/api/office-brain/status'&&req.method==='GET'){
+    try{send(res,200,JSON.stringify(await brain.status()));}
+    catch(err){send(res,503,JSON.stringify({connected:false,error:String(err.message||'Mac conversation engine unavailable.').slice(0,180)}));}
+    return;
+  }
+  if(url.pathname==='/api/office-brain/reply'&&req.method==='POST'){
+    try{const payload=await parseJson(req);send(res,200,JSON.stringify(await brain.reply(payload)));}
+    catch(err){send(res,Number(err.status)||400,JSON.stringify({error:String(err.message||'AI conversation failed.').slice(0,250)}));}
     return;
   }
   if(url.pathname==='/api/openmaus/status'&&req.method==='GET'){

@@ -27,6 +27,13 @@ test('local server serves dashboard, reports draft-only status, and refuses AI c
     assert.match(await res.text(),/Agent Office HQ/);
     assert.equal((await fetch(base+'/ios-workstations.js')).status,200);
     assert.equal((await fetch(base+'/desktop-workstations.js')).status,200);
+    assert.equal((await fetch(base+'/openmausbot.js')).status,200);
+    const mausStatus=await fetch(base+'/api/openmaus/status');
+    assert.equal(mausStatus.status,200);
+    assert.equal(typeof (await mausStatus.json()).connected,'boolean');
+    const denied=await fetch(base+'/api/openmaus/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'bind',companyId:'companyA',employeeId:'emp1',department:'Marketing',botName:'Office HQ Marketing Research',ownerConfirmed:false})});
+    assert.equal(denied.status,403);
+    assert.equal((await fetch(base+'/openmaus/bridge.mjs')).status,404);
     const status=await (await fetch(base+'/api/status')).json();
     assert.equal(status.aiReady,false);
     assert.equal(status.externalActions,false);

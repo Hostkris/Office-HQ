@@ -1,5 +1,7 @@
 # Office HQ OpenMausBot local starter
 
+**New:** For all forty roles and all twelve departments, use the [unified forty-role runtime guide](WORKFORCE_RUNTIME.md) and the 40 Agent Runtimes page. The legacy Marketing Research starter below remains documented for older projects.
+
 This first release connects the existing Office HQ local Node server to a running OpenMausBot using the upstream openmausbot CLI. It does not copy the OpenMausBot application, nor turn static GitHub Pages into a runtime.
 
 ## Before starting

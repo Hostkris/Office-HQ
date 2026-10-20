@@ -1,0 +1,48 @@
+/* Office HQ iPhone signal bars — honest Mac/iOS sync state. */
+.hq-device-sync-wrap{
+ display:grid;gap:6px;padding:13px 14px;border:1px solid var(--border);
+ border-radius:14px;background:var(--panel);color:var(--text);
+ margin-bottom:12px;min-width:0;
+}
+.hq-device-sync-summary{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hq-device-sync{
+ display:inline-flex;align-items:center;gap:9px;min-height:43px;
+ border:1px solid var(--border);border-radius:11px;
+ background:var(--panel2);color:var(--text);
+ padding:7px 12px;font-size:13px;font-weight:800;cursor:pointer;
+}
+.hq-sync-caption{color:var(--muted);font-size:12px}
+.hq-sync-detail{margin:4px 0;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.hq-sync-bars{display:flex;align-items:flex-end;gap:3px;height:19px;position:relative;padding:0 3px}
+.hq-sync-bars>i{display:block;width:5px;border-radius:2px 2px 1px 1px;
+ background:#8795a2;opacity:.36}
+.hq-sync-bars>i:nth-child(1){height:5px}
+.hq-sync-bars>i:nth-child(2){height:9px}
+.hq-sync-bars>i:nth-child(3){height:13px}
+.hq-sync-bars>i:nth-child(4){height:18px}
+.hq-sync-x{position:absolute;right:-9px;top:-11px;color:#b43b42;
+ font-size:23px;font-weight:900;line-height:1;text-shadow:0 0 2px var(--panel)}
+.hq-device-sync.is-connected .hq-sync-bars>i{background:#159167;opacity:1}
+.hq-device-sync.is-connected .hq-sync-x{display:none}
+.hq-device-sync.is-connected{border-color:#73bfa2;color:#22634c;background:#ecf9f2}
+.hq-device-sync.is-disconnected{border-color:#c6cfd3}
+.hq-sync-settings{margin-top:5px;border-top:1px solid var(--border);padding-top:9px}
+.hq-sync-settings summary{font-size:12px;color:var(--turq);font-weight:750;cursor:pointer;line-height:1.6}
+.hq-sync-settings form{display:grid;gap:10px;margin:10px 0}
+.hq-sync-settings label{display:grid;gap:5px;font-size:12px;font-weight:650}
+.hq-sync-settings input,.hq-sync-settings select{display:block;width:100%;min-height:41px;
+ border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);
+ padding:9px;box-sizing:border-box;font-size:16px}
+.hq-sync-settings :is(button,.btn){min-height:43px;white-space:normal}
+.hq-sync-settings [data-hq-sync-paired],.hq-sync-settings [data-hq-sync-mac-control]{margin:12px 0}
+[data-theme="day"] .hq-device-sync-wrap{background:#fff;color:#1c3542;border-color:#bed4db}
+[data-theme="day"] .hq-device-sync.is-disconnected{background:#f5f7f8;color:#3a5966;border-color:#bcced4}
+[data-theme="day"] .hq-sync-x{color:#a32b37;text-shadow:0 0 2px #fff}
+[data-theme="day"] .hq-sync-detail{color:#41636f}
+[data-theme="day"] .hq-sync-settings :is(input,select){background:#fff;color:#1d3946;border-color:#b7ced7}
+@media(max-width:560px){
+ .hq-device-sync-wrap{padding:11px 12px}
+ .hq-device-sync-summary{gap:7px}
+ .hq-sync-caption{font-size:11px}
+ .hq-sync-settings button{width:100%}
+}

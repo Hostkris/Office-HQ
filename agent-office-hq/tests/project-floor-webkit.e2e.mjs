@@ -201,7 +201,7 @@ test('iPhone Command Center shares same 15 employees and supports safe remove, a
   assert.equal(first.ids.length,15);
   assert.equal(await page.locator('#officeCanvas').getAttribute('width'),'1240');
   assert.equal(await page.locator('#officeCanvas').getAttribute('height'),'1135');
-  await page.locator('.hq-command-manage > summary').click();
+  await page.locator('.hq-command-manage-toggle').click();
   const before=await page.locator('#pfCommandRemove option').count();
   assert.equal(before,16);
   await page.locator('#pfCommandRemove').selectOption({index:1});
@@ -209,7 +209,7 @@ test('iPhone Command Center shares same 15 employees and supports safe remove, a
   const removed=await page.evaluate(()=>{const s=window.OfficeHQBridge.getState(),d=s.enterprise.projectFloor,cid=s.companies[0].id;return d.floors.find(f=>f.id===d.selected[cid].floorId).placements.length;});
   assert.equal(removed,14);
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.locator('.hq-command-manage > summary').click();
+  await page.locator('.hq-command-manage-toggle').click();
   await page.locator('#pfCommandWorker').waitFor();
   assert.equal(await page.locator('#pfCommandRemove option').count(),15,'worker must not auto-respawn after reload');
   await page.locator('#pfCommandWorker').selectOption({index:1});
@@ -386,8 +386,8 @@ test('iPhone premium UI: sidebar can close without navigating and entire animate
   assert.equal(dims.inner,1240,'canvas internal drawing resolution remains intact');
   assert.ok(dims.canvas<=dims.viewport+1,JSON.stringify(dims));
   assert.ok(dims.contents<=dims.viewport+1,JSON.stringify(dims));
-  assert.equal(await page.locator('.hq-command-manage').evaluate(el=>el.open),false,'technical controls start collapsed');
-  await page.locator('.hq-command-manage > summary').click();
+  assert.equal(await page.locator('.hq-command-manage-toggle').getAttribute('aria-expanded'),'false','technical controls start collapsed');
+  await page.locator('.hq-command-manage-toggle').click();
   assert.equal(await page.locator('#pfCommandFloor').isVisible(),true);
   assert.deepEqual(errors,[]);
  }finally{await context.close();}

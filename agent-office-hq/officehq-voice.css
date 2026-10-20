@@ -2,7 +2,7 @@
 .hq-message-inbox{max-width:960px;margin-inline:auto}
 .hq-voice-composer{display:grid;gap:10px;padding:15px;margin:0 0 20px;border:1px solid rgba(94,200,184,.4);background:rgba(86,181,172,.065);border-radius:16px}
 .hq-voice-composer h3,.hq-voice-composer p{margin:0}
-.hq-voice-composer textarea,.hq-voice-composer select{width:100%;max-width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid var(--border,#44666a);background:var(--card,#172832);color:var(--text,#e6f1f3);font:inherit;font-size:16px}
+.hq-voice-composer textarea,.hq-voice-composer select{width:100%;max-width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid var(--border,#44666a);background:var(--panel,#172735);color:var(--text,#e6f1f3);font:inherit;font-size:16px}
 .hq-voice-composer textarea{min-height:90px;resize:vertical}
 .hq-voice-actions{display:flex;flex-wrap:wrap;gap:8px}
 .hq-voice-actions button{min-height:48px;flex:1 1 190px;touch-action:manipulation}
@@ -11,3 +11,64 @@
 .hq-voice-option input{width:18px;height:18px;flex:none}
 .office-phone-body .hq-voice-composer{padding:12px;margin-bottom:12px}
 @media(max-width:700px){.hq-voice-actions{flex-direction:column}.hq-voice-actions button{width:100%;flex:auto}.hq-voice-composer{padding:12px}.ops-message{overflow-wrap:anywhere}#opsDrawerContent{padding-bottom:env(safe-area-inset-bottom)}}
+
+
+/* Light mode company inbox: explicit contrast for message boxes AND the voice composer.
+   This intentionally overrides legacy dark-only nested selectors in styles.css.
+   Keep text selectable/readable on narrow iPhone, iPad and Mac layouts. */
+[data-theme="day"] .hq-message-inbox,
+[data-theme="day"] .ops-thread-list,
+[data-theme="day"] .office-phone-body{color:#1c3542}
+[data-theme="day"] .hq-voice-composer{
+  background:#f1f9fa;
+  color:#1b3541;
+  border-color:#a7c6ce;
+}
+[data-theme="day"] .hq-voice-composer :is(h3,p,label,.hq-voice-option){color:#244352}
+[data-theme="day"] .hq-voice-composer [data-voice-status]{color:#355a67}
+[data-theme="day"] .hq-voice-composer [data-voice-status][data-warning="1"]{color:#855c08}
+[data-theme="day"] .hq-voice-composer :is(textarea,select){
+  background:#fff;
+  color:#193744;
+  border-color:#9fbec9;
+  -webkit-text-fill-color:#193744;
+  color-scheme:light;
+}
+[data-theme="day"] .hq-voice-composer textarea::placeholder{color:#55717c;-webkit-text-fill-color:#55717c}
+[data-theme="day"] .hq-voice-composer select option{background:#fff;color:#193744}
+[data-theme="day"] .ops-thread-list .ops-message{
+  background:#fff;
+  border-color:#bad0d8;
+  color:#1b3542;
+}
+[data-theme="day"] .ops-thread-list .ops-message.ops-own{
+  background:#e1f2ed;
+  border-color:#91c5b9;
+  color:#193f42;
+}
+[data-theme="day"] .ops-thread-list .ops-message :is(.ops-msg-top,.ops-msg-top strong,h3,p,summary,details){
+  color:#193744;
+}
+[data-theme="day"] .ops-thread-list .ops-message :is(.ops-msg-top span,.ops-msg-top time,small,.tiny,.muted){
+  color:#4b6672;
+}
+[data-theme="day"] .ops-thread-list .ops-message pre{
+  background:#f0f6f8;
+  border:1px solid #cbdee3;
+  border-radius:8px;
+  padding:12px;
+  color:#193744;
+}
+[data-theme="day"] .ops-thread-list>h3,
+[data-theme="day"] .ops-thread-heading h3{color:#244352}
+[data-theme="day"] .ops-message .ops-msg-top .ops-dismiss{
+  background:#fff0e9;
+  color:#804125;
+  border-color:#d6b7a7;
+}
+[data-theme="day"] .ops-thread-list .ops-message :is(.btn-primary,.btn-danger){
+  -webkit-text-fill-color:currentColor;
+}
+/* Dark mode stays deliberately legible as well. */
+[data-theme="night"] .hq-voice-composer :is(textarea,select){background:#172735;color:#f0f6f5;-webkit-text-fill-color:#f0f6f5}
+[data-theme="night"] .ops-thread-list .ops-message :is(.ops-msg-top,.ops-msg-top strong,h3,p,summary){color:#f0f6f5}

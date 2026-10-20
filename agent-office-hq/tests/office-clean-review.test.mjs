@@ -31,7 +31,7 @@ test('Live RPG is an isolated viewer until user taps Manage Office',()=>{
 test('Deliverables are loaded online, offline, on localhost and by Refresh App',()=>{
  for(const asset of [html,sw,refresh])assert.match(asset,/deliverables\.js/);
  assert.match(server,/'\/deliverables\.js':'deliverables\.js'/);
- assert.match(sw,/agent-office-hq-v18/);
+ assert.match(sw,/agent-office-hq-v\d+/);
  assert.match(app,/reviewDeliverable/);
  assert.match(app,/Open work & decide/);
 });

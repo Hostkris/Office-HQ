@@ -1,5 +1,44 @@
 # Agent Office HQ 🏢
 
+
+## Independent Ollama Mac engine and paired iOS assignments (October 2026)
+
+Office HQ's Mac server now imports the independent draft-only agent engine at
+[native-engine/bridge.mjs](native-engine/bridge.mjs), not the legacy OpenMausBot CLI bridge.
+The [Mac installer](../mac/install.command) downloads the official Ollama Mac app and
+\`llama3.2:3b\` model into private local storage when needed, without requiring
+a third-party bot subscription. It asks before installing, requires macOS 14+,
+and may download several gigabytes. Source code updates back up existing files.
+
+The [Company Text Thread](https://hostkris.github.io/Office-HQ/#/thread) on Mac
+and iPhone/iPad now displays an iPhone-style four-bar indicator. **Green bars mean
+both devices have recently completed authenticated queue exchanges**, and gray
+bars with a red X mean they have not. A working internet connection alone does
+not light the bars. A Mac server running alone does not imply an iPhone is connected.
+
+### One-time pairing
+1. Use the iOS **Send to Mac** button to AirDrop
+   [Office HQ for Mac](https://raw.githubusercontent.com/Hostkris/Office-HQ/main/downloads/Office_HQ_for_Mac.zip).
+2. Download and open the ZIP on the Mac; launch Office HQ.app and approve Ollama/model setup.
+3. Open the Mac's local Company Text Thread and expand **Connect devices / manage sync**.
+   Sign in with your Secure Cloud HQ account.
+4. On Mac, explicitly **Authorize selected employee for synced drafts** for each
+   specialist allowed to receive mobile work, then tap **Enable local Ollama drafts**.
+5. On iPhone/iPad, open the same Company Text Thread, sign into the **same**
+   Secure Cloud HQ account, and send voice/typed assignments. A matching
+   company *name* and specialist role must exist on the Mac. Work is queued
+   in owner-RLS Supabase until the Mac can safely handle it.
+
+The local Mac service polls the secure cloud queue while running, even if the Mac
+browser closes. The iOS Safari app uploads new work and downloads results when
+open/foregrounded; a closed iOS web app cannot keep a permanent background connection.
+Mac AI generates drafts, not external actions. Work returned for CEO review requires
+approval. The sync only transfers assignments/results; it does not automatically
+merge whole companies, employee records, account logins, or credentials.
+The cloud owner session must be established on each device; the installer
+cannot secretly pair the devices.
+
+
 **GitHub-ready, mobile-friendly, RPG-style multi-business workforce dashboard.** Create separate companies, assign narrowly scoped AI-employee roles, organize projects, review approvals and track manually entered budgets/inventory while animated characters move around a virtual office.
 
 **Lean workforce:** Every new company starts with **40 essential positions across 12 departments**, not 168. The RPG has a separate **HQ Collaboration** room that initially displays 15 distinct specialists from the real roster, plus 12 department-restricted offices; the collaboration room does not give employees wider task permissions. When an older browser workspace opens, additional profiles are archived inside the JSON backup, their unfinished jobs are held for CEO reassignment, and the twelve department heads and reporting lines are updated. Original instructions, original job scopes, and previous completed work remain available. No archived bot receives new permission or a task automatically. Back up from **Settings → Export JSON** before making substantial changes. Browser-local workspaces on other devices require the update on each device; secure Cloud HQ is separate.

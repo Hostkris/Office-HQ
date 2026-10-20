@@ -30,7 +30,7 @@ function ensure(cid,d){
  if(!cid||!d)return [];
  if(!Array.isArray(d.departmentRoutes))d.departmentRoutes=[];
  const floors=d.floors.filter(f=>f.companyId===cid);
- const legacy=floors.filter(f=>!deptIds.has(f.department));
+ const legacy=floors.filter(f=>f.kind!=='hq_hub'&&!deptIds.has(f.department));
  let cursor=0,changed=false;
  for(const dept of DEPTS){
   if(floors.some(f=>f.department===dept.id))continue;

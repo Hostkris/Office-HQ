@@ -1,0 +1,380 @@
+{
+  "version": 1,
+  "policy": "essential-40-v2",
+  "departments": [
+    "Leadership",
+    "PMO",
+    "Finance",
+    "Operations",
+    "Marketing",
+    "Sales",
+    "Customer",
+    "People",
+    "Technology",
+    "Legal",
+    "Audit",
+    "Product"
+  ],
+  "roles": [
+    {
+      "key": "ceo",
+      "title": "Chief Executive Officer",
+      "department": "Leadership",
+      "level": "Executive",
+      "reportsTo": null,
+      "scope": "corporate_strategy",
+      "description": "Defines corporate priorities, approves final strategic direction, and remains accountable for the enterprise."
+    },
+    {
+      "key": "chief_staff",
+      "title": "Chief of Staff",
+      "department": "Leadership",
+      "level": "Executive",
+      "reportsTo": "ceo",
+      "scope": "executive_coordination",
+      "description": "Coordinates executive priorities and cross-company escalation."
+    },
+    {
+      "key": "exec_assistant",
+      "title": "Executive Assistant",
+      "department": "Leadership",
+      "level": "Associate",
+      "reportsTo": "chief_staff",
+      "scope": "executive_scheduling",
+      "description": "Manages the CEO schedule and, after authorized Gmail connection, reviews unread email, flags urgent and important messages, prepares daily inbox briefings, tracks deadlines and follow-ups, drafts suggested replies for CEO approval, and escalates urgent matters to the Chief of Staff. Never sends, forwards, deletes, unsubscribes or opens suspicious links or attachments without express CEO authorization."
+    },
+    {
+      "key": "project_mgr",
+      "title": "Project Manager",
+      "department": "PMO",
+      "level": "Manager",
+      "reportsTo": "chief_staff",
+      "scope": "briefing",
+      "description": "Routes work, creates executive briefs, checks status and escalates. Never executes specialist work."
+    },
+    {
+      "key": "cfo",
+      "title": "Chief Financial Officer",
+      "department": "Finance",
+      "level": "Executive",
+      "reportsTo": "ceo",
+      "scope": "finance_strategy",
+      "description": "Owns financial policy, financial risk and capital planning."
+    },
+    {
+      "key": "budget_officer",
+      "title": "Budget Officer",
+      "department": "Finance",
+      "level": "Specialist",
+      "reportsTo": "cfo",
+      "scope": "budget_tracking",
+      "description": "Tracks departmental budgets and variance reports."
+    },
+    {
+      "key": "bookkeeper",
+      "title": "Bookkeeper",
+      "department": "Finance",
+      "level": "Specialist",
+      "reportsTo": "cfo",
+      "scope": "bookkeeping",
+      "description": "Prepares ledger entries and transaction reconciliation drafts."
+    },
+    {
+      "key": "ap",
+      "title": "Accounts Payable Officer",
+      "department": "Finance",
+      "level": "Specialist",
+      "reportsTo": "cfo",
+      "scope": "accounts_payable",
+      "description": "Reviews vendor bills and prepares payment requests, never issues payments."
+    },
+    {
+      "key": "ar",
+      "title": "Accounts Receivable Officer",
+      "department": "Finance",
+      "level": "Specialist",
+      "reportsTo": "cfo",
+      "scope": "accounts_receivable",
+      "description": "Tracks invoices and outstanding customer balances."
+    },
+    {
+      "key": "coo",
+      "title": "Chief Operating Officer",
+      "department": "Operations",
+      "level": "Executive",
+      "reportsTo": "ceo",
+      "scope": "operations_strategy",
+      "description": "Sets operational direction and monitors enterprise delivery."
+    },
+    {
+      "key": "inventory_mgr",
+      "title": "Inventory Manager",
+      "department": "Operations",
+      "level": "Manager",
+      "reportsTo": "coo",
+      "scope": "inventory_planning",
+      "description": "Sets reorder levels and tracks inventory health."
+    },
+    {
+      "key": "purchaser",
+      "title": "Purchasing Officer",
+      "department": "Operations",
+      "level": "Specialist",
+      "reportsTo": "coo",
+      "scope": "purchasing",
+      "description": "Compares suppliers and drafts purchase requests; never spends automatically."
+    },
+    {
+      "key": "fulfillment",
+      "title": "Fulfillment Coordinator",
+      "department": "Operations",
+      "level": "Specialist",
+      "reportsTo": "coo",
+      "scope": "fulfillment",
+      "description": "Prepares orders for shipment and flags fulfillment exceptions."
+    },
+    {
+      "key": "qa_manager",
+      "title": "Quality Assurance Manager",
+      "department": "Operations",
+      "level": "Manager",
+      "reportsTo": "coo",
+      "scope": "quality_assurance",
+      "description": "Reviews product quality and corrective-action records."
+    },
+    {
+      "key": "cmo",
+      "title": "Chief Marketing Officer",
+      "department": "Marketing",
+      "level": "Executive",
+      "reportsTo": "ceo",
+      "scope": "marketing_strategy",
+      "description": "Sets brand and growth direction."
+    },
+    {
+      "key": "content",
+      "title": "Content Creator",
+      "department": "Marketing",
+      "level": "Specialist",
+      "reportsTo": "cmo",
+      "scope": "content_creation",
+      "description": "Drafts copy, scripts and product content for review."
+    },
+    {
+      "key": "social",
+      "title": "Social Media Manager",
+      "department": "Marketing",
+      "level": "Specialist",
+      "reportsTo": "cmo",
+      "scope": "social_scheduling",
+      "description": "Drafts post schedules and organic channel plans."
+    },
+    {
+      "key": "ads",
+      "title": "Paid Advertising Specialist",
+      "department": "Marketing",
+      "level": "Specialist",
+      "reportsTo": "cmo",
+      "scope": "paid_advertising",
+      "description": "Drafts ad plans; never launches paid ads without sign-off."
+    },
+    {
+      "key": "research",
+      "title": "Market Research Analyst",
+      "department": "Marketing",
+      "level": "Specialist",
+      "reportsTo": "cmo",
+      "scope": "market_research",
+      "description": "Reviews market signals and competitive research."
+    },
+    {
+      "key": "graphic_designer",
+      "title": "Graphic Design Specialist",
+      "department": "Marketing",
+      "level": "Specialist",
+      "reportsTo": "cmo",
+      "scope": "graphic_design",
+      "description": "Creates image briefs and coordinates approved image-generation work."
+    },
+    {
+      "key": "cro",
+      "title": "Chief Revenue Officer",
+      "department": "Sales",
+      "level": "Executive",
+      "reportsTo": "ceo",
+      "scope": "revenue_strategy",
+      "description": "Sets the sales and revenue strategy."
+    },
+    {
+      "key": "sales_rep",
+      "title": "Sales Development Representative",
+      "department": "Sales",
+      "level": "Associate",
+      "reportsTo": "cro",
+      "scope": "sales_outreach",
+      "description": "Drafts lead follow-up and prospect communications."
+    },
+    {
+      "key": "account_mgr",
+      "title": "Account Manager",
+      "department": "Sales",
+      "level": "Manager",
+      "reportsTo": "cro",
+      "scope": "account_management",
+      "description": "Coordinates existing accounts and renewal work."
+    },
+    {
+      "key": "support_lead",
+      "title": "Customer Support Manager",
+      "department": "Customer",
+      "level": "Manager",
+      "reportsTo": "cro",
+      "scope": "support_management",
+      "description": "Routes service cases and evaluates support quality."
+    },
+    {
+      "key": "support",
+      "title": "Customer Support Specialist",
+      "department": "Customer",
+      "level": "Associate",
+      "reportsTo": "support_lead",
+      "scope": "customer_service",
+      "description": "Drafts customer replies and organizes support tickets."
+    },
+    {
+      "key": "hr_dir",
+      "title": "Human Resources Director",
+      "department": "People",
+      "level": "Director",
+      "reportsTo": "ceo",
+      "scope": "hr_management",
+      "description": "Owns talent processes and employee policies."
+    },
+    {
+      "key": "people_ops",
+      "title": "People Operations Coordinator",
+      "department": "People",
+      "level": "Associate",
+      "reportsTo": "hr_dir",
+      "scope": "employee_records",
+      "description": "Organizes employee records and onboarding checklists."
+    },
+    {
+      "key": "cto",
+      "title": "Chief Technology Officer",
+      "department": "Technology",
+      "level": "Executive",
+      "reportsTo": "ceo",
+      "scope": "technology_strategy",
+      "description": "Sets technology architecture and systems direction."
+    },
+    {
+      "key": "integrator",
+      "title": "Systems Integration Engineer",
+      "department": "Technology",
+      "level": "Specialist",
+      "reportsTo": "cto",
+      "scope": "integrations",
+      "description": "Designs approved app connections and workflow handoffs."
+    },
+    {
+      "key": "security",
+      "title": "Security Analyst",
+      "department": "Technology",
+      "level": "Specialist",
+      "reportsTo": "cto",
+      "scope": "security_review",
+      "description": "Reviews access controls, suspicious activity and system risks."
+    },
+    {
+      "key": "backend_engineer",
+      "title": "Backend Engineer",
+      "department": "Technology",
+      "level": "Specialist",
+      "reportsTo": "cto",
+      "scope": "backend_development",
+      "description": "Implements API designs and background service changes."
+    },
+    {
+      "key": "frontend_engineer",
+      "title": "Frontend Engineer",
+      "department": "Technology",
+      "level": "Specialist",
+      "reportsTo": "cto",
+      "scope": "frontend_development",
+      "description": "Develops user-facing software and accessibility features."
+    },
+    {
+      "key": "counsel",
+      "title": "General Counsel",
+      "department": "Legal",
+      "level": "Executive",
+      "reportsTo": "ceo",
+      "scope": "legal_strategy",
+      "description": "Advises on legal governance; output requires human/legal review."
+    },
+    {
+      "key": "privacy",
+      "title": "Privacy & Compliance Officer",
+      "department": "Legal",
+      "level": "Manager",
+      "reportsTo": "counsel",
+      "scope": "compliance_review",
+      "description": "Reviews privacy, labeling and regulatory requirements; human verification required."
+    },
+    {
+      "key": "contracts",
+      "title": "Contracts Specialist",
+      "department": "Legal",
+      "level": "Specialist",
+      "reportsTo": "counsel",
+      "scope": "contract_review",
+      "description": "Prepares contract summaries and routing recommendations."
+    },
+    {
+      "key": "chief_audit",
+      "title": "Chief Audit Officer",
+      "department": "Audit",
+      "level": "Executive",
+      "reportsTo": "ceo",
+      "scope": "audit_strategy",
+      "description": "Defines independent audit priorities without editing audited records."
+    },
+    {
+      "key": "internal_auditor",
+      "title": "Internal Auditor",
+      "department": "Audit",
+      "level": "Specialist",
+      "reportsTo": "chief_audit",
+      "scope": "independent_audit",
+      "description": "Performs read-only operational and financial control reviews."
+    },
+    {
+      "key": "product_mgr",
+      "title": "Product Director",
+      "department": "Product",
+      "level": "Director",
+      "reportsTo": "coo",
+      "scope": "product_planning",
+      "description": "Prioritizes product releases and product roadmaps."
+    },
+    {
+      "key": "catalog",
+      "title": "Product Catalog Specialist",
+      "department": "Product",
+      "level": "Associate",
+      "reportsTo": "product_mgr",
+      "scope": "product_catalog",
+      "description": "Maintains product descriptions and catalog update proposals."
+    },
+    {
+      "key": "pricing_analyst",
+      "title": "Pricing Analyst",
+      "department": "Product",
+      "level": "Specialist",
+      "reportsTo": "product_mgr",
+      "scope": "pricing_analysis",
+      "description": "Recommends product pricing based on authorized market data."
+    }
+  ]
+}

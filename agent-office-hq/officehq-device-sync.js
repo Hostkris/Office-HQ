@@ -162,7 +162,7 @@ async function uploadPending(){
  if(!B||!auth)return;
  const s=getBody();
  const now=Date.now();
- const pending=s.tasks.filter(t=>t.delegatedBy==='owner'&&!t.cloudSynced&&
+ const pending=s.tasks.filter(t=>(t.voiceAssigned===true||t.cloudSyncRequested===true)&&t.delegatedBy==='owner'&&!t.cloudSynced&&
   Number.isFinite(Date.parse(t.createdAt))&&now-Date.parse(t.createdAt)<14*86400000);
  for(const task of pending.slice(0,15))await uploadTask(task);
 }

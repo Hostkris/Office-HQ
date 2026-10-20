@@ -319,3 +319,21 @@ test('iPhone: Public APIs catalog is searchable and an eligible employee can req
    assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
+
+test('iPhone: all forty separate runtime specialties are shown and private execution remains disabled',async()=>{
+ const {page,context,errors}=await pageFor('iPhone 13');
+ try{
+   await page.evaluate(()=>window.OfficeHQBridge.setView('openmaus'));
+   await page.locator('h1').filter({hasText:'AI Workforce Runtime'}).waitFor({timeout:15000});
+   await page.waitForFunction(()=>document.querySelectorAll('[data-workforce="select-role"]').length===40,{timeout:15000});
+   assert.equal(await page.locator('[data-workforce="select-role"]').count(),40);
+   assert.match(await page.locator('.page-head').innerText(),/40 SEPARATE AGENT IDENTITIES/);
+   assert.match(await page.locator('section.card').first().innerText(),/0 \/ 40/);
+   assert.equal(await page.locator('[data-workforce="provision"]').isDisabled(),true);
+   await page.locator('#runtimeDept').selectOption('Finance');
+   assert.equal(await page.locator('[data-workforce="select-role"]').count(),5);
+   assert.equal(await page.locator('[data-workforce="bind"]').isDisabled(),true);
+   assert.equal(await page.locator('[data-workforce="send"]').isDisabled(),true);
+   assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});

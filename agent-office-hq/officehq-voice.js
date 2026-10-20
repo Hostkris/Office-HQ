@@ -96,6 +96,7 @@ async function assign(box,automatic=false){
    delegatedBy:'owner',status:'queued',priority:'Medium',due:'',createdAt:now,updatedAt:now,
    output:'',requiresApproval:true,approvalId:null,voiceAssigned:true};
   B.getState().tasks.unshift(task);B.save();window.OfficeHQFloor?.onTaskAssigned(task);
+  window.OfficeHQDeviceSync?.pushTask?.(task);
   B.addActivity('You · CEO','Assigned '+title+' to '+worker.name+' in company inbox','task',cid);
   post('Office HQ Dispatcher','Assignment received and routed to '+worker.name+' ('+r.title+'): '+title,cid);
   const input=part(box,'[data-voice-text]');if(input)input.value='';

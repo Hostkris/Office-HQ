@@ -13,15 +13,15 @@ If the installed OpenMausBot desktop requires pairing for write/send commands, g
 6. Start Office HQ locally with npm install followed by npm run dev; open http://127.0.0.1:3000/#/openmaus.
 7. Choose one Marketing employee, confirm its scope, and explicitly bind that employee to the Marketing Research bot.
 8. Job sending is disabled by default. After checking the actual OpenMausBot restrictions, restart Office HQ with OFFICE_HQ_OPENMAUS_SEND=1 set in your own environment. Review and confirm each draft-only assignment before sending.
-9. See the OpenMausBot conversation for actual activity, permission requests and output. Office HQ only reports submission, not task completion.
+9. Use **Check real progress** to read the specific task thread from OpenMausBot. Office HQ will show working, approval-needed, failed, or completed states from the actual backend. Finished draft output is copied into that employee's existing assignment as **CEO review required**, never approved automatically. You can also Stop that specific conversation after explicit confirmation. The actual OpenMausBot conversation remains the authoritative place to answer approval cards.
 
 ## Boundaries
 
 - This is local-only. Never deploy server.mjs publicly or expose the unauthenticated localhost HTTP port through a tunnel or port forwarding.
 - Safari on iPhone/iPad can view the public static integration setup screen but cannot remotely control the local connector until a separate authenticated HTTPS pairing backend is built.
-- Only one Marketing Research bot is provisioned in this starter and may be mapped to exactly one employee at a time. The existing 12 departments, other employees and assignments are preserved.
+- Only one Marketing Research bot is provisioned in this starter and may be mapped to exactly one employee at a time. Each assignment gets its own OpenMausBot thread, and tracking survives local server restarts. The existing 12 departments, other employees and assignments are preserved.
 - OpenMausBot's default bot permission is Full Access. The team template explicitly requests Ask; inspect the real setting and the capabilities in the OpenMausBot application before enabling send.
 - OpenMausBot app connections may be shared between bots. Prompt instructions are not an authorization boundary. Tool selection with allow native:* limits external MCP tools on supported engines, but native tools remain available under their engine's permission framework.
-- Revoking the mapping does not interrupt running jobs or revoke an OAuth token: do that separately inside OpenMausBot.
+- Revoking the mapping does not interrupt running jobs or revoke an OAuth token. Use the Stop control for tracked threads (or OpenMausBot directly) and revoke OAuth apps separately inside OpenMausBot.
 - Local binding metadata only is stored in the git-ignored .office-hq-private directory. No API keys, cookies or session tokens are written by this bridge.
 - Source reference: https://github.com/milind-soni/OpenMausBot/blob/main/docs/headless-cli.md. The bridge itself is independently authored and does not copy OpenMausBot code. Respect its core Apache 2.0 and separate enterprise licensing.

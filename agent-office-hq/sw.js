@@ -1,7 +1,37 @@
-const CACHE='agent-office-hq-v29-day-palette-audit';const FILES=['./','./index.html','./cloud.html','./cloud.js','./assignment-library.js','./workforce-lean.js','./app.js','./office-features.js','./officehq-voice.js','./officehq-voice.css','./project-floor.js','./office-life.js','./department-offices.js','./deliverables.js','./integration-center.js','./desktop-workstations.js','./openmausbot.js','./workforce-runtime.js','./research-center.js','./ios-workstations.js','./refresh.js','./theme.js','./styles.css','./icon.svg','./manifest.webmanifest'];
-self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',event=>{const u=new URL(event.request.url);const allowed=new Set(FILES.map(p=>new URL(p,self.registration.scope).pathname));if(event.request.method!=='GET'||u.origin!==self.location.origin||!allowed.has(u.pathname))return;event.respondWith(fetch(event.request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(c=>c.put(event.request,copy))}return response}).catch(()=>caches.match(event.request)))});
-
-// Allow the user-initiated Refresh App action to activate a waiting update.
-self.addEventListener('message',event=>{if(event.data?.type==='ACTIVATE_NOW')self.skipWaiting()});
+/* Office HQ PWA offline cache — versioned for iPhone/iPad and desktop.
+ * Online requests always prefer published files rather than older cached HTML.
+ * A URL's refresh query is ignored in the offline cache key, never in its network request.
+ */
+const CACHE='agent-office-hq-v30-reliable-refresh';
+const PREFIX='agent-office-hq-v';
+const FILES=['./','./index.html','./cloud.html','./cloud.js','./assignment-library.js','./workforce-lean.js','./app.js','./office-features.js','./officehq-voice.js','./officehq-voice.css','./project-floor.js','./office-life.js','./department-offices.js','./deliverables.js','./integration-center.js','./desktop-workstations.js','./openmausbot.js','./workforce-runtime.js','./research-center.js','./ios-workstations.js','./refresh.js','./theme.js','./styles.css','./icon.svg','./manifest.webmanifest'];
+const allowed=new Set(FILES.map(p=>new URL(p,self.registration.scope).pathname));
+self.addEventListener('install',event=>event.waitUntil(
+ caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())
+));
+self.addEventListener('activate',event=>event.waitUntil(
+ caches.keys().then(keys=>Promise.all(
+  keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k))
+ )).then(()=>self.clients.claim())
+));
+self.addEventListener('fetch',event=>{
+ const request=event.request,uri=new URL(request.url);
+ if(request.method!=='GET'||uri.origin!==self.location.origin||!allowed.has(uri.pathname))return;
+ // Canonical cache key: a fresh hq_refresh query should not break offline fallback.
+ const key=new Request(uri.origin+uri.pathname);
+ event.respondWith(
+  fetch(request,{cache:'no-store'}).then(response=>{
+   if(response.ok){
+    const copy=response.clone();
+    event.waitUntil(caches.open(CACHE).then(cache=>cache.put(key,copy)).catch(()=>{}));
+   }
+   return response;
+  }).catch(async()=>{
+   const stored=await caches.match(key);
+   return stored||Response.error();
+  })
+ );
+});
+self.addEventListener('message',event=>{
+ if(event.data?.type==='ACTIVATE_NOW')event.waitUntil(self.skipWaiting());
+});

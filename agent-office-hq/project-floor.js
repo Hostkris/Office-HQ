@@ -36,10 +36,17 @@ function setup(cid){
  }
  window.OfficeHQDepartments?.ensure(cid,d);
  floors=d.floors.filter(f=>f.companyId===cid);
+ let hub=floors.find(f=>f.kind==='hq_hub');
+ if(!hub){
+  hub={id:B.uid('floor'),companyId:cid,kind:'hq_hub',name:'HQ Collaboration · All Departments',department:null,
+   placements:[],janitor:false,createdAt:time()};
+  d.floors.push(hub);floors.push(hub);B.save();
+ }
  const chosen=d.selected[cid]||{};
  const existingPlacements=floors.some(f=>(f.placements||[]).length>0);
- // New workspaces begin with an Operations team, where fifteen matching workers exist.
- const initial=floors.find(f=>f.department==='Operations')||floors[0];
+ // The shared HQ supports fifteen real, distinct specialists from different departments.
+ // The twelve separate department offices still restrict their own worker placements.
+ const initial=hub;
  const floor=floors.find(f=>f.id===chosen.floorId)||(existingPlacements?floors[0]:initial);
  d.selected[cid]={floorId:floor.id,projectId:chosen.projectId||'all'};
  // One-time welcome population from real company employees; never refill after

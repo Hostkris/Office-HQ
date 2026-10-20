@@ -1,7 +1,7 @@
 // Local OpenMausBot connector. No credentials or model actions are exposed on GitHub Pages.
 import {spawn} from 'node:child_process';
 import {mkdir, readFile, writeFile, rename} from 'node:fs/promises';
-import {join, resolve} from 'node:path';
+import {join, resolve, isAbsolute} from 'node:path';
 import {randomUUID} from 'node:crypto';
 
 export const STARTER_BOT = 'Office HQ Marketing Research';
@@ -10,12 +10,15 @@ const fail = (s, code=400) => Object.assign(new Error(s), {status:code});
 export async function localCli(args,input=''){
   const port=Number(process.env.OFFICE_HQ_OPENMAUS_PORT || 8799);
   if(!Number.isInteger(port)||port<1||port>65535)throw fail('Invalid local OpenMausBot port.');
+  const tokenFile=process.env.OFFICE_HQ_OPENMAUS_TOKEN_FILE;
+  if(tokenFile && (!isAbsolute(tokenFile) || tokenFile.length>400))throw fail('Paired-session token file must use a private absolute path.');
+  const cliArgs=tokenFile?[...args,'--token-file',tokenFile]:args;
   const env={...process.env,OMB_PORT:String(port)};
   delete env.OPENMAUSBOT_URL;
   delete env.ALLOW_INSECURE_HTTP;
   return await new Promise((resolve,reject)=>{
     let output='', settled=false;
-    const child=spawn(process.env.OFFICE_HQ_OPENMAUS_BIN||'openmausbot',args,{shell:false,env,stdio:['pipe','pipe','pipe']});
+    const child=spawn(process.env.OFFICE_HQ_OPENMAUS_BIN||'openmausbot',cliArgs,{shell:false,env,stdio:['pipe','pipe','pipe']});
     const timeout=setTimeout(()=>child.kill('SIGKILL'),18000);
     child.stdout.on('data',b=>{output+=b.toString();if(output.length>300000)child.kill('SIGKILL');});
     child.stderr.on('data',()=>{}); // Never return CLI diagnostic secrets to browsers.

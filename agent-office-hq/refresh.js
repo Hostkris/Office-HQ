@@ -9,11 +9,13 @@
 
  let running=false;
  const say=message=>{status.textContent=message;};
- const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
- const timeLimit=(promise,ms)=>Promise.race([
-   promise,
-   delay(ms).then(()=>{throw Error('Update timed out');})
- ]);
+ const timeLimit=(promise,ms)=>{
+   let timer;
+   return Promise.race([
+     Promise.resolve(promise),
+     new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Update timed out')),ms);})
+   ]).finally(()=>clearTimeout(timer));
+ };
  async function checkPublishedApp(){
    const url=new URL('./index.html',document.baseURI);
    url.searchParams.set('hq_check',String(Date.now()));

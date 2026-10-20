@@ -45,7 +45,7 @@ function render(){
  (providers.length?'':'<p class="muted">No matching entries. Change your search.</p>')+'</div></section>'+
  '<section class="card" style="margin-top:16px"><h2>Request a provider review for one employee</h2>'+
  '<p class="notice">This creates an internal CEO review card only. Approving it does not install anything, request OAuth scopes, share passwords, or activate an external action.</p>'+
- '<form id="researchApiForm"><div class="field"><label>API / MCP provider</label><select id="researchPick">'+CATALOG.map(p=>'<option value="'+E(p.id)+'"'+(p.id===source.id?' selected':'')+'>'+E(p.name)+'</option>').join('')+'</select></div>'+
+ '<form id="researchApiForm"><div class="field"><label>API / MCP provider</label><select id="researchPick" name="provider">'+CATALOG.map(p=>'<option value="'+E(p.id)+'"'+(p.id===source.id?' selected':'')+'>'+E(p.name)+'</option>').join('')+'</select></div>'+
  '<div class="field"><label>Specialist assigned to assess provider</label><select id="researchAssignee" name="employeeId" required>'+agents.map(e=>'<option value="'+E(e.id)+'">'+E(e.name)+' · '+E(B.roleFor(e)?.title)+'</option>').join('')+'</select></div>'+
  '<div class="field"><label>Business purpose</label><textarea name="reason" rows="2" required maxlength="400" placeholder="Example: Evaluate read-only inventory information for a product launch"></textarea></div>'+
  '<button type="submit" class="btn btn-primary"'+(!agents.length?' disabled':'')+'>Send API evaluation to CEO</button></form></section>'+
@@ -107,7 +107,7 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('submit',e=>{
  if(e.target.id==='researchApiForm'){
-  e.preventDefault();const f=new FormData(e.target),p=CATALOG.find(p=>p.id===pick);
+  e.preventDefault();const f=new FormData(e.target),p=CATALOG.find(item=>item.id===String(f.get('provider')||pick));
   const employee=members().find(w=>w.id===f.get('employeeId')&&p?.dept.includes(B.roleFor(w)?.dept));
   const reason=String(f.get('reason')||'').trim();
   if(!employee||reason.length<12){alertUser('Select a valid specialist and explain the evaluation.',true);return;}

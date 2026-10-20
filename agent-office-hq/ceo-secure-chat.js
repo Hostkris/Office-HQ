@@ -224,7 +224,11 @@
     const previews=tasks.filter(t=>t.output&&t.status==='review');
     const approvals=previews.map(t=>B.getState().approvals.find(a=>a.taskId===t.id&&a.status==='pending')).filter(Boolean);
     const allReady=tasks.length>0&&previews.length===tasks.length;
-    const fmt=job.status==='needs-answer'?'Needs your answer':job.status==='held'?'On hold':job.status==='approved'?'Approved':job.status==='denied'?'Denied':allReady?'Draft ready for review':previews.length?'Some drafts ready; waiting for team':tasks.some(t=>t.status==='in_progress')?'Agent working':'Queued — waiting for an authorized agent';
+    const mac=['localhost','127.0.0.1'].includes(location.hostname);
+    const paired=window.OfficeHQDeviceSync?.snapshot?.()?.connected===true;
+    const hasVerifiedWork=tasks.some(t=>t.status==='in_progress'&&(mac?!!t.openMausRunId:!!t.cloudSynced&&paired));
+    const hasUnverifiedWork=tasks.some(t=>t.status==='in_progress')&&!hasVerifiedWork;
+    const fmt=job.status==='needs-answer'?'Needs your answer':job.status==='held'?'On hold':job.status==='approved'?'Approved':job.status==='denied'?'Denied':allReady?'Draft ready for review':previews.length?'Some drafts ready; waiting for team':hasVerifiedWork?'Agent working':hasUnverifiedWork?'Mac connection lost — status unverified':tasks.some(t=>t.status==='blocked')?'Agent needs attention':'Queued — waiting for an authorized agent';
     let html='<section class="ceo-job" data-ceo-job="'+E(job.id)+'"><div class="ceo-job-head"><strong>Assignment</strong><span>'+E(fmt)+'</span></div>';
     html+='<p class="ceo-job-people">'+E(assigned(job))+'</p>';
     if(previews.length){

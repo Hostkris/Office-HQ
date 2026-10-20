@@ -111,6 +111,7 @@
     $('#officePhoneBtn')?.focus();
   }
   function renderThread(){
+    queueMicrotask(()=>window.OfficeHQDeviceSync?.draw());
     return page('Company text thread','Your employee inbox: assignments, questions, completed work and decisions.',
       `<div class="hq-message-inbox">${panel('Messages & requests',threadInner())}</div>`);
   }

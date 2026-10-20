@@ -107,7 +107,7 @@ async function action(type,id){
  await refresh();alertUser(type==='run'?'Real read-only research attempt finished. Review the reported result.':'CEO decision saved. No account access was granted.');
 }
 async function refreshPublic(){
- if(!isLocal||publicBusy)return;
+ if(!isLocal)return;
  try{const res=await fetch('/api/public-capabilities/status?companyId='+encodeURIComponent(getCompany()),{cache:'no-store'});
   if(!res.ok)throw Error('Mac public research backend unavailable.');
   publicStatus=await res.json();

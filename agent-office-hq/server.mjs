@@ -4,7 +4,8 @@ import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createDesktopService} from './desktop/runner.mjs';
-import {createOpenMausBridge} from './openmaus/bridge.mjs';
+import {createOpenMausBridge} from './native-engine/bridge.mjs';
+import {createMacSyncService} from './device-sync/mac-worker.mjs';
 import {createWorkforceEngine} from './openmaus/workforce-engine.mjs';
 import {createReachBridge} from './research/reach-bridge.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
@@ -15,6 +16,7 @@ const apiKey=process.env.OPENAI_API_KEY;
 const model=process.env.OPENAI_MODEL||'gpt-4.1-mini';
 const desktop=createDesktopService({root,apiKey,model});
 const openmaus=createOpenMausBridge({root});
+const deviceSync=createMacSyncService({bridge:openmaus});
 const workforceEngine=createWorkforceEngine({root});
 const research=createReachBridge({root});
 const files={'/':'index.html','/index.html':'index.html','/cloud.html':'cloud.html','/cloud.js':'cloud.js','/app.js':'app.js','/workforce-lean.js':'workforce-lean.js','/assignment-library.js':'assignment-library.js','/office-features.js':'office-features.js','/officehq-voice.js':'officehq-voice.js','/officehq-voice.css':'officehq-voice.css','/mac-share.js':'mac-share.js','/mac.html':'mac.html','/project-floor.js':'project-floor.js','/office-life.js':'office-life.js','/department-offices.js':'department-offices.js','/deliverables.js':'deliverables.js','/integration-center.js':'integration-center.js','/research-center.js':'research-center.js','/ios-workstations.js':'ios-workstations.js','/desktop-workstations.js':'desktop-workstations.js','/openmausbot.js':'openmausbot.js','/workforce-runtime.js':'workforce-runtime.js','/refresh.js':'refresh.js','/theme.js':'theme.js','/styles.css':'styles.css','/icon.svg':'icon.svg','/manifest.webmanifest':'manifest.webmanifest','/sw.js':'sw.js'};
@@ -41,6 +43,23 @@ const server=http.createServer(async(req,res)=>{try{
     catch{send(res,403,JSON.stringify({error:'Desktop actions must originate from the same local website.'}));return;}
   }
   const url=new URL(req.url,'http://localhost');
+  if(url.pathname==='/api/device-sync/status'&&req.method==='GET'){
+    try{send(res,200,JSON.stringify(await deviceSync.status()));}
+    catch{send(res,503,JSON.stringify({connected:false,reason:'Local Mac sync unavailable.'}));}
+    return;
+  }
+  if(url.pathname==='/api/device-sync/action'&&req.method==='POST'){
+    try{
+      const body=await parseJson(req);
+      let result;
+      if(body.action==='pair')result=await deviceSync.pair(body);
+      else if(body.action==='unpair'){if(body.ownerConfirmed!==true)throw Object.assign(Error('CEO confirmation required.'),{status:403});result=await deviceSync.unpair();}
+      else if(body.action==='grant')result=await deviceSync.grant(body);
+      else throw Object.assign(Error('Unsupported device sync action.'),{status:400});
+      send(res,200,JSON.stringify(result));
+    }catch(e){send(res,Number(e.status)||400,JSON.stringify({error:String(e.message||'Device sync failed.').slice(0,220)}));}
+    return;
+  }
   if(url.pathname==='/api/research/status'&&req.method==='GET'){
     try{send(res,200,JSON.stringify(await research.status()));}
     catch{send(res,503,JSON.stringify({error:'Local research diagnostics unavailable.'}));}

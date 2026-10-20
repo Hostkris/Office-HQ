@@ -5,7 +5,8 @@
   const root=document.documentElement;
   let saved=null;
   try{saved=localStorage.getItem(KEY);}catch{}
-  let theme=saved==='day'?'day':'night';
+  // New installations start in readable light mode; explicit night/day choices persist.
+  let theme=saved==='night'?'night':'day';
   root.dataset.theme=theme;
 
   // Shared scene palette for the canvas-based RPG floor (including Command Center).

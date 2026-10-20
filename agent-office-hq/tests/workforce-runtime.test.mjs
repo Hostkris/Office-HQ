@@ -119,7 +119,8 @@ test('browser build includes runtime controller but not private engine, prompts 
  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
  const bundle=await readFile(new URL('../scripts/build.mjs',import.meta.url),'utf8');
  const ui=await readFile(new URL('../workforce-runtime.js',import.meta.url),'utf8');
- assert.match(html,/src="workforce-runtime.js"/);
+ assert.doesNotMatch(html,/src="workforce-runtime.js"/);
+ assert.match(html,/src="officehq-voice.js"/);
  assert.match(bundle,/workforce-runtime.js/);
  assert.doesNotMatch(bundle,/workforce-engine.mjs|essential-workforce.json/);
  assert.match(ui,/data-workforce/);

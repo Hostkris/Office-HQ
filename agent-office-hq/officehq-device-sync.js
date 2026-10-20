@@ -73,6 +73,7 @@ function draw(){
  }
  for(const el of document.querySelectorAll('[data-hq-sync-paired]'))el.hidden=!auth?.access_token;
  for(const el of document.querySelectorAll('[data-hq-sync-mac-control]'))el.hidden=!local()||!auth?.access_token;
+ employeeOptions();
 }
 function markup(compact=false){
  return '<section class="hq-device-sync-wrap'+(compact?' is-compact':'')+'" aria-label="Mac and iOS synchronization status">'+

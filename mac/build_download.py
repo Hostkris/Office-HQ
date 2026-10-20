@@ -32,8 +32,8 @@ def main():
         "CFBundleInfoDictionaryVersion": "6.0",
         "CFBundleName": "Office HQ",
         "CFBundlePackageType": "APPL",
-        "CFBundleShortVersionString": "1.0.0",
-        "CFBundleVersion": "1",
+        "CFBundleShortVersionString": "1.0.1",
+        "CFBundleVersion": "2",
         "LSMinimumSystemVersion": "14.0",
         "NSHighResolutionCapable": True,
         "LSUIElement": False,
@@ -55,7 +55,7 @@ APP="$(cd "$(dirname "$0")/.." && pwd)"
    privately installs Node.js when necessary, and starts the local
    Office HQ website at http://127.0.0.1:3000/#/thread.
 
-Existing ~/Office-HQ files are NEVER replaced automatically.
+On each launch, choose Update Office HQ to install the newest GitHub code.\nApplication code is backed up before updating; personal workspace data\nis preserved, and no external accounts are authorized automatically.
 
 This is a Mac launcher, not a signed offline application.
 On setup it fetches and installs the full independent Ollama runtime and

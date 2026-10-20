@@ -64,7 +64,9 @@ fi
 [ -x "$NODE" ] || failed 'Node runtime missing.'
 say "Using Node.js $("$NODE" --version)"
 
+NEW_INSTALL=0
 if [ ! -d "$TARGET" ]; then
+  NEW_INSTALL=1
   say 'Downloading your Office HQ application from GitHub...'
   curl -fL --retry 3 --connect-timeout 20 \
     'https://codeload.github.com/Hostkris/Office-HQ/zip/refs/heads/main' \
@@ -77,7 +79,7 @@ fi
 
 # Refresh the application code from the owner's GitHub repository on repeat
 # installs, but only after consent, and back up prior working files.
-if [ -d "$TARGET" ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/bridge.mjs" ]; then
+if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/bridge.mjs" ]; then
   if /usr/bin/osascript -e 'display dialog "Office HQ will update its app code from your own GitHub repository. Existing application files will be backed up and company records preserved. Continue?" buttons {"Keep Current", "Update Office HQ"} default button "Update Office HQ" with title "Office HQ · Mac Update"' >/dev/null 2>&1; then
     curl -fL --retry 3 --connect-timeout 20 \
       'https://codeload.github.com/Hostkris/Office-HQ/zip/refs/heads/main' \

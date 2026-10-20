@@ -6,6 +6,7 @@ import {join,resolve,isAbsolute} from 'node:path';
 import {randomUUID} from 'node:crypto';
 
 export const STARTER_BOT='Office HQ Marketing Research';
+const BINDING_POLICY='essential-40-v1';
 const validId=x=>typeof x==='string'&&/^[\w.-]{1,100}$/.test(x);
 const fail=(reason,status=400)=>Object.assign(new Error(reason),{status});
 const clip=(s,n=3500)=>String(s??'').replace(/[\x00-\x08\x0b-\x1f]/g,'').slice(0,n);
@@ -67,7 +68,7 @@ export function createOpenMausBridge({root,invoke=localCli,allowSend=process.env
   }
   async function status(){
     const s=await load();
-    const bindings=s.bindings.map(b=>({companyId:b.companyId,employeeId:b.employeeId,employeeName:b.employeeName,botName:b.botName}));
+    const bindings=s.bindings.filter(b=>b.policy===BINDING_POLICY).map(b=>({companyId:b.companyId,employeeId:b.employeeId,employeeName:b.employeeName,botName:b.botName}));
     const runs=s.runs.slice(-50).reverse().map(publicRun);
     try{return {connected:true,dispatchEnabled:allowSend,bots:(await bots()).filter(n=>n===STARTER_BOT),bindings,runs,localOnly:true};}
     catch{return {connected:false,dispatchEnabled:allowSend,bots:[],bindings,runs,localOnly:true,message:'Start OpenMausBot and install its CLI.'};}
@@ -82,10 +83,10 @@ export function createOpenMausBridge({root,invoke=localCli,allowSend=process.env
       if(employeeName.length<2)throw fail('Missing employee name.');
       if(!(await bots()).includes(STARTER_BOT))throw fail('Apply the restricted Office HQ Marketing team in OpenMausBot first.',409);
       const s=await load();
-      if(s.bindings.some(b=>b.botName===STARTER_BOT&&(b.companyId!==body.companyId||b.employeeId!==body.employeeId)))
+      if(s.bindings.some(b=>b.policy===BINDING_POLICY&&b.botName===STARTER_BOT&&(b.companyId!==body.companyId||b.employeeId!==body.employeeId)))
         throw fail('That bot is bound exclusively to another employee.',409);
-      s.bindings=s.bindings.filter(b=>!(b.companyId===body.companyId&&b.employeeId===body.employeeId));
-      s.bindings.push({companyId:body.companyId,employeeId:body.employeeId,employeeName,botName:STARTER_BOT});
+      s.bindings=s.bindings.filter(b=>b.policy===BINDING_POLICY&&!(b.companyId===body.companyId&&b.employeeId===body.employeeId));
+      s.bindings.push({companyId:body.companyId,employeeId:body.employeeId,employeeName,botName:STARTER_BOT,policy:BINDING_POLICY});
       await save(s);return {bound:true,employeeName,botName:STARTER_BOT};
     });
     if(body.action==='revoke')return locked(async()=>{
@@ -104,7 +105,7 @@ export function createOpenMausBridge({root,invoke=localCli,allowSend=process.env
       const title=clip(body.title,120).trim(),description=clip(body.description,1600).trim();
       if(title.length<6||description.length<15)throw fail('Provide a specific job and instructions.');
       const s=await load();
-      const b=s.bindings.find(b=>b.companyId===body.companyId&&b.employeeId===body.employeeId&&b.botName===STARTER_BOT);
+      const b=s.bindings.find(b=>b.policy===BINDING_POLICY&&b.companyId===body.companyId&&b.employeeId===body.employeeId&&b.botName===STARTER_BOT);
       if(!b)throw fail('No authorized bot for this employee.',403);
       if(s.runs.some(r=>r.companyId===body.companyId&&r.officeTaskId===body.officeTaskId&&active.has(r.status)))
         throw fail('This assignment already has an active or paused OpenMausBot job.',409);

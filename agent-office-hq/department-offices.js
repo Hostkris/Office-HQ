@@ -10,12 +10,12 @@ const DEPTS=[
  {id:'Finance',name:'Finance & Treasury',head:'cfo'},
  {id:'Marketing',name:'Marketing',head:'cmo'},
  {id:'Technology',name:'Technology & IT',head:'cto'},
- {id:'People',name:'People & HR',head:'chro'},
+ {id:'People',name:'People & HR',head:'hr_dir'},
  {id:'Sales',name:'Sales & Revenue',head:'cro'},
  {id:'Legal',name:'Legal & Compliance',head:'counsel'},
  {id:'Audit',name:'Audit & Analytics',head:'chief_audit'},
- {id:'PMO',name:'Project Management',head:'pmo_dir'},
- {id:'Customer',name:'Customer Experience',head:'customer_mgr'},
+ {id:'PMO',name:'Project Management',head:'project_mgr'},
+ {id:'Customer',name:'Customer Experience',head:'support_lead'},
  {id:'Product',name:'Product & Catalog',head:'product_mgr'}
 ];
 const byId=Object.fromEntries(DEPTS.map(d=>[d.id,d]));

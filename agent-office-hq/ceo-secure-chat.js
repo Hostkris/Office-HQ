@@ -70,7 +70,7 @@
   function question(text,uncertain){
     if(uncertain)return 'Which department or kind of specialist should handle this? For example: marketing, finance, technology, sales or operations.';
     if(/\b(publish|post|advertise)\b/i.test(text)&&!/\b(instagram|facebook|tiktok|youtube|linkedin|twitter| x |website|blog)\b/i.test(text))return 'Which platform is this for? I can prepare the draft before anything is published.';
-    if(/\b(schedule|book an? appointment|pickup|pick up|dry clean)\b/i.test(text)&&!/\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}[:/]\d{1,2}|next week)\b/i.test(text))return 'What day should I plan this for? Nothing will be booked or purchased without your approval.';
+    if(/\b(schedule|book an? appointment|pickup|pick up|dry clean(?:ing|ers)?)\b/i.test(text)&&!/\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}[:/]\d{1,2}|next week)\b/i.test(text))return 'What day should I plan this for? Nothing will be booked or purchased without your approval.';
     return '';
   }
   function taskFor(job,person,instruction){
@@ -255,4 +255,5 @@
     }
   });
   window.OfficeHQSecureChat={render,route};
+  queueMicrotask(()=>{if(location.hash==='#/thread')refresh();});
 })();

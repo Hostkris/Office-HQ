@@ -553,7 +553,7 @@ body.hq-immersive-office .view{padding:0!important;width:100%;max-width:none}
 .hq-command-manage>summary::-webkit-details-marker{display:none}
 .hq-command-manage>summary::before{content:"⚙";font-size:14px}
 .hq-command-manage[open]>summary{color:var(--text)}
-.hq-command-manage:not([open]) .pf-command-controls{display:none}
+/* The management panel uses its own [hidden] state; do not hide controls based on parent attributes. */
 /* Command Center always shows the ENTIRE animated office floor, never a cropped pan region. */
 .pf-command-stage{overflow:hidden;max-height:none;scrollbar-gutter:auto}
 .pf-command-stage .office-canvas{display:block;width:100%!important;min-width:0!important;max-width:100%!important;height:auto!important;aspect-ratio:1240/1135;touch-action:manipulation}

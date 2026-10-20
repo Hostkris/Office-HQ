@@ -28,6 +28,10 @@ test('local server serves dashboard, reports draft-only status, and refuses AI c
     assert.equal((await fetch(base+'/ios-workstations.js')).status,200);
     assert.equal((await fetch(base+'/desktop-workstations.js')).status,200);
     assert.equal((await fetch(base+'/openmausbot.js')).status,200);
+    assert.equal((await fetch(base+'/officehq-voice.js')).status,200);
+    assert.equal((await fetch(base+'/officehq-voice.css')).status,200);
+    assert.equal((await fetch(base+'/mac-share.js')).status,200);
+    assert.equal((await fetch(base+'/mac.html')).status,200);
     assert.equal((await fetch(base+'/workforce-runtime.js')).status,200);
     const workforceStatus=await fetch(base+'/api/agent-workforce/status?companyId=company1');
     assert.equal(workforceStatus.status,200);

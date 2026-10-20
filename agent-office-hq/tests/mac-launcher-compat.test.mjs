@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile,copyFile,writeFile,mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {pathToFileURL} from 'node:url';
 test('legacy OpenMausBot worker no longer prevents independent Ollama server startup',async()=>{
  const worker=await readFile(new URL('../openmaus/workforce-engine.mjs',import.meta.url),'utf8');
  const native=await readFile(new URL('../native-engine/bridge.mjs',import.meta.url),'utf8');
@@ -16,4 +19,18 @@ test('legacy OpenMausBot worker no longer prevents independent Ollama server sta
  assert.match(server,/from ['"]\.\/native-engine\/bridge\.mjs['"]/);
  assert.match(installer,/openmaus\/workforce-engine\.mjs/);
  assert.match(installer,/BACKUP.*dirname.*item/);
+});
+
+test('runtime import succeeds when the old 1.2 Mac bridge does not export localCli',async()=>{
+ const folder=await mkdtemp(join(tmpdir(),'officehq-mac-compat-'));
+ try{
+  await copyFile(new URL('../openmaus/workforce-engine.mjs',import.meta.url),join(folder,'workforce-engine.mjs'));
+  await copyFile(new URL('../openmaus/team.mjs',import.meta.url),join(folder,'team.mjs'));
+  await copyFile(new URL('../openmaus/essential-workforce.json',import.meta.url),join(folder,'essential-workforce.json'));
+  await writeFile(join(folder,'bridge.mjs'),
+    'export function createOpenMausBridge() { return {status(){ return {}; }}; }\n');
+  const loaded=await import(pathToFileURL(join(folder,'workforce-engine.mjs')).href);
+  assert.equal(typeof loaded.createWorkforceEngine,'function',
+    'legacy worker must import without its original CLI export');
+ }finally{await rm(folder,{recursive:true,force:true});}
 });

@@ -93,7 +93,7 @@ async function refresh(){
  if(!isLocal||busy)return;
  busy=true;
  try{const r=await fetch('/api/research/status',{cache:'no-store'});if(!r.ok)throw Error('Research backend unavailable.');
- status=await r.json();if(location.hash.replace('#/','')==='research')B.setView('research');}
+ status=await r.json();if(location.hash.replace('#/','')==='research'&&!document.activeElement?.closest('#researchApiForm, #reachResearchForm'))B.setView('research');}
  catch(e){alertUser(e.message,true)}finally{busy=false}
 }
 async function action(type,id){
@@ -111,7 +111,7 @@ async function refreshPublic(){
  try{const res=await fetch('/api/public-capabilities/status?companyId='+encodeURIComponent(getCompany()),{cache:'no-store'});
   if(!res.ok)throw Error('Mac public research backend unavailable.');
   publicStatus=await res.json();
-  if(location.hash.replace('#/','')==='research')B.setView('research');
+  if(location.hash.replace('#/','')==='research'&&!document.activeElement?.closest('#researchApiForm, #reachResearchForm'))B.setView('research');
  }catch(e){alertUser(e.message,true);}
 }
 async function publicAction(action){

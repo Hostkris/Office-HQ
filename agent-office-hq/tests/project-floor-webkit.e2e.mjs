@@ -201,6 +201,7 @@ test('iPhone Command Center shares same 15 employees and supports safe remove, a
   assert.equal(first.ids.length,15);
   assert.equal(await page.locator('#officeCanvas').getAttribute('width'),'1240');
   assert.equal(await page.locator('#officeCanvas').getAttribute('height'),'1135');
+  await page.locator('.hq-command-manage-toggle').click();
   const before=await page.locator('#pfCommandRemove option').count();
   assert.equal(before,16);
   await page.locator('#pfCommandRemove').selectOption({index:1});
@@ -208,6 +209,7 @@ test('iPhone Command Center shares same 15 employees and supports safe remove, a
   const removed=await page.evaluate(()=>{const s=window.OfficeHQBridge.getState(),d=s.enterprise.projectFloor,cid=s.companies[0].id;return d.floors.find(f=>f.id===d.selected[cid].floorId).placements.length;});
   assert.equal(removed,14);
   await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('.hq-command-manage-toggle').click();
   await page.locator('#pfCommandWorker').waitFor();
   assert.equal(await page.locator('#pfCommandRemove option').count(),15,'worker must not auto-respawn after reload');
   await page.locator('#pfCommandWorker').selectOption({index:1});
@@ -347,7 +349,9 @@ test('iPhone and iPad: Send to Mac shares the published installer and Mac page s
    await page.evaluate(()=>{
     Object.defineProperty(navigator,'share',{configurable:true,value:async payload=>{window.__officeMacShare=payload;}});
    });
-   await page.locator('.mac-share-top[data-mac-share]').click();
+   await page.locator('#menuToggle').click();
+   await page.locator('.hq-nav-group').last().locator('summary').click();
+   await page.locator('.mac-share-sidebar[data-mac-share]').click();
    await page.waitForFunction(()=>Boolean(window.__officeMacShare),null,{timeout:5000});
    const shared=await page.evaluate(()=>window.__officeMacShare);
    assert.match(shared.url,/\/downloads\/Office_HQ_for_Mac\.zip$/);
@@ -358,4 +362,60 @@ test('iPhone and iPad: Send to Mac shares the published installer and Mac page s
    assert.deepEqual(errors,[]);
   }finally{await context.close();}
  }
+});
+
+
+test('iPhone premium UI: sidebar can close without navigating and entire animated office fits its preview',async()=>{
+ const {page,context,errors}=await pageFor('iPhone 13');
+ try{
+  const initial=await page.locator('h1').innerText();
+  await page.locator('#menuToggle').click();
+  assert.equal(await page.locator('#menuToggle').getAttribute('aria-expanded'),'true');
+  assert.equal(await page.locator('#sidebar').evaluate(el=>el.classList.contains('open')),true);
+  await page.locator('#sidebarClose').click();
+  assert.equal(await page.locator('#menuToggle').getAttribute('aria-expanded'),'false');
+  assert.equal(await page.locator('h1').innerText(),initial,'closing sidebar preserves the original page');
+  await page.locator('#menuToggle').click();
+  await page.locator('#sidebarShade').click({position:{x:365,y:400}});
+  assert.equal(await page.locator('#menuToggle').getAttribute('aria-expanded'),'false');
+  await page.evaluate(()=>window.OfficeHQBridge.setView('command'));
+  const dims=await page.locator('.pf-command-stage').evaluate(el=>{
+   const canvas=el.querySelector('canvas');
+   return {viewport:el.clientWidth,contents:el.scrollWidth,canvas:canvas.getBoundingClientRect().width,inner:canvas.width};
+  });
+  assert.equal(dims.inner,1240,'canvas internal drawing resolution remains intact');
+  assert.ok(dims.canvas<=dims.viewport+1,JSON.stringify(dims));
+  assert.ok(dims.contents<=dims.viewport+1,JSON.stringify(dims));
+  assert.equal(await page.locator('.hq-command-manage-toggle').getAttribute('aria-expanded'),'false','technical controls start collapsed');
+  await page.locator('.hq-command-manage-toggle').click();
+  assert.equal(await page.locator('#pfCommandFloor').isVisible(),true);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
+test('iPhone premium UI: day and night modes style the company messages composer',async()=>{
+ const {page,context,errors}=await pageFor('iPhone 13');
+ try{
+  await page.locator('#menuToggle').click();
+  await page.locator('.hq-nav-group').last().locator('summary').click();
+  await page.locator('.nav-theme-sidebar[data-theme-toggle]').click();
+  const toggled=await page.evaluate(()=>document.documentElement.dataset.theme);
+  assert.equal(toggled,'night');
+  await page.locator('.nav-theme-sidebar[data-theme-toggle]').click();
+  assert.equal(await page.evaluate(()=>document.documentElement.dataset.theme),'day');
+  await page.locator('#sidebarClose').click();
+  await page.locator('#officePhoneBtn').click();
+  await page.locator('.ceo-chat-compose textarea').first().waitFor({state:'visible'});
+  const day=await page.locator('.ceo-chat-compose').first().evaluate(el=>({
+   background:getComputedStyle(el).backgroundColor,text:getComputedStyle(el.querySelector('textarea')).color
+  }));
+  assert.match(day.background,/rgb\(255, 255, 255\)/);
+  await page.evaluate(()=>window.OfficeHQTheme.set('night'));
+  const night=await page.locator('.ceo-chat-compose').first().evaluate(el=>({
+   background:getComputedStyle(el).backgroundColor,text:getComputedStyle(el.querySelector('textarea')).color
+  }));
+  assert.notEqual(day.background,night.background);
+  assert.notEqual(day.text,night.text);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
 });

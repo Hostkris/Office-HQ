@@ -19,7 +19,7 @@
 <body>
   <div id="app" class="app-shell">
     <aside class="sidebar" id="sidebar" aria-label="Main navigation">
-      <a class="brand" href="#/command" aria-label="Agent Office HQ home"><div class="brand-mark">▦<span>✦</span></div><div><strong>AGENT OFFICE</strong><small>HQ · Workforce OS</small></div></a>
+      <div class="sidebar-head"><a class="brand" href="#/command" aria-label="Agent Office HQ home"><div class="brand-mark">▦<span>✦</span></div><div><strong>AGENT OFFICE</strong><small>HQ · Workforce OS</small></div></a><button type="button" id="sidebarClose" class="sidebar-close" aria-label="Close navigation and return to current screen">✕</button></div>
       <div class="workspace-label">YOUR WORKSPACE</div>
       <div class="company-picker-wrap"><select id="companyPicker" aria-label="Choose company"></select><button id="addCompany" class="small-square" title="Add company" aria-label="Add company">＋</button></div>
       <div class="nav-label">QUICK ACCESS</div>
@@ -56,7 +56,10 @@
           <div class="hq-nav-children">
             <a href="./cloud.html" class="nav-btn nav-link" aria-label="Open Secure Cloud HQ backed by Supabase"><span class="nav-icon">☁</span> Secure Cloud HQ <span class="nav-pill">CLOUD</span></a>
             <button data-view="connections" class="nav-btn"><span class="nav-icon">◈</span> Social &amp; business accounts</button>
-            <a class="nav-btn nav-link" href="./mac.html"><span class="nav-icon">↗</span> Send Office HQ to Mac</a>
+            <button type="button" class="nav-btn mac-share-sidebar" data-mac-share aria-label="Send latest Office HQ installer to Mac via AirDrop or Messages"><span class="nav-icon">↗</span> Send to Mac</button>
+            <a class="nav-btn nav-link" href="./mac.html"><span class="nav-icon">↓</span> Mac download &amp; update guide</a>
+            <button type="button" class="nav-btn nav-theme-sidebar" data-theme-toggle aria-pressed="false" aria-label="Switch appearance"><span class="nav-icon theme-icon">☀</span><span class="theme-label">Day Mode</span></button>
+            <button type="button" class="nav-btn" id="sidebarRefresh" aria-label="Refresh Office HQ app"><span class="nav-icon">↻</span> Check for updates</button>
             <button data-view="workstations" class="nav-btn"><span class="nav-icon">▣</span> AI workstations <span class="nav-pill">LOCAL</span></button>
             <button data-view="openmaus" class="nav-btn"><span class="nav-icon">✧</span> Native AI agent engine <span class="nav-pill">LOCAL</span></button>
             <button data-view="research" class="nav-btn"><span class="nav-icon">⌕</span> Agent Reach &amp; Public APIs</button>
@@ -66,10 +69,11 @@
       </nav>
       <div class="sidebar-bottom"><span class="connected-dot"></span><span id="modeLabel">Local workspace active</span><div class="side-foot">Your data stays on this device until connected.</div></div>
     </aside>
+    <div id="sidebarShade" class="sidebar-shade" hidden></div>
     <main class="main">
-      <header class="topbar"><button id="menuToggle" class="icon-button mobile-menu" aria-label="Toggle navigation">☰</button><div class="breadcrumb" id="breadcrumb">WORKSPACE / COMMAND CENTER</div><div class="top-actions"><span id="liveClock" class="clock"></span>
+      <header class="topbar"><button id="menuToggle" class="icon-button mobile-menu" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">☰</button><div class="breadcrumb" id="breadcrumb">WORKSPACE / COMMAND CENTER</div><div class="top-actions"><span id="liveClock" class="clock"></span>
         <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Night mode active. Switch to day mode" title="Switch to day mode"><span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Night Mode</span></button>
-        <button type="button" class="mac-share-top" data-mac-share title="AirDrop Office HQ Mac download link" aria-label="Send Office HQ for Mac using AirDrop or Messages"><span aria-hidden="true">↗</span> <span class="mac-share-label">Send to Mac</span><span class="mac-share-small">Mac</span></button>
+        
         <button type="button" id="officePhoneBtn" class="office-phone-btn" data-ops="phone-open" aria-label="Open company messages" aria-controls="officePhoneDrawer" title="CEO messages and approval requests">📱<span id="officePhoneCount" class="office-phone-count" hidden></span></button>
         <button id="helpButton" class="top-help" title="About this app">ⓘ Help</button><button class="avatar-you" id="userAvatar" title="Owner account">YOU</button></div></header>
       <div id="view" class="view" aria-live="polite"></div>

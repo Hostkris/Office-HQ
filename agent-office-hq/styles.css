@@ -540,3 +540,74 @@ body.hq-immersive-office .view{padding:0!important;width:100%;max-width:none}
 @media(max-width:380px){
  .mac-share-top{font-size:11px;padding:7px}
 }
+
+
+/* Mobile premium polish: one calm toolbar, intentional whitespace and simple navigation. */
+.sidebar-head{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.sidebar-head .brand{min-width:0;flex:1}
+.sidebar-close{display:none;align-items:center;justify-content:center;flex:none;width:42px;height:42px;border:1px solid var(--border);border-radius:12px;background:var(--panel2);color:var(--text);font-size:20px;line-height:1}
+.sidebar-shade{display:none}
+.mac-share-sidebar,.nav-theme-sidebar{font:inherit;cursor:pointer}
+.hq-command-manage{margin-top:13px;border-top:1px solid var(--border);padding-top:11px}
+.hq-command-manage>summary{display:flex;align-items:center;gap:9px;cursor:pointer;font-weight:700;color:var(--muted);font-size:12px;padding:6px 0;list-style:none}
+.hq-command-manage>summary::-webkit-details-marker{display:none}
+.hq-command-manage>summary::before{content:"⚙";font-size:14px}
+.hq-command-manage[open]>summary{color:var(--text)}
+/* The management panel uses its own [hidden] state; do not hide controls based on parent attributes. */
+/* Command Center always shows the ENTIRE animated office floor, never a cropped pan region. */
+.pf-command-stage{overflow:hidden;max-height:none;scrollbar-gutter:auto}
+.pf-command-stage .office-canvas{display:block;width:100%!important;min-width:0!important;max-width:100%!important;height:auto!important;aspect-ratio:1240/1135;touch-action:manipulation}
+@media(max-width:850px){
+ .sidebar{width:min(310px,calc(100vw - 35px));max-width:calc(100vw - 35px);padding-top:max(16px,env(safe-area-inset-top));z-index:30;box-shadow:none}
+ .sidebar.open{box-shadow:12px 0 44px #0004}
+ .sidebar-close{display:inline-flex}
+ .sidebar-shade:not([hidden]){display:block;position:fixed;inset:0;background:#071c2b82;z-index:25}
+ .topbar{min-height:61px;height:61px;padding:0 12px;gap:9px;background:var(--panel);border-color:var(--border)}
+ .mobile-menu{flex:none;min-width:42px;min-height:42px;border-radius:12px;color:var(--text)}
+ .breadcrumb{flex:1;min-width:0;max-width:none;letter-spacing:.04em;font-size:10px;line-height:1.25}
+ .top-actions{flex:none;gap:7px}
+ .topbar .theme-toggle{display:none}
+ .office-phone-btn{height:42px;min-height:42px;min-width:42px;padding:5px;font-size:21px;border-radius:12px;box-shadow:none}
+ .top-help{height:42px;min-height:42px;min-width:37px;padding:5px 6px;font-size:0;display:inline-flex;align-items:center;justify-content:center}
+ .top-help::first-letter{font-size:19px}
+ .avatar-you{width:37px;height:37px;flex:none}
+ .view{padding:16px 12px 35px}
+ .page-head{gap:10px;margin-bottom:13px}
+ .page-head h1{font-size:clamp(23px,6vw,29px)}
+ .page-head .subtitle{font-size:12px;line-height:1.45;margin-top:6px}
+ .metrics{gap:8px;margin-bottom:12px}
+ .metric{padding:13px;border-radius:13px}
+ .grid{gap:11px}
+ .card{padding:14px;border-radius:15px}
+ .hero-band{padding:14px;border-radius:14px}
+ .hero-band p{line-height:1.5}
+ .section-top{margin-bottom:12px}
+ .pf-command-stage{border-radius:13px;max-height:none}
+ .pf-command-stage canvas{width:100%!important;min-width:0!important;max-width:100%!important;height:auto!important}
+ .pf-command-controls{gap:8px}
+ .app-refresh-dock{display:none}
+}
+@media(max-width:380px){
+ .topbar{padding:0 9px;gap:6px}
+ .top-actions{gap:5px}
+ .breadcrumb{font-size:9px}
+ .avatar-you{width:32px;height:32px;font-size:9px}
+ .office-phone-btn{min-width:40px}
+ .top-help{min-width:34px}
+}
+:root[data-theme="day"] .sidebar-close{background:#fff;border-color:#c7d8e1;color:#284957}
+:root[data-theme="day"] .sidebar-shade:not([hidden]){background:#1a334a60}
+:root[data-theme="day"] .hq-command-manage{border-color:#d5e1e6}
+:root[data-theme="day"] .hq-command-manage>summary{color:#526e78}
+:root[data-theme="day"] .hq-command-manage[open]>summary{color:#233d49}
+
+
+/* Native details toggling can be unreliable inside an animated WebKit canvas view. */
+.hq-command-manage-toggle{display:flex;align-items:center;gap:9px;width:100%;min-height:42px;padding:7px 0;border:0;background:transparent;color:var(--muted);font:700 12px/1.4 system-ui,-apple-system,sans-serif;text-align:left;cursor:pointer}
+.hq-command-manage-toggle::before{content:"⚙";font-size:15px}
+.hq-command-manage-toggle::after{content:"⌄";margin-left:auto;font-size:17px}
+.hq-command-manage-toggle[aria-expanded="true"]::after{content:"⌃"}
+.hq-command-manage-panel{padding-top:5px}
+.hq-command-manage-panel[hidden]{display:none!important}
+:root[data-theme="day"] .hq-command-manage-toggle{color:#526e78}
+:root[data-theme="day"] .hq-command-manage-toggle[aria-expanded="true"]{color:#233d49}

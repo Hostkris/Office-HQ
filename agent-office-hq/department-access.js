@@ -37,29 +37,24 @@ function wizard(){
     '<p class="notice">No direct account connector is ready for this department. Continue to set up its local AI workers; external access stays off.</p>')+
    '<p class="tiny muted">Connections are verified inside Secure Cloud HQ. Opening a link does not grant employee access.</p><div class="department-actions">'+btn('Next: AI workers →','next')+'</div>';
  }else if(step===2){
-  const roles=engine?.roles||[];
-  const ready=!!engine?.connected;
-  const needRoles=roles.filter(r=>r.department===chosen&&team(chosen).some(e=>e.roleKey===r.key));
-  const canBind=ready&&needRoles.length===count&&needRoles.every(r=>r.installed)&&count>0;
-  const bound=engine?.bindings?.filter(b=>b.companyId===cid&&team(chosen).some(e=>e.id===b.employeeId&&e.roleKey===b.roleKey)).length||0;
+  const ready=engine?.connected===true;
+  const bound=engine?.bindings?.filter(b=>b.companyId===cid&&team(chosen).some(e=>e.id===b.employeeId&&(!b.roleKey||e.roleKey===b.roleKey))).length||0;
   body='<div class="department-step-top">'+btn('← Back','back')+'<span>Step 2 of 3</span></div>'+
-   '<h3>Activate '+E(chosen)+' workers</h3><p class="muted">'+count+' active employees · '+(local?(engine===null?'Mac status not checked':ready?'Mac engine responding':'Mac engine unavailable'):'Open this step on your Mac')+'</p>'+
-   '<p class="department-progress">'+bound+' of '+count+' workers paired with an AI runtime</p>'+
+   '<h3>Activate '+E(chosen)+' workers</h3><p class="muted">'+count+' active employees · '+(local?(engine===null?'Mac status not checked':ready?'Mac AI engine ready':'Mac AI engine unavailable'):'Open this step on your Mac')+'</p>'+
+   '<p class="department-progress">'+bound+' of '+count+' workers authorized for local AI drafts</p>'+
    '<div class="department-actions">'+btn('Check Mac engine','check',!local||pending)+
-   (canBind?btn('Authorize all '+count+' workers','activate',pending):'')+
+   (ready&&count>0?btn('Authorize whole department','activate',pending):'')+
+   (ready&&bound===count&&!engine?.dispatchEnabled?btn('Enable approved AI drafts','enable-drafts',pending):'')+
    '</div>'+
-   (local&&ready&&!canBind&&engine.allowProvision?
-    '<p class="muted">The AI bots must be installed first.</p><div class="department-actions">'+btn('Install AI worker team','provision',pending)+'</div>':'')+
-   (local&&ready&&!canBind&&!engine.allowProvision?
-    '<p class="notice">Bot installation is disabled. Open the Mac setup guide to enable owner-approved provisioning.</p>':'')+
-   '<p class="tiny muted">Department authorization here binds local AI workers only. It never shares passwords, grants external account access, or turns on unrestricted tools.</p>'+
-   '<a class="btn btn-sm" target="_blank" rel="noopener" href="https://github.com/Hostkris/Office-HQ/blob/main/agent-office-hq/docs/WORKFORCE_RUNTIME.md">Mac setup instructions ↗</a>'+
-   '<div class="department-actions">'+btn('Next: Test a task →','next')+'</div>';
+   (!local?'<p class="notice">Finish this step in Office HQ on your Mac. Your iPhone remains your command center.</p>':
+    ready?'<p class="tiny muted">AI drafts are '+(engine.dispatchEnabled?'enabled':'off')+'. This does not give workers Gmail, TikTok, or other external account access.</p>':
+    '<p class="notice">Start the Office HQ Mac app and Ollama AI model before authorizing workers.</p>')+
+   '<div class="department-actions">'+btn('Next: Assign team work →','next')+'</div>';
  }else{
   body='<div class="department-step-top">'+btn('← Back','back')+'<span>Step 3 of 3</span></div>'+
-  '<h3>Give your team a task</h3><p class="muted">Open Company Messages, describe the job, and check for a real result. The Mac agent and secure device sync must be running.</p>'+
-  '<div class="department-actions">'+btn('Open Company Messages','messages')+' '+btn('Check Mac engine','check',!local||pending)+'</div>'+
-  '<p class="tiny muted">A queued task or animated avatar does not prove execution. Only confirmed agent status and a returned result do.</p>';
+  '<h3>Give your team a task</h3><p class="muted">One instruction splits into specialist drafts. Verified results are combined and returned to Company Messages for your approval.</p>'+
+  '<div class="department-actions">'+btn('Start a team job →','team-job')+' '+btn('Open Company Messages','messages')+'</div>'+
+  '<p class="tiny muted">Tasks actually execute only when your Mac is running, the workers are authorized, and secure device sync is connected.</p>';
  }
  return '<section class="card department-setup" aria-label="Guided department setup">'+
  '<div class="section-top"><div><div class="eyebrow">SIMPLE SETUP</div><h2>Department activation</h2></div><span class="ops-tag">12 departments</span></div>'+body+alert()+'</section>';
@@ -69,9 +64,9 @@ async function check(){
  if(!local){notice='Open Office HQ on your Mac to activate local AI workers.';render();return;}
  pending=true;notice='';render();
  try{
-  const res=await fetch('/api/agent-workforce/status?companyId='+encodeURIComponent(company()),{cache:'no-store'});
+  const res=await fetch('/api/openmaus/status?companyId='+encodeURIComponent(company()),{cache:'no-store'});
   if(!res.ok)throw Error('The local workforce server did not respond.');
-  engine=await res.json();notice=engine.connected?'Mac engine responded. You can continue setup.':'Mac is reachable, but the AI worker engine is not ready.';
+  engine=await res.json();notice=engine.connected?'Mac AI engine responded. You can continue setup.':'Mac is reachable, but the AI model is not ready.';
  }catch(err){engine=null;notice=err.message;}
  finally{pending=false;render();}
 }
@@ -79,32 +74,34 @@ async function action(kind){
  if(kind==='back'){if(step===1){chosen='';step=0;}else step--;notice='';render();return;}
  if(kind==='next'){step=Math.min(3,step+1);notice='';render();if(step===2&&engine===null&&local)await check();return;}
  if(kind==='messages'){document.querySelector('[data-ops="phone-open"]')?.click();return;}
+ if(kind==='team-job'){B.setView('workflows');return;}
  if(kind==='check'){await check();return;}
  if(!local){notice='Activation runs on your Mac, not the public iPhone website.';render();return;}
- if(kind==='provision'){
-  if(!engine?.connected||!engine.allowProvision)return;
-  if(!confirm('Install the restricted AI worker team on this Mac? No external accounts will be authorized.'))return;
+ if(kind==='enable-drafts'){
+  if(!engine?.connected)return;
+  if(!confirm('Enable AI drafting for authorized employees? This does NOT enable external posting, browsing or email sending.'))return;
   pending=true;render();
   try{
-   const res=await fetch('/api/agent-workforce/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'provision',companyId:company(),ownerConfirmed:true})});
-   const data=await res.json();if(!res.ok)throw Error(data.error||'Could not install AI workers.');
-   notice=data.note||'Provisioning returned.';await check();
-  }catch(err){notice=err.message;pending=false;render();}
+   const res=await fetch('/api/openmaus/action',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'set-dispatch',enabled:true,ownerConfirmed:true})});
+   const result=await res.json();if(!res.ok)throw Error(result.error||'Could not enable local AI drafts.');
+   await check();notice='Local AI drafting is enabled for authorized workers only.';
+  }catch(err){notice=err.message;}finally{pending=false;render();}
   return;
  }
  if(kind==='activate'){
-  const workers=team(chosen),roles=engine?.roles||[];
-  if(!engine?.connected||!workers.length||!workers.every(w=>roles.some(r=>r.key===w.roleKey&&r.department===chosen&&r.installed))){notice='First verify the installed Mac AI workers.';render();return;}
-  if(!confirm('Authorize '+workers.length+' '+chosen+' employees to use their own restricted AI runtimes? External accounts stay separate.'))return;
+  const workers=team(chosen);
+  if(!engine?.connected||!workers.length){notice='First start and check the Mac AI engine.';render();return;}
+  if(!confirm('Authorize '+workers.length+' '+chosen+' employees for local AI drafting? External accounts remain separate.'))return;
   pending=true;render();
   try{
    const people=workers.map(w=>({employeeId:w.id,employeeName:w.name,roleKey:w.roleKey}));
-   const res=await fetch('/api/agent-workforce/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'bind-department',companyId:company(),department:chosen,employees:people,ownerConfirmed:true})});
-   const data=await res.json();if(!res.ok)throw Error(data.error||'The department could not be activated.');
-   notice=data.note||'Department runtime bindings saved.';noticeError=false;
-   await check();notice=data.note||notice;
-  }catch(err){notice=err.message;noticeError=true;}
-  finally{pending=false;render();}
+   const res=await fetch('/api/openmaus/action',{method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({action:'bind-department',companyId:company(),department:chosen,employees:people,ownerConfirmed:true})});
+   const result=await res.json();if(!res.ok)throw Error(result.error||'Could not authorize department.');
+   await check();notice=result.note||'Department workers authorized.';
+  }catch(err){notice=err.message;}finally{pending=false;render();}
+  return;
  }
 }
 const older=window.OfficeHQExtraViews.connections;

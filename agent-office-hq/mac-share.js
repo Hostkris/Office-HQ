@@ -20,10 +20,10 @@
         try{
           await navigator.share({
             title:LABEL,
-            text:'Open this link on your Mac to download Office HQ. Unzip it, then open Office HQ.app.',
+            text:'Open this link on your Mac to install or update the latest published Office HQ. Unzip it, open Office HQ.app and approve any proposed update.',
             url:URL
           });
-          notify('Mac download link shared. Open the link on your Mac to download the ZIP.');
+          notify('Mac installer link shared. Open it on your Mac to download and install or update Office HQ.');
           return;
         }catch(error){
           if(error?.name==='AbortError'){
@@ -37,7 +37,7 @@
       if(navigator.clipboard?.writeText){
         try{
           await navigator.clipboard.writeText(URL);
-          notify('Mac download link copied. Send it to your Mac using AirDrop or Messages.');
+          notify('Latest Mac installer link copied. Send it to your Mac using AirDrop or Messages.');
           return;
         }catch(error){
           console.info('Office HQ clipboard unavailable:',error);

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4f8fa">
+<meta name="description" content="AirDrop the GitHub-hosted Office HQ Mac launcher from iPhone or iPad.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Send Office HQ to your Mac</title>
+<script src="./theme.js"></script>
+<link rel="stylesheet" href="./styles.css">
+<style>
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text)}
+.mac-shell{max-width:730px;margin:0 auto;padding:clamp(18px,4vw,34px);padding-bottom:max(55px,env(safe-area-inset-bottom))}
+.mac-back{color:var(--turq);text-decoration:underline;text-underline-offset:4px;font-weight:750}
+.mac-hero{border-radius:19px;background:var(--panel);border:1px solid var(--border);padding:clamp(20px,4vw,34px);margin:24px 0;box-shadow:var(--shadow)}
+.mac-title{font-size:clamp(26px,6vw,38px);line-height:1.15;margin:14px 0}
+.mac-steps{margin:20px 0;display:grid;gap:12px;padding-left:24px}
+.mac-steps li{padding-left:6px;line-height:1.7}
+.mac-actions{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}
+.mac-actions :is(a,button){flex:1 1 220px;text-align:center;display:inline-flex;align-items:center;justify-content:center;min-height:50px;white-space:normal;font-size:15px}
+.mac-status{color:var(--muted);font-size:13px;min-height:20px}
+.mac-note{border:1px solid var(--border);border-radius:12px;background:var(--panel2);padding:15px;line-height:1.65;font-size:13px}
+.mac-small-link{color:var(--turq);text-decoration:underline;overflow-wrap:anywhere}
+[data-theme="day"] .mac-hero{background:#fff;color:#1c3542}
+[data-theme="day"] .mac-note{background:#edf6f7;color:#375c69}
+@media(max-width:520px){.mac-actions{flex-direction:column}.mac-actions :is(a,button){width:100%;flex:initial}}
+</style>
+</head>
+<body>
+<main class="mac-shell">
+<a class="mac-back" href="./index.html#/command">← Back to Office HQ</a>
+<section class="mac-hero">
+<div class="eyebrow">OFFICE HQ · MAC INSTALLER</div>
+<h1 class="mac-title">Send Office HQ to your Mac</h1>
+<p>Use your iPhone or iPad to share the Office HQ Mac download link through AirDrop or Messages. The Mac downloads and opens the installer—no remote control or Mac sign-in is required.</p>
+<div class="mac-actions">
+<button class="btn btn-primary" type="button" data-mac-share>↗ Send to Mac (AirDrop)</button>
+<a class="btn" href="https://raw.githubusercontent.com/Hostkris/Office-HQ/main/downloads/Office_HQ_for_Mac.zip" download="Office_HQ_for_Mac.zip">↓ Download Mac ZIP</a>
+</div>
+<p id="macShareStatus" class="mac-status" role="status" aria-live="polite"></p>
+<ol class="mac-steps">
+<li>On your iPhone or iPad, tap <strong>Send to Mac (AirDrop)</strong>, choose AirDrop, and select your Mac. You can also share the link through Messages.</li>
+<li>On your Mac, open the received link and download <strong>Office_HQ_for_Mac.zip</strong>.</li>
+<li>Double-click the ZIP, then open <strong>Office HQ.app</strong>. macOS may require you to review and explicitly open the unsigned application.</li>
+<li>Approve the first-run setup. Office HQ installs into your home folder if it is not already present and opens your local workspace.</li>
+</ol>
+<div class="mac-note">
+<strong>Important:</strong> This is a one-click Mac web-server launcher, not a signed offline Mac app or remote iPhone-to-Mac controller. It preserves your existing Mac Office HQ installation, including any previously installed native AI engine. A new Mac setup needs internet and macOS 14 or later. Connecting an actual AI runtime and synchronizing company data between your iPhone and Mac require separate setup and permissions.
+</div>
+<p><a class="mac-small-link" href="https://github.com/Hostkris/Office-HQ/tree/main/mac">Review the Mac installer source on GitHub</a></p>
+</section>
+</main>
+<script src="./mac-share.js" defer></script>
+</body>
+</html>

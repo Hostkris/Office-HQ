@@ -139,11 +139,34 @@ export function createOpenMausBridge(){
    const now=timestamp(),id=randomUUID();
    s.runs.push({id,threadId:randomUUID(),companyId:body.companyId,employeeId:body.employeeId,
      officeTaskId:body.officeTaskId,employeeName:binding.employeeName,department:binding.department,
-     botName:binding.botName,title,description,status:'submitted',result:'',reason:'',
+     botName:binding.botName,title,description,approvedForDraft:true,retryCount:0,status:'submitted',result:'',reason:'',
      thought:'Submitted to local AI',createdAt:now,updatedAt:now});
    s.runs=s.runs.slice(-250);await persist(s);
    queueMicrotask(()=>void draft(id));
    return {submitted:true,runId:id,note:'Local Ollama draft pending. No external action is enabled.'};
+  });
+  // Resume only the SAME CEO-approved draft after a verified runtime recovery.
+  // No second approval for identical instructions, and no fresh external tools.
+  if(body.action==='resume')return lock(async()=>{
+   if(!valid(body.companyId)||!valid(body.runId))throw err('Invalid previous assignment.');
+   const s=await get(),run=s.runs.find(x=>x.id===body.runId&&x.companyId===body.companyId);
+   if(!run||!run.approvedForDraft)throw err('No retained approval for this run.',403);
+   if(!['failed','paused'].includes(run.status))throw err('Only an interrupted or failed draft can resume.',409);
+   const transient=/\b(ollama|network|connect|timeout|timed out|fetch failed|temporar|unavailable|reset|abort|model returned status 5\d\d|reboot|start)\b/i;
+   if(run.status==='failed'&&!transient.test(String(run.reason||'')))
+     throw err('This failure needs review, not automatic resumption.',409);
+   if(Number(run.retryCount||0)>=2)throw err('Automatic retry limit reached. Review Agent Health.',409);
+   const cfg=await engineConfig();if(!cfg.allowSending)throw err('AI dispatch is disabled.',403);
+   if(!s.bindings.some(x=>x.companyId===run.companyId&&x.employeeId===run.employeeId))
+     throw err('The worker is no longer authorized.',403);
+   const health=await checkOllama(cfg.model);if(!health.ready)throw err(health.message,503);
+   run.retryCount=Number(run.retryCount||0)+1;
+   run.status='submitted';run.reason='';run.result='';
+   run.thought='Resuming previously approved draft after verified Mac recovery';
+   run.updatedAt=timestamp();await persist(s);
+   queueMicrotask(()=>void draft(run.id));
+   return {resumed:true,runId:run.id,taskId:run.officeTaskId,
+     note:'Same previously approved draft resumed. No additional permissions or external actions granted.'};
   });
   if(body.action==='check'){const s=await get(),r=s.runs.find(x=>x.id===body.runId&&x.companyId===body.companyId);
    if(!r)throw err('Task not found.',404);return {run:publicRun(r)};}

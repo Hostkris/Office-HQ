@@ -312,6 +312,7 @@ test('iPhone: Public APIs catalog is searchable and an eligible employee can req
    await assignee.selectOption({index:0});
    await page.locator('#researchApiForm [name=reason]').fill('Evaluate read-only recall evidence for a product risk review.');
    await page.locator('#researchApiForm button[type=submit]').click();
+   await page.waitForFunction(()=>window.OfficeHQBridge.getState().approvals.some(a=>a.kind==='api_discovery'),null,{timeout:10000});
    const proposals=await page.evaluate(()=>window.OfficeHQBridge.getState().approvals.filter(a=>a.kind==='api_discovery'));
    assert.equal(proposals.length,1);
    assert.equal(proposals[0].status,'pending');

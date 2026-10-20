@@ -235,7 +235,7 @@ function render(){
 }
 function toCtx(c){ctx=c;return c;}
 function background(c){c.clearRect(0,0,960,436);c.fillStyle=sceneColor('#1b3544');c.fillRect(0,0,960,436);
- for(let y=0;y<436;y+=28){for(let x=0;x<960;x+=28){c.fillStyle=(Math.floor(x/28)+Math.floor(y/28))%2?'#244858':'#294d5b';c.fillRect(x+1,y+1,26,26);}}
+ for(let y=0;y<436;y+=28){for(let x=0;x<960;x+=28){c.fillStyle=sceneColor((Math.floor(x/28)+Math.floor(y/28))%2?'#244858':'#294d5b');c.fillRect(x+1,y+1,26,26);}}
  c.fillStyle=sceneColor('#102e3d');c.fillRect(0,0,960,65);
  c.fillStyle=sceneColor('#e0f4ef');c.font='bold 20px system-ui';c.fillText('OFFICE HQ  /  LIVE PROJECT FLOOR',28,33);
  c.fillStyle=sceneColor('#89c6c0');c.font='12px system-ui';c.fillText('30 DESKS MAX · SELECTED STAFF ONLY',30,53);
@@ -249,7 +249,7 @@ function workstation(c,seat,person,focused,now,x=coords(seat).x,y=coords(seat).y
  c.fillStyle=sceneColor('#1a2939');c.fillRect(-33,-47,60,36);c.fillStyle=sceneColor('#69c4c4');c.fillRect(-29,-43,52,27);c.fillStyle=sceneColor('#315c64');c.fillRect(-24,-40,38,18);
  c.fillStyle=sceneColor('#243844');c.fillRect(-7,-11,9,9);c.fillStyle=sceneColor('#192833');c.fillRect(-16,-2,27,5);
  c.fillStyle=sceneColor('#466973');c.fillRect(-23,22,44,17);c.fillStyle=sceneColor('#9bb8b7');c.font='11px system-ui';c.fillText('DESK '+(seat+1),-68,36);
- if(!person){c.strokeStyle='#76a6a6';c.setLineDash([3,4]);c.strokeRect(-65,9,34,24);c.setLineDash([]);}
+ if(!person){c.strokeStyle=sceneColor('#76a6a6');c.setLineDash([3,4]);c.strokeRect(-65,9,34,24);c.setLineDash([]);}
  c.restore();
 }
 function sprite(c,person,x,y,now,moving=false){

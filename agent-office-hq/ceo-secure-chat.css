@@ -1,0 +1,33 @@
+/* CEO Secure Desk: restrained iOS-style internal messages */
+.ceo-chat{display:flex;flex-direction:column;gap:12px;min-width:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.ceo-chat-title{display:flex;flex-direction:column;gap:3px;text-align:center;border-bottom:1px solid #385363;padding:10px 4px 14px}
+.ceo-chat-title strong{font-size:18px;font-weight:750;color:#f2fafb}.ceo-chat-title small{font-size:11px;color:#a3bdc2}
+.ceo-chat-log{display:flex;flex-direction:column;gap:9px;min-height:210px;max-height:49vh;overflow-y:auto;overscroll-behavior:contain;padding:15px 4px 13px;scrollbar-width:thin}
+.ceo-chat-bubble{width:fit-content;max-width:87%;padding:9px 13px 8px;border-radius:19px;overflow-wrap:anywhere;box-shadow:0 1px 3px #0002}
+.ceo-chat-bubble.received{align-self:flex-start;background:#2b4250;color:#eef7f8;border-bottom-left-radius:5px}
+.ceo-chat-bubble.sent{align-self:flex-end;background:#2176e4;color:white;border-bottom-right-radius:5px}
+.ceo-chat-name{font-size:10px;font-weight:800;margin-bottom:4px;opacity:.85}
+.ceo-chat-bubble p{margin:0;font-size:13px;line-height:1.55;white-space:pre-wrap}
+.ceo-chat-bubble time{display:block;font-size:10px;opacity:.65;margin-top:5px;text-align:right}
+.ceo-chat-empty{font-size:13px;color:#a6c3ca;line-height:1.6;text-align:center;margin:auto 16px}
+.ceo-chat-jobs{display:flex;flex-direction:column;gap:10px}
+.ceo-job{border:1px solid #3b6375;border-radius:16px;background:#1e3745;padding:12px}
+.ceo-job-head{display:flex;align-items:center;justify-content:space-between;gap:9px;font-size:12px}
+.ceo-job-head strong{color:#f4f9fb}.ceo-job-head span{font-size:10px;color:#bcdad7;text-align:right}
+.ceo-job-people{font-size:11px;color:#a6c3ca;line-height:1.4;margin:8px 0}
+.ceo-job button,.ceo-chat-buttons button{border:1px solid #567a8a;border-radius:20px;color:#eef8f9;background:#254957;padding:9px 11px;font-size:12px;font-weight:750;cursor:pointer}
+.ceo-job button:hover,.ceo-chat-buttons button:hover{filter:brightness(1.15)}
+.ceo-job-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.ceo-job-actions button:first-child{background:#26785f;border-color:#32876d}
+.ceo-job-actions button:nth-child(2){background:#573943;border-color:#7e5362}
+.ceo-preview{border-top:1px solid #355967;padding-top:10px;margin-top:10px;font-size:12px}
+.ceo-preview summary{cursor:pointer;color:#a5e4df;font-weight:750}
+.ceo-preview pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;font-family:inherit;line-height:1.5}
+.ceo-chat-compose{display:flex;align-items:flex-end;gap:9px;border:1px solid #3b5968;border-radius:22px;background:#122935;padding:7px}
+.ceo-chat-compose textarea{flex:1;min-height:39px;max-height:145px;resize:vertical;border:0;background:transparent;outline:none;color:#f3fcfc;font-size:14px;padding:9px 7px}
+.ceo-chat-buttons{display:flex;align-items:center;gap:5px;padding-bottom:2px}
+.ceo-chat-buttons button{min-width:37px;padding:8px 9px}
+.ceo-chat-buttons .ceo-chat-send{background:#2176e4;border-color:#2176e4}
+.ceo-chat-note{margin:0;color:#91aeb8;font-size:10px;line-height:1.5}
+#officePhoneDrawer .office-phone-body{padding:8px 13px 18px}
+@media(max-width:520px){.ceo-chat-log{max-height:42vh}.ceo-chat-bubble{max-width:94%}.ceo-chat-title strong{font-size:17px}.ceo-chat-compose textarea{min-width:0}}

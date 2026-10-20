@@ -51,6 +51,18 @@ test('Canceling iOS share does not claim the Mac got anything',async()=>{
  assert.match(session.status(),/canceled/i);
  assert.doesNotMatch(session.status(),/download link shared/);
 });
+test('Mac update refreshes new CEO chat and browser assets while retaining backups and consent',()=>{
+ assert.match(macSetup,/ceo-secure-chat\.js ceo-secure-chat\.css/);
+ assert.match(macSetup,/workforce-lean\.js/);
+ assert.match(macSetup,/mac\.html mac-share\.js/);
+ assert.match(macSetup,/native-engine\/bridge\.mjs device-sync\/mac-worker\.mjs/);
+ assert.match(macSetup,/cp -p "\$WEB\/\$item" "\$BACKUP\/\$item"/);
+ assert.match(macSetup,/Update Office HQ/);
+ assert.match(macSetup,/UPDATED_CODE=1/);
+ assert.match(macSetup,/previous Office HQ server is still running/);
+ assert.match(landing,/Install or update Office HQ on your Mac/);
+ assert.match(landing,/Existing workspace data is preserved/);
+});
 test('Mac ZIP launcher preserves existing install and uses official SHA-verified Node',()=>{
  assert.match(macBuilder,/Office_HQ_for_Mac\.zip/);
  assert.match(macBuilder,/MacOS\/OfficeHQ/);

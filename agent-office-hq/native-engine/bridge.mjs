@@ -5,6 +5,7 @@
 import {mkdir,readFile,writeFile,rename,chmod} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
+import {roles as essentialRoles} from '../openmaus/team.mjs';
 const dir=()=>resolve(process.env.OFFICE_HQ_NATIVE_DIR||join(process.env.HOME||process.cwd(),'.officehq-agent-engine'));
 const timestamp=()=>new Date().toISOString();
 const valid=x=>typeof x==='string'&&/^[\w.-]{1,100}$/.test(x);
@@ -71,6 +72,41 @@ export function createOpenMausBridge(){
    const cfg=await engineConfig();cfg.allowSending=body.enabled;await save('config.json',cfg);
    return {dispatchEnabled:cfg.allowSending,notice:'Only authorized, CEO-assigned local drafting is enabled; never external actions.'};
   }
+  // One explicit CEO decision applies only to the existing, approved roles in one
+  // department. This binds local draft agents; it never grants external access.
+  if(body.action==='bind-department')return lock(async()=>{
+   if(body.ownerConfirmed!==true)throw err('CEO confirmation required for this department.',403);
+   if(!valid(body.companyId))throw err('Invalid company ID.');
+   const dept=short(body.department,90).trim(),members=body.employees;
+   if(!essentialRoles.some(r=>r.department===dept)||!Array.isArray(members)||!members.length||members.length>40)
+     throw err('Select an existing department with active specialists.');
+   const seenIds=new Set(),seenRoles=new Set();
+   const bindings=members.map(person=>{
+     const role=essentialRoles.find(r=>r.key===person?.roleKey);
+     if(!role||role.key==='ceo'||role.department!==dept)throw err('Employee role is outside this department.',403);
+     if(!valid(person.employeeId)||seenIds.has(person.employeeId)||seenRoles.has(role.key))
+       throw err('Duplicate or invalid employee specialty.');
+     const name=short(person.employeeName,110).trim();
+     if(name.length<2)throw err('Valid employee names are required.');
+     seenIds.add(person.employeeId);seenRoles.add(role.key);
+     return {companyId:body.companyId,employeeId:person.employeeId,employeeName:name,
+       roleKey:role.key,department:dept,botName:'Office HQ · '+name,authorizedAt:timestamp()};
+   });
+   const s=await get();
+   // Fail closed before saving if the existing account has conflicting role
+   // mappings, including those made through older individual setup screens.
+   for(const item of bindings){
+     const prior=s.bindings.find(x=>x.companyId===item.companyId&&x.employeeId===item.employeeId);
+     if(prior?.roleKey&&prior.roleKey!==item.roleKey)throw err('Employee has a different authorized specialty.',409);
+     if(prior?.department&&prior.department!==dept)throw err('Employee belongs to another department.',409);
+   }
+   const ids=new Set(bindings.map(x=>x.employeeId));
+   s.bindings=s.bindings.filter(x=>x.companyId!==body.companyId||!ids.has(x.employeeId));
+   s.bindings.push(...bindings);
+   await persist(s);
+   return {bound:bindings.length,department:dept,
+     note:bindings.length+' local AI workers authorized for '+dept+'. External accounts and publishing remain disconnected.'};
+  });
   if(body.action==='bind')return lock(async()=>{
    if(body.ownerConfirmed!==true)throw err('CEO must authorize employee.',403);
    if(!valid(body.companyId)||!valid(body.employeeId))throw err('Invalid employee ID.');
@@ -94,6 +130,7 @@ export function createOpenMausBridge(){
    const cfg=await engineConfig();if(!cfg.allowSending)throw err('Local AI dispatch is disabled.',403);
    const health=await checkOllama(cfg.model);if(!health.ready)throw err(health.message,503);
    const s=await get(),binding=s.bindings.find(x=>x.companyId===body.companyId&&x.employeeId===body.employeeId);
+   if(binding?.roleKey&&body.roleKey&&binding.roleKey!==body.roleKey)throw err('Employee specialty does not match authorized role.',403);
    if(!binding)throw err('Employee has not been authorized.',403);
    if(s.runs.some(r=>r.officeTaskId===body.officeTaskId&&['submitted','running','review'].includes(r.status)))
      throw err('This task was already assigned.',409);

@@ -45,7 +45,7 @@ test('Send creates dedicated OpenMausBot thread, stores receipt, blocks duplicat
  const sent=await b.action(assignment);
  assert.equal(sent.submitted,true);assert.equal(sent.threadId,'thread-001');
  assert.deepEqual(called.args.slice(0,3),['run',STARTER_BOT,'-']);
- assert.ok(called.args.includes('none'));assert.ok(called.args.includes('send-id'));
+ assert.ok(called.args.includes('none'));assert.ok(called.args.includes('--send-id'));
  assert.match(called.input,/No authenticated websites/);
  await assert.rejects(b.action(assignment),/already has an active/);
  const b2=createOpenMausBridge({root,invoke,allowSend:true});

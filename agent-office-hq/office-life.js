@@ -198,7 +198,14 @@ function ensurePlan(key,placements){
  if(stateByFloor.size>70)stateByFloor.delete(stateByFloor.keys().next().value);
  return state;
 }
-function busyTask(tasks,p){return tasks.find(t=>t.ownerId===p.employeeId&&t.status==='in_progress');}
+function busyTask(tasks,p){
+ // A queued cloud task may remain marked in progress after the Mac goes offline.
+ // Never display the CEO Secure Desk agent as actively drafting without a verified runtime path.
+ const mac=typeof location!=='undefined'&&['localhost','127.0.0.1'].includes(location.hostname);
+ const paired=window.OfficeHQDeviceSync?.snapshot?.()?.connected===true;
+ return tasks.find(t=>t.ownerId===p.employeeId&&t.status==='in_progress'&&
+   (!t.ceoSecureDesk||(mac?!!t.openMausRunId:!!t.cloudSynced&&paired)));
+}
 function needsCEO(approvals,p){return approvals.some(a=>a.status==='pending'&&a.companyId===p.companyId&&(a.employeeId===p.employeeId||a.requesterId===p.employeeId||a.taskId&&tasksByIdForApproval.get(a.taskId)===p.employeeId));}
 // ephemeral mapping rebuilt each draw, no remote access.
 let tasksByIdForApproval=new Map();

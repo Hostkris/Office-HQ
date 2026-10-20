@@ -31,6 +31,10 @@ function refreshThoughts(){
  window.OfficeHQMausThoughts=map;if(changed)B.save();
 }
 function display(){
+ // Static GitHub Pages has no local CLI: render the same essential 40-role catalogue
+ // from the existing Office HQ roster, but never mark a bot as installed or connected.
+ if(!data.roles?.length)data.roles=B.getRoles().map(r=>({key:r.key,title:r.title,department:r.dept,
+   scope:r.scope,description:r.description,installed:false,botName:null}));
  let staff=employees();if(chosen&&!staff.some(w=>w.id===chosen))chosen='';
  if(!chosen)chosen=staff[0]?.id||'';
  const w=selected(),r=w&&role(w),b=binding(w),availableRoles=data.roles.filter(x=>dept==='All'||x.department===dept);

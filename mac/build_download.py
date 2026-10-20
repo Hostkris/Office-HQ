@@ -57,11 +57,16 @@ APP="$(cd "$(dirname "$0")/.." && pwd)"
 
 Existing ~/Office-HQ files are NEVER replaced automatically.
 
-This is a Mac web-server launcher, not a signed offline application.
-It does not install or enable optional third-party AI runtimes,
-external account sessions, financial access or Mac-iOS sync.
-If you already have the independent local AI engine, it is preserved.
-First installation requires internet; macOS 14+ is required.
+This is a Mac launcher, not a signed offline application.
+On setup it fetches and installs the full independent Ollama runtime and
+llama3.2:3b model from the official vendor. These are several GB and run
+locally on your Mac. First installation requires internet and macOS 14+.
+The Mac sync engine connects to your existing private Office HQ cloud
+account only AFTER you sign in under Company Messages. Sign in on your
+iPhone/iPad with the same account to begin automatic assignment sync.
+Authorize each Mac AI specialist separately to prepare draft-only work.
+It never grants website sign-ins, emailing, publishing or money actions.
+
 Your company records are stored separately on each device unless
 you configure authenticated sync.
 """

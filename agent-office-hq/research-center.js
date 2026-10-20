@@ -22,6 +22,7 @@ const CATALOG=[
 ];
 const RESEARCH_ROLES=new Set(['research','social','content','cmo','product_mgr','catalog','pricing_analyst','integrator','security','backend_engineer','frontend_engineer','cto']);
 let status={agentReachReady:false,enabled:false,requests:[],channels:{}},query='',filter='All',pick=CATALOG[0].id,who='',channel='github',busy=false;
+let publicTools={loaded:false,enabled:false,engineReady:false,tools:[]};
 const getCompany=()=>$('#companyPicker')?.value==='all'||!$('#companyPicker')?.value?B.getState().companies[0]?.id:$('#companyPicker').value;
 const members=()=>B.getState().employees.filter(x=>x.active&&x.companyId===getCompany());
 const compatible=entry=>members().filter(x=>entry.dept.includes(B.roleFor(x)?.dept));
@@ -35,6 +36,10 @@ function render(){
  const requests=(status.requests||[]).filter(x=>x.companyId===getCompany());
  return '<div class="page-head"><div class="eyebrow">OFFICE HQ · CURATED CAPABILITY DIRECTORY</div><h1>Agent Reach + Public APIs</h1>'+
  '<p class="muted">Discover external APIs, select an authorized specialist, and request CEO review. Public APIs is a directory, not a universal API key. Agent Reach is a local diagnostic/routing toolkit, not a blanket account authorization.</p></div>'+
+ '<section class="card" style="margin-bottom:16px"><div class="section-top"><h2>One-click public data tools · Mac only</h2><span class="ops-tag">'+(publicTools.enabled?'Enabled for authorized drafts':'Not enabled')+'</span></div>'+
+ (isLocal?'<p class="notice">Enable three vetted, keyless, read-only sources on this Mac: public GitHub repository metadata, Frankfurter exchange rates, and Open Food Facts barcode records. The tools can provide evidence automatically for relevant tasks assigned to a bound employee. They cannot search arbitrary websites, log in, publish, spend money or authorize MCP servers.</p>':'<p class="notice">Open the Office HQ app on your Mac to enable free public lookup sources. The iPhone company thread can then send approved assignments to that connected Mac. This website cannot enable your Mac remotely.</p>')+
+ (isLocal?'<div class="inline-actions"><button type="button" class="btn btn-primary" data-public-tool="toggle"'+(!publicTools.loaded?' disabled':'')+'>'+(publicTools.enabled?'Disable free public tools':'Enable 3 free public tools')+'</button><button type="button" class="btn btn-sm" data-public-tool="check">Check Mac tool status</button></div><p class="tiny muted">Local model: '+(publicTools.engineReady?'Ready':'Not ready or disconnected')+'. Enable tools separately from enabling Ollama drafts and authorizing each employee. The CEO must approve every assignment; external account permissions never change.</p>':'<a class="btn btn-sm" href="./mac.html">Send Office HQ to Mac ↗</a>')+
+ '</section>'+
  '<section class="card"><div class="section-top"><h2>Browse APIs and MCP connectors</h2><span class="ops-tag">'+CATALOG.length+' curated entries</span></div>'+
  '<p class="small muted">These entries were selected from the supplied Public APIs repository. Listings are informational; uptime, pricing, and current provider access must be verified individually.</p>'+
  '<div class="field-row"><div class="field"><label>Search API directory</label><input id="researchSearch" placeholder="Search APIs, tasks or departments" value="'+E(query)+'"></div>'+
@@ -78,11 +83,40 @@ async function api(data){
  const res=await fetch('/api/research/action',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify(data)});
  const x=await res.json();if(!res.ok)throw Error(x.error||'Local research request failed.');return x;
 }
+async function refreshPublicTools(renderView=true){
+ if(!isLocal)return;
+ try{
+  const response=await fetch('/api/openmaus/status',{cache:'no-store'});
+  if(!response.ok)throw Error('Mac public tool engine unavailable');
+  const data=await response.json();
+  publicTools={loaded:true,enabled:data.publicToolsEnabled===true,engineReady:data.connected===true,
+    tools:Array.isArray(data.publicTools)?data.publicTools:[]};
+ }catch(e){publicTools={loaded:false,enabled:false,engineReady:false,tools:[]};}
+ if(renderView&&location.hash.replace('#/','')==='research')B.setView('research');
+}
+async function togglePublicTools(){
+ if(!isLocal||!publicTools.loaded)throw Error('Open the local Office HQ Mac app before enabling tools.');
+ const enabled=!publicTools.enabled;
+ if(!confirm(enabled?'Enable exactly THREE free read-only public information sources on this Mac for authorized AI draft assignments? No account access, publishing, shell or general web browsing is included.':'Disable these public data tools on this Mac?'))return;
+ const response=await fetch('/api/openmaus/action',{method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({action:'set-public-tools',enabled,ownerConfirmed:true})});
+ const data=await response.json();
+ if(!response.ok)throw Error(data.error||'Unable to update local public-data permissions.');
+ await refreshPublicTools();alertUser(data.notice||'Public tool permission updated.');
+}
+document.addEventListener('click',event=>{
+ const button=event.target.closest('[data-public-tool]');
+ if(!button)return;
+ event.preventDefault();
+ const action=button.dataset.publicTool;
+ void (action==='toggle'?togglePublicTools():refreshPublicTools()).catch(e=>alertUser(e.message,true));
+});
+
 async function refresh(){
  if(!isLocal||busy)return;
  busy=true;
  try{const r=await fetch('/api/research/status',{cache:'no-store'});if(!r.ok)throw Error('Research backend unavailable.');
- status=await r.json();if(location.hash.replace('#/','')==='research')B.setView('research');}
+ status=await r.json();await refreshPublicTools(false);if(location.hash.replace('#/','')==='research')B.setView('research');}
  catch(e){alertUser(e.message,true)}finally{busy=false}
 }
 async function action(type,id){

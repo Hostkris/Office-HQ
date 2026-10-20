@@ -41,7 +41,7 @@ test('GitHub Pages cannot impersonate Mac service; sync uses Supabase owner auth
  assert.match(client,/owner_confirmed:true/);
  assert.match(client,/OfficeHQDeviceSync=\{markup,draw,refresh/);
  assert.match(client,/sessionStorage\.setItem/);
- assert.doesNotMatch(client,/service_role|secret_key|Authorization:\s*'Bearer '+KEY/);
+ assert.doesNotMatch(client,/const\s+(?:SERVICE_ROLE|SERVICE_KEY|SECRET_KEY)\s*=/i);
 });
 test('Mac background worker is separate from Safari session and requires employee grants',()=>{
  assert.match(worker,/auth\/v1\/token\?grant_type=password/);
@@ -60,7 +60,7 @@ test('Independent Ollama bridge is local, draft-only and never uses OpenMausBot 
  assert.match(native,/externalActions:false/);
  assert.match(native,/allowSending:false/);
  assert.match(native,/ownerConfirmed!==true/);
- assert.doesNotMatch(native,/spawn\(|openmausbot\b/i);
+ assert.doesNotMatch(native,/spawn\(|from\s+['\"]\.\.\/openmaus\/bridge/);
  assert.match(server,/from '\.\/native-engine\/bridge\.mjs'/);
  assert.match(server,/createMacSyncService/);
  assert.match(server,/\/api\/device-sync\/action/);

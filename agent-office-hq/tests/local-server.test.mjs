@@ -28,6 +28,15 @@ test('local server serves dashboard, reports draft-only status, and refuses AI c
     assert.equal((await fetch(base+'/ios-workstations.js')).status,200);
     assert.equal((await fetch(base+'/desktop-workstations.js')).status,200);
     assert.equal((await fetch(base+'/openmausbot.js')).status,200);
+    assert.equal((await fetch(base+'/research-center.js')).status,200);
+    const reachStatus=await fetch(base+'/api/research/status');
+    assert.equal(reachStatus.status,200);
+    const reachJson=await reachStatus.json();
+    assert.equal(reachJson.localOnly,true);
+    assert.equal(reachJson.enabled,false);
+    const deniedResearch=await fetch(base+'/api/research/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'request',companyId:'co',employeeId:'emp',roleKey:'ap',department:'Finance',channel:'github',target:'public-apis/public-apis',purpose:'Should be denied for this role'})});
+    assert.equal(deniedResearch.status,403);
+    assert.equal((await fetch(base+'/research/reach-bridge.mjs')).status,404);
     const mausStatus=await fetch(base+'/api/openmaus/status');
     assert.equal(mausStatus.status,200);
     assert.equal(typeof (await mausStatus.json()).connected,'boolean');

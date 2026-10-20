@@ -81,11 +81,16 @@ export function createMacSyncService({bridge}={}){
  }
  async function pair(body){
   if(body?.ownerConfirmed!==true)throw error('Authorize this Mac explicitly before syncing.',403);
-  if(typeof body.access_token!=='string'||typeof body.refresh_token!=='string')throw error('Sign in first.');
-  const user=await request('/auth/v1/user',body.access_token);
+  if(typeof body.email!=='string'||typeof body.password!=='string')throw error('Sign in on this Mac first.');
+  if(body.email.length>254||body.password.length>1024)throw error('Sign-in details are too long.');
+  // Independent background session: never rotate the browser's refresh token.
+  const login=await request('/auth/v1/token?grant_type=password',null,{
+   method:'POST',body:JSON.stringify({email:body.email,password:body.password})
+  });
+  const user=await request('/auth/v1/user',login.access_token);
   if(!user?.id)throw error('Cloud account could not be authenticated.',401);
-  creds={access_token:body.access_token,refresh_token:body.refresh_token,
-   owner_id:user.id,expires_at:Date.now()+Math.max(120,Number(body.expires_in||3600))*1000,
+  creds={access_token:login.access_token,refresh_token:login.refresh_token,
+   owner_id:user.id,expires_at:Date.now()+Math.max(120,Number(login.expires_in||3600))*1000,
    device_id:creds?.device_id||'mac-'+randomUUID()};
   await lockedSave(creds);
   await presence();
@@ -123,7 +128,7 @@ export function createMacSyncService({bridge}={}){
   const ai=await bridge.status();
   if(!ai.connected||!ai.dispatchEnabled)return;
   for(const task of pending){
-   if(task.source_device_id===creds.device_id)continue;
+   if(task.source_device_id===creds.device_id||task.source_device_id.startsWith('mac-'))continue;
    const matched=mappings.find(x=>x.roleKey===task.employee_role&&
      x.companyName.toLowerCase()===task.company_label.toLowerCase()&&
      ai.bindings.some(b=>b.companyId===x.companyId&&b.employeeId===x.employeeId));

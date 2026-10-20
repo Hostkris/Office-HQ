@@ -93,9 +93,10 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/b
     mkdir -p "$BACKUP"
     for item in server.mjs index.html app.js office-features.js officehq-voice.js \
       officehq-voice.css officehq-device-sync.js officehq-sync.css sw.js styles.css \
-      refresh.js cloud.html cloud.js; do
+      refresh.js cloud.html cloud.js openmaus/workforce-engine.mjs; do
       if [ -f "$SOURCE/$item" ]; then
-        if [ -f "$WEB/$item" ]; then cp "$WEB/$item" "$BACKUP/$item"; fi
+        mkdir -p "$BACKUP/$(dirname "$item")" "$WEB/$(dirname "$item")"
+        if [ -f "$WEB/$item" ]; then cp -p "$WEB/$item" "$BACKUP/$item"; fi
         cp "$SOURCE/$item" "$WEB/$item"
       fi
     done

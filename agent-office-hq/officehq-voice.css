@@ -1,0 +1,13 @@
+/* Office HQ Voice Inbox — touch-friendly on Mac, iPhone and iPad. */
+.hq-message-inbox{max-width:960px;margin-inline:auto}
+.hq-voice-composer{display:grid;gap:10px;padding:15px;margin:0 0 20px;border:1px solid rgba(94,200,184,.4);background:rgba(86,181,172,.065);border-radius:16px}
+.hq-voice-composer h3,.hq-voice-composer p{margin:0}
+.hq-voice-composer textarea,.hq-voice-composer select{width:100%;max-width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid var(--border,#44666a);background:var(--card,#172832);color:var(--text,#e6f1f3);font:inherit;font-size:16px}
+.hq-voice-composer textarea{min-height:90px;resize:vertical}
+.hq-voice-actions{display:flex;flex-wrap:wrap;gap:8px}
+.hq-voice-actions button{min-height:48px;flex:1 1 190px;touch-action:manipulation}
+.hq-voice-composer [data-voice-status][data-warning="1"]{color:var(--gold,#e4b960)}
+.hq-voice-option{display:flex;align-items:flex-start;gap:8px;font-size:.84rem}
+.hq-voice-option input{width:18px;height:18px;flex:none}
+.office-phone-body .hq-voice-composer{padding:12px;margin-bottom:12px}
+@media(max-width:700px){.hq-voice-actions{flex-direction:column}.hq-voice-actions button{width:100%;flex:auto}.hq-voice-composer{padding:12px}.ops-message{overflow-wrap:anywhere}#opsDrawerContent{padding-bottom:env(safe-area-inset-bottom)}}

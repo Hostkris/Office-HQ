@@ -252,7 +252,7 @@ function renderFloor(c,now){
  const cid=inCompany(),{floor,project}=setup(cid);if(!floor)return;
  if(window.OfficeHQOfficeLife?.draw){
   if(handoff&&handoff.cid===cid&&handoff.floorId===floor.id&&handoff.until===null)handoff.until=Date.now()+6500;
-  window.OfficeHQOfficeLife.draw({c,now,cid,floor,project,handoff,staff:state().employees,tasks:state().tasks,approvals:state().approvals||[],thoughts:window.OfficeHQDesktopThoughts||{},B});
+  window.OfficeHQOfficeLife.draw({c,now,cid,floor,project,handoff,staff:state().employees,tasks:state().tasks,approvals:state().approvals||[],thoughts:{...(window.OfficeHQDesktopThoughts||{}),...(window.OfficeHQMausThoughts||{})},B});
   if(handoff&&handoff.until!==null&&Date.now()>=handoff.until)handoff=null;
   return;
  }
@@ -272,7 +272,7 @@ function renderFloor(c,now){
    c.fillText(clamp(e?.name?.split(' ')[0]||'Worker',13),pt.x,pt.y+52);
    c.textAlign='left';
    const active=state().tasks.find(t=>t.ownerId===placement.employeeId&&t.status==='in_progress');
-   const thought=window.OfficeHQDesktopThoughts?.[placement.employeeId]||active?.title;
+   const thought=window.OfficeHQMausThoughts?.[placement.employeeId]||window.OfficeHQDesktopThoughts?.[placement.employeeId]||active?.title;
    if(thought)label(c,thought,pt.x+8,pt.y-61);
   }
  }

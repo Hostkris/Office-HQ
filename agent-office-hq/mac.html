@@ -33,21 +33,21 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text)}
 <a class="mac-back" href="./index.html#/command">← Back to Office HQ</a>
 <section class="mac-hero">
 <div class="eyebrow">OFFICE HQ · MAC INSTALLER</div>
-<h1 class="mac-title">Send Office HQ to your Mac</h1>
-<p>Use your iPhone or iPad to share the Office HQ Mac download link through AirDrop or Messages. The Mac downloads and opens the installer—no remote control or Mac sign-in is required.</p>
+<h1 class="mac-title">Install or update Office HQ on your Mac</h1>
+<p>Use your iPhone or iPad to send the latest published Office HQ Mac installer through AirDrop or Messages. Open the link on your Mac to install Office HQ or update an existing installation.</p>
 <div class="mac-actions">
-<button class="btn btn-primary" type="button" data-mac-share>↗ Send to Mac (AirDrop)</button>
+<button class="btn btn-primary" type="button" data-mac-share>↗ Send latest Mac installer</button>
 <a class="btn" href="https://raw.githubusercontent.com/Hostkris/Office-HQ/main/downloads/Office_HQ_for_Mac.zip" download="Office_HQ_for_Mac.zip">↓ Download Mac ZIP</a>
 </div>
 <p id="macShareStatus" class="mac-status" role="status" aria-live="polite"></p>
 <ol class="mac-steps">
-<li>On your iPhone or iPad, tap <strong>Send to Mac (AirDrop)</strong>, choose AirDrop, and select your Mac. You can also share the link through Messages.</li>
+<li>On your iPhone or iPad, tap <strong>Send latest Mac installer</strong>, choose AirDrop, and select your Mac. You can also share the link through Messages.</li>
 <li>On your Mac, open the received link and download <strong>Office_HQ_for_Mac.zip</strong>.</li>
 <li>Double-click the ZIP, then open <strong>Office HQ.app</strong>. macOS may require you to review and explicitly open the unsigned application.</li>
-<li>Approve setup on your Mac. Office HQ installs the independent Ollama engine and the <strong>llama3.2:3b</strong> local model, then opens your Mac workspace. A large model download is required.</li>
+<li>On a first install, approve setup. If Office HQ is already installed, select <strong>Update Office HQ</strong> when prompted. Existing workspace data is preserved and replaced application files are backed up. Quit an older running Office HQ server and relaunch the Mac app to activate updated server code.</li>
 </ol>
 <div class="mac-note">
-<strong>Important:</strong> This is an unsigned Mac launcher, not an offline App Store application or a remote installer. After your approval, it installs the full independent local Ollama runtime and downloads its llama3.2:3b model, requiring several GB of disk space, internet, and macOS 14+. To synchronize assignments, sign in to the same Office HQ Cloud account under Company Messages on the Mac and iPhone/iPad. The Mac can draft with Ollama only for explicitly authorized employees; outside account actions remain disabled. iPhone/iPad sync runs while its Office HQ web app is open.
+<strong>Important:</strong> This is an unsigned Mac launcher, not an offline App Store application or a remote installer. On first setup, it can install the independent local Ollama runtime and llama3.2:3b model, requiring several GB of disk space, internet and macOS 14+. Reopening the launcher checks the published code and requests consent before replacing existing application files; models and company records are not automatically deleted. To synchronize assignments, sign in to the same Office HQ Cloud account under Company Messages on the Mac and iPhone/iPad. The Mac can draft with Ollama only for explicitly authorized employees; outside account actions remain disabled. iPhone/iPad sync runs while its Office HQ web app is open.
 </div>
 <p><a class="mac-small-link" href="https://github.com/Hostkris/Office-HQ/tree/main/mac">Review the Mac installer source on GitHub</a></p>
 </section>

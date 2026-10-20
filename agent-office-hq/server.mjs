@@ -8,6 +8,7 @@ import {createOpenMausBridge} from './native-engine/bridge.mjs';
 import {createMacSyncService} from './device-sync/mac-worker.mjs';
 import {createWorkforceEngine} from './openmaus/workforce-engine.mjs';
 import {createReachBridge} from './research/reach-bridge.mjs';
+import {createPublicCapabilities} from './research/public-capabilities.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const host=process.env.HOST||'127.0.0.1';
 if(!['127.0.0.1','localhost','::1'].includes(host))throw Error('The desktop workforce must only listen on this computer (127.0.0.1).');
@@ -15,7 +16,8 @@ const port=Number(process.env.PORT||3000);
 const apiKey=process.env.OPENAI_API_KEY;
 const model=process.env.OPENAI_MODEL||'gpt-4.1-mini';
 const desktop=createDesktopService({root,apiKey,model});
-const openmaus=createOpenMausBridge({root});
+const publicSources=createPublicCapabilities();
+const openmaus=createOpenMausBridge({publicSources});
 const deviceSync=createMacSyncService({bridge:openmaus});
 const workforceEngine=createWorkforceEngine({root});
 const research=createReachBridge({root});
@@ -60,7 +62,17 @@ const server=http.createServer(async(req,res)=>{try{
     }catch(e){send(res,Number(e.status)||400,JSON.stringify({error:String(e.message||'Device sync failed.').slice(0,220)}));}
     return;
   }
-  if(url.pathname==='/api/research/status'&&req.method==='GET'){
+  if(url.pathname==='/api/public-capabilities/status'&&req.method==='GET'){
+     try{send(res,200,JSON.stringify(await publicSources.status(url.searchParams.get('companyId'))));}
+     catch{send(res,503,JSON.stringify({error:'Local public API permissions unavailable.'}));}
+     return;
+   }
+   if(url.pathname==='/api/public-capabilities/action'&&req.method==='POST'){
+     try{const body=await parseJson(req);send(res,200,JSON.stringify(await publicSources.action(body)));}
+     catch(e){send(res,Number(e.status)||400,JSON.stringify({error:String(e.message||'Public API operation failed').slice(0,240)}));}
+     return;
+   }
+   if(url.pathname==='/api/research/status'&&req.method==='GET'){
     try{send(res,200,JSON.stringify(await research.status()));}
     catch{send(res,503,JSON.stringify({error:'Local research diagnostics unavailable.'}));}
     return;

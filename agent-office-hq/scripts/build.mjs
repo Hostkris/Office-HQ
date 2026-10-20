@@ -8,6 +8,11 @@ const assets = ['index.html', 'cloud.html', 'cloud.js', 'assignment-library.js',
 await rm(dist, {recursive:true, force:true});
 await mkdir(dist, {recursive:true});
 for(const file of assets) await cp(path.join(root, file), path.join(dist, file));
+// Preserve historical Office HQ bookmarks and AirDrop links under /agent-office-hq/.
+// Also leave root copies for installations that already use the shorter /Office-HQ/ URL.
+const legacy = path.join(dist, 'agent-office-hq');
+await mkdir(legacy, {recursive:true});
+for(const file of assets) await cp(path.join(root,file),path.join(legacy,file));
 // GitHub Pages must serve files as-is (no Jekyll preprocessing).
 await writeFile(path.join(dist, '.nojekyll'), '');
-console.log(`Built ${assets.length} public files into dist/ (no backend or secrets)`);
+console.log(`Built ${assets.length} public files at root and /agent-office-hq/ (no backend or secrets)`);

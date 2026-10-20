@@ -33,6 +33,12 @@ jobs:
       - name: Install Safari WebKit test engine and Linux dependencies
         working-directory: agent-office-hq
         run: npx playwright install --with-deps webkit
-      - name: Exercise iPhone and iPad browser UI (WebKit emulation)
+      - name: Exercise branch's static iPhone and iPad site (WebKit emulation)
         working-directory: agent-office-hq
-        run: node --test tests/ios-browser.e2e.mjs tests/ios-extension-webkit.e2e.mjs tests/ios-live-production.e2e.mjs tests/project-floor-webkit.e2e.mjs
+        run: |
+          npm run build
+          python3 -m http.server 4173 --directory dist --bind 127.0.0.1 > /tmp/office-hq-static.log 2>&1 &
+          STATIC_PID=$!
+          trap 'kill $STATIC_PID 2>/dev/null || true' EXIT
+          sleep 2
+          OFFICE_HQ_SITE=http://127.0.0.1:4173/agent-office-hq/ node --test tests/ios-browser.e2e.mjs tests/ios-extension-webkit.e2e.mjs tests/ios-live-production.e2e.mjs tests/project-floor-webkit.e2e.mjs

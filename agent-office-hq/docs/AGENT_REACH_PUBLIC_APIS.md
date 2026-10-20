@@ -12,7 +12,7 @@ Supported real local actions (only after enabling and approving):
 - YouTube public video metadata using yt-dlp --dump-single-json --skip-download for a strictly validated video ID
 - Agent Reach installation status using agent-reach doctor --json (diagnostics, not account access)
 
-Everything else from the directory is **discovery only**. This release does NOT grant or enable access to Facebook, Instagram, X, Reddit, TikTok, Shopify, Etsy, Gmail, iCloud, financial accounts, publishing APIs or browser cookies. Catalog approval is an internal decision to evaluate the provider documentation; it does not install anything or authorize account connection.
+Other catalog entries are **discovery only**, apart from the separately supported direct public-source lookups explained below. This release does NOT grant or enable access to Facebook, Instagram, X, Reddit, TikTok, Shopify, Etsy, Gmail, iCloud, financial accounts, publishing APIs or browser cookies. Catalog approval is an internal decision to evaluate the provider documentation; it does not install anything or authorize account connection.
 
 ## Local setup on your Mac or PC
 
@@ -29,6 +29,22 @@ Everything else from the directory is **discovery only**. This release does NOT 
 4. From the agent-office-hq directory, run npm install and npm run dev. Open http://127.0.0.1:3000/#/research on **that same computer**.
 5. Choose an active employee and public target; submit a research request; explicitly approve the exact request as CEO.
 6. After you verify the local CLI and permission boundaries, restart the local server with OFFICE_HQ_RESEARCH_EXECUTE=1 in its local environment. Click Run for the approved request. This switch does not create recurring jobs or grant any account permission.
+
+## One-click read-only public sources (new Mac tool layer)
+
+Office HQ now includes **three strictly allowlisted, keyless data lookups** independent of Agent Reach and the gh/yt-dlp tools:
+
+- **GitHub public repository metadata** via `https://api.github.com/repos/owner/repo`; eligible Technology/Research employees only.
+- **Frankfurter exchange rates** via the public `api.frankfurter.dev` API; eligible Finance/Pricing employees only.
+- **Open Food Facts product/barcode records** via the public `world.openfoodfacts.org` API; eligible Product/Inventory/Research employees only.
+
+On the Mac, launch the updated Office HQ backend and visit `http://127.0.0.1:3000/#/research`. Click **Enable keyless public sources** and confirm. This saves one company-scoped permission set for **named, currently active, eligible employees** with restrictive local file permissions. The exact worker must also be authorized in the native Ollama engine, and agent drafting must separately be enabled. Click **Check Mac readiness** to see the actual state of Ollama, dispatch, pairing, and employee bindings. **Revoke source access** disables subsequent lookups for that company. No API keys or browser cookies are collected.
+
+An employee uses one of these sources only when an assignment includes an explicit, recognizable target such as `GitHub public-apis/public-apis`, `exchange rate USD to EUR`, or `barcode 3017620422003`. Office HQ makes a **read-only HTTPS request** to a fixed provider endpoint, passes the returned metadata to the authorized Mac Ollama drafting model as **untrusted source data**, and instructs the worker to identify the source and retrieval date. If the source is not approved, its server fails, or the query is unsupported, **no external result is claimed or fabricated**. A public API grant does not empower arbitrary browsing, logins, social posts, or external changes.
+
+These endpoints can have rate limits, change service policy, or return incomplete third-party content. Keep the final CEO review and independently verify business-critical facts. This is an initial set of real tools, **not** a universal connector installation and **not** permission for all twelve catalog entries.
+
+On iPhone/iPad Safari, GitHub Pages still runs the interface; it does not run local Mac code. Pair the two devices through the existing secure Office HQ device sync after starting the Mac engine. The Mac must remain powered and connected for unattended jobs. The one-click permission screen is intentionally local to that Mac.
 
 ## Security
 

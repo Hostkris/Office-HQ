@@ -22,6 +22,7 @@ const CATALOG=[
 ];
 const RESEARCH_ROLES=new Set(['research','social','content','cmo','product_mgr','catalog','pricing_analyst','integrator','security','backend_engineer','frontend_engineer','cto']);
 let status={agentReachReady:false,enabled:false,requests:[],channels:{}},query='',filter='All',pick=CATALOG[0].id,who='',channel='github',busy=false;
+let publicStatus=null,macReadiness=null,publicBusy=false;
 const getCompany=()=>$('#companyPicker')?.value==='all'||!$('#companyPicker')?.value?B.getState().companies[0]?.id:$('#companyPicker').value;
 const members=()=>B.getState().employees.filter(x=>x.active&&x.companyId===getCompany());
 const compatible=entry=>members().filter(x=>entry.dept.includes(B.roleFor(x)?.dept));
@@ -43,7 +44,17 @@ function render(){
  '<p>'+E(p.about)+'</p><p class="tiny muted">Relevant: '+E(p.dept.join(', '))+'</p>'+
  '<a class="btn btn-sm" href="'+E(p.url)+'" target="_blank" rel="noopener noreferrer">Read provider documentation ↗</a></article>').join('')+
  (providers.length?'':'<p class="muted">No matching entries. Change your search.</p>')+'</div></section>'+
- '<section class="card" style="margin-top:16px"><h2>Request a provider review for one employee</h2>'+
+ '<section class="card" style="margin-top:16px"><div class="section-top"><h2>One-click public research setup</h2><span class="ops-tag">'+(isLocal?'Your Mac only':'Mac setup required')+'</span></div>'+
+ '<p class="notice">Enable credential-free READ-ONLY sources for compatible employees in this company. This is not an OAuth or bank-account authorization, and it does not enable the Mac AI engine. Other connectors still require their own sign-in and approved scopes.</p>'+
+ (isLocal?
+  '<div class="info-box"><strong>Company permission:</strong> '+(publicStatus?.grants?.filter(g=>g.companyId===getCompany()).length||0)+' employee/source grants. '+(publicStatus?'Sources available: '+publicStatus.capabilities.map(x=>E(x.name)).join(', '):'Checking Mac public tools…')+'</div>'+
+  '<div class="inline-actions" style="margin-top:12px"><button class="btn btn-primary" data-public-action="enable"'+(!publicStatus||publicBusy?' disabled':'')+'>✓ Enable keyless public sources</button>'+
+  '<button class="btn" data-public-action="revoke"'+(!publicStatus||publicBusy?' disabled':'')+'>Revoke source access</button>'+
+  '<button class="btn" data-public-action="diagnose"'+(publicBusy?' disabled':'')+'>Check Mac readiness</button></div>'+
+  (macReadiness?'<p class="notice">Ollama: '+E(macReadiness.ollama)+' · Agent dispatch: '+E(macReadiness.dispatch)+' · Mac pairing: '+E(macReadiness.pairing)+' · Bound workers: '+E(macReadiness.bindings)+'</p>':'<p class="tiny muted">This button grants only approved public reads to eligible named agents. A connected Ollama model and separately approved runtime bindings are still required to start working.</p>')
+  :'<p class="notice">On iPhone, you can review these sources. Open Office HQ on your Mac at <code>127.0.0.1:3000/#/research</code> to enable them once. The Mac performs the actual lookups; this static phone webpage never receives API keys.</p>')+
+ '<p class="tiny muted">An agent uses a source only when your assignment explicitly includes a supported target, such as “GitHub public-apis/public-apis”, “exchange rate USD to EUR”, or “barcode 3017620422003”. Other tasks remain ordinary draft work.</p></section>'+
+  '<section class="card" style="margin-top:16px"><h2>Request a provider review for one employee</h2>'+
  '<p class="notice">This creates an internal CEO review card only. Approving it does not install anything, request OAuth scopes, share passwords, or activate an external action.</p>'+
  '<form id="researchApiForm"><div class="field"><label>API / MCP provider</label><select id="researchPick" name="provider">'+CATALOG.map(p=>'<option value="'+E(p.id)+'"'+(p.id===source.id?' selected':'')+'>'+E(p.name)+'</option>').join('')+'</select></div>'+
  '<div class="field"><label>Specialist assigned to assess provider</label><select id="researchAssignee" name="employeeId" required>'+agents.map(e=>'<option value="'+E(e.id)+'">'+E(e.name)+' · '+E(B.roleFor(e)?.title)+'</option>').join('')+'</select></div>'+
@@ -82,7 +93,7 @@ async function refresh(){
  if(!isLocal||busy)return;
  busy=true;
  try{const r=await fetch('/api/research/status',{cache:'no-store'});if(!r.ok)throw Error('Research backend unavailable.');
- status=await r.json();if(location.hash.replace('#/','')==='research')B.setView('research');}
+ status=await r.json();if(location.hash.replace('#/','')==='research'&&!document.activeElement?.closest('#researchApiForm, #reachResearchForm'))B.setView('research');}
  catch(e){alertUser(e.message,true)}finally{busy=false}
 }
 async function action(type,id){
@@ -95,6 +106,50 @@ async function action(type,id){
  await api({action:type,companyId:getCompany(),requestId:selected.id,ownerConfirmed:true});
  await refresh();alertUser(type==='run'?'Real read-only research attempt finished. Review the reported result.':'CEO decision saved. No account access was granted.');
 }
+async function refreshPublic(){
+ if(!isLocal)return;
+ try{const res=await fetch('/api/public-capabilities/status?companyId='+encodeURIComponent(getCompany()),{cache:'no-store'});
+  if(!res.ok)throw Error('Mac public research backend unavailable.');
+  publicStatus=await res.json();
+  if(location.hash.replace('#/','')==='research'&&!document.activeElement?.closest('#researchApiForm, #reachResearchForm'))B.setView('research');
+ }catch(e){alertUser(e.message,true);}
+}
+async function publicAction(action){
+ if(!isLocal)return;
+ if(action==='enable'){
+  if(!publicStatus)throw Error('Check your Mac public research service first.');
+  const compatibleRoles=new Set(publicStatus.capabilities.flatMap(c=>c.roles));
+  const team=members().filter(e=>compatibleRoles.has(e.roleKey)).map(e=>({employeeId:e.id,roleKey:e.roleKey}));
+  if(!team.length)throw Error('No active eligible employees in this company.');
+  if(!confirm('Enable ONLY the three listed keyless, read-only public sources for '+team.length+' eligible workers in this company? No private accounts, email, posting or purchases.'))return;
+  const res=await fetch('/api/public-capabilities/action',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'enable',companyId:getCompany(),employees:team,ownerConfirmed:true})});
+  const result=await res.json();if(!res.ok)throw Error(result.error||'Grant failed.');
+  B.addActivity('You · CEO','Enabled '+result.enabled+' strictly read-only public-source permissions for eligible employees','approval',getCompany());
+  await refreshPublic();alertUser('Read-only public research enabled for compatible employees. Agent runtime permissions remain separate.');return;
+ }
+ if(action==='revoke'){
+  if(!confirm('Revoke ALL credential-free public-source research grants for this company?'))return;
+  const res=await fetch('/api/public-capabilities/action',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'revoke',companyId:getCompany(),ownerConfirmed:true})});
+  const data=await res.json();if(!res.ok)throw Error(data.error||'Revocation failed.');
+  B.addActivity('You · CEO','Revoked public-source grants ('+data.revoked+')','approval',getCompany());
+  await refreshPublic();alertUser('Public research access revoked.');return;
+ }
+ if(action==='diagnose'){
+  const [agent,pairing]=await Promise.all([
+   fetch('/api/openmaus/status',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null),
+   fetch('/api/device-sync/status',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null)]);
+  macReadiness={ollama:agent?.connected?'Ready':'Not ready',dispatch:agent?.dispatchEnabled?'Enabled':'Disabled',
+   pairing:pairing?.connected?'Synced':pairing?.paired?'Paired; waiting for phone':'Not paired',
+   bindings:(agent?.bindings||[]).filter(x=>x.companyId===getCompany()).length};
+  B.setView('research');alertUser('Mac readiness checked against actual running services.');return;
+ }
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-public-action]');if(!b)return;
+ e.preventDefault();if(publicBusy)return;publicBusy=true;
+ void publicAction(b.dataset.publicAction).catch(err=>alertUser(err.message,true)).finally(()=>{publicBusy=false;});
+});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-reach]');if(!b)return;e.preventDefault();void action(b.dataset.reach,b.dataset.id).catch(x=>alertUser(x.message,true));});
 document.addEventListener('input',e=>{
  if(e.target.id==='researchSearch'){query=e.target.value;B.setView('research');$('#researchSearch')?.focus();}
@@ -128,6 +183,6 @@ document.addEventListener('submit',e=>{
     .catch(err=>alertUser(err.message,true));return;
  }
 });
-setTimeout(()=>{if(isLocal)void refresh();},500);
+setTimeout(()=>{if(isLocal){void refreshPublic();void refresh();}},500);
 if(location.hash.replace('#/','')==='research')B.setView('research');
 })();

@@ -105,3 +105,37 @@ test('company inbox voice fields and message headings use high-contrast light co
   function contrast(a,b){const x=luminance(a.slice(1)),y=luminance(b.slice(1));return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
   for(const [fg,bg] of [['#193744','#ffffff'],['#193744','#f0f6f8'],['#355a67','#f1f9fa'],['#4b6672','#ffffff']])assert.ok(contrast(fg,bg)>=4.5,fg+' on '+bg+' below AA contrast');
 });
+
+
+test('day-mode audit covers dashboard, workflow, office, modal, email, phone and voice surfaces',async()=>{
+  const css=await readFile(path.join(root,'styles.css'),'utf8');
+  const voice=await readFile(path.join(root,'officehq-voice.css'),'utf8');
+  const cloud=await readFile(path.join(root,'cloud.html'),'utf8');
+  const floor=await readFile(path.join(root,'project-floor.js'),'utf8');
+  const expected=['.hero-band','.brand-mark','.nav-count','.field label','.close-modal',
+    '.office-plan-form label','.ios-guide','.ios-insert textarea','.pf-route-builder',
+    '.pf-route-item','.ops-msg-top','.ops-message details pre','.budget-row .tiny',
+    '.desktop-check','.brief','.task-card:hover','.office-phone-header'];
+  for(const selector of expected){
+    assert.ok(css.includes(selector), 'Day-mode stylesheet missing '+selector);
+  }
+  assert.match(css,/\[data-theme="day"\] \.hero-band\s*\{/);
+  assert.match(css,/background:linear-gradient\(110deg,#e0f3f2/);
+  assert.match(voice,/\[data-theme="day"\] \.ops-thread-list \.ops-message/);
+  assert.match(voice,/\[data-theme="day"\] \.hq-voice-composer :is\(textarea,select\)/);
+  assert.match(cloud,/\[data-theme="day"\] \.error\{color:#a53842\}/);
+  assert.match(floor,/sceneColor\(\(Math\.floor\(x\/28/);
+  // Text colors on their declared pale day-mode surfaces must reach WCAG AA.
+  const toLin=(h)=>h.match(/[0-9a-f]{2}/gi).map(v=>parseInt(v,16)/255)
+    .map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
+  const lum=h=>{const c=toLin(h.slice(1));return c[0]*.2126+c[1]*.7152+c[2]*.0722;};
+  const contrast=(a,b)=>{const l=lum(a),r=lum(b);return (Math.max(l,r)+.05)/(Math.min(l,r)+.05);};
+  for(const [fg,bg] of [
+    ['#1c3542','#e0f3f2'], // header band
+    ['#193744','#ffffff'], // inputs/messages
+    ['#466773','#eef6f9'], // hero description
+    ['#355968','#ffffff'], // form labels
+    ['#a13d30','#ffffff'], // budget alert
+    ['#ffffff','#096f73']  // highlighted brand / primary action
+  ])assert.ok(contrast(fg,bg)>=4.5,fg+' vs '+bg+' contrast is too low');
+});

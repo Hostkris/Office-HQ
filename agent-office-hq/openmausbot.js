@@ -5,12 +5,15 @@ const B=window.OfficeHQBridge;
 if(!B||!window.OfficeHQExtraViews)return;
 const E=B.E, $=q=>document.querySelector(q);
 const isLocal=['localhost','127.0.0.1'].includes(location.hostname);
-let latest={connected:false,dispatchEnabled:false,bots:[],bindings:[]},selected='',busy=false;
+let latest={connected:false,dispatchEnabled:false,bots:[],bindings:[],runs:[]},selected='',busy=false;
+window.OfficeHQMausThoughts={};
 const companyId=()=>$('#companyPicker')?.value==='all'||!$('#companyPicker')?.value?B.getState().companies[0]?.id:$('#companyPicker').value;
 const marketers=()=>B.getState().employees.filter(e=>e.companyId===companyId()&&e.active&&B.roleFor(e)?.dept==='Marketing');
 const employee=()=>marketers().find(e=>e.id===selected);
 const tasks=()=>B.getState().tasks.filter(t=>t.companyId===companyId()&&t.ownerId===selected&&t.status!=='done'&&t.status!=='cancelled');
 const bound=()=>latest.bindings?.find(b=>b.companyId===companyId()&&b.employeeId===selected);
+const runs=()=>latest.runs?.filter(j=>j.companyId===companyId())||[];
+const isWorking=s=>['submitted','running','needs-input','stop_requested'].includes(s);
 function heading(){return '<div class="page-head"><div class="eyebrow">REAL AGENT ENGINE · LOCAL BRIDGE</div><h1>OpenMausBot · AI Agent Engine</h1><p class="muted">Connect one approved Marketing specialist to a real OpenMausBot conversation. Your existing staff, desks, roles, and assignments stay in Office HQ.</p></div>';}
 function render(){
  const setup='<section class="card"><h2>Start the agent engine on your computer</h2>'+
@@ -41,7 +44,18 @@ function render(){
  eligible.map(t=>'<option value="'+E(t.id)+'">'+E(t.title)+'</option>').join('')+'</select></label>'+
  '<label class="desktop-check"><input id="mausSendConfirm" type="checkbox"> I have inspected OpenMausBot: Ask for approval, computer Off, no connected app access. I approve sending this draft-only job now.</label>'+
  '<button type="button" class="btn btn-primary" data-maus="send"'+(!mapped||!latest.dispatchEnabled?' disabled':'')+'>▶ Send to OpenMausBot</button>'+
- '<p class="small muted">When sending is off, restart the local Office HQ server with OFFICE_HQ_OPENMAUS_SEND=1 after checking restrictions. Sending a message does not prove task completion.</p></section>'+
+ '<p class="small muted">When sending is off, restart the local Office HQ server with OFFICE_HQ_OPENMAUS_SEND=1 after checking restrictions. Tasks are reviewed—not automatically approved.</p></section>'+
+ '<section class="card" style="margin-top:16px"><div class="section-top"><h2>4 · Verified agent activity</h2><button type="button" class="btn btn-sm" data-maus="refresh">↻ Refresh jobs</button></div>'+
+ (runs().length?runs().slice(0,20).map(j=>'<article class="desktop-job"><div class="desktop-job-heading"><strong>'+E(j.employeeName)+' · '+E(j.title)+'</strong><span>'+E(j.status)+'</span></div>'+
+ '<p class="desktop-thought">💭 '+E(j.thought||'Waiting for engine')+'</p>'+
+ (j.result?'<div class="desktop-summary"><strong>Actual OpenMausBot draft for CEO review:</strong><p style="white-space:pre-wrap">'+E(j.result)+'</p></div>':'')+
+ (j.reason?'<p class="small muted">'+E(j.reason)+'</p>':'')+
+ '<p class="tiny muted">OpenMausBot thread '+E(j.threadId)+' · '+E(j.updatedAt||j.createdAt)+'</p>'+
+ (isWorking(j.status)?'<div class="desktop-actions"><button type="button" class="btn btn-sm" data-maus="check" data-run="'+E(j.id)+'">Check real progress</button>'+
+ '<button type="button" class="btn btn-sm" data-maus="interrupt" data-run="'+E(j.id)+'">Stop this bot task</button></div>':'')+
+ '</article>').join(''):'<p class="muted">No dispatched OpenMausBot jobs yet. Assign one above after connecting the engine.</p>')+
+ '<p class="small muted">Only an actual OpenMausBot completion changes an Office HQ task to CEO review. An approval request must be answered inside OpenMausBot; this screen never approves it silently.</p></section>'+
+
  '<p class="notice">Do not give this starter bot Gmail, Meta, Shopify, bank, password, or payment access. Revoking a mapping does not stop a running bot or revoke an OAuth token.</p>'+
  '<p id="mausNotice" class="notice" role="status" aria-live="polite"></p>';
 }
@@ -57,11 +71,33 @@ async function refresh(){
  try{
   const r=await fetch('/api/openmaus/status',{cache:'no-store'});if(!r.ok)throw Error('Local Office HQ server is unavailable.');
   latest=await r.json();if($('#mausEmployee'))selected=$('#mausEmployee').value||selected;
+  syncAgentResults();
   if(location.hash.replace('#/','')==='openmaus')B.setView('openmaus');
  }catch(e){notice(e.message,true);}
  finally{busy=false;}
 }
-async function clicked(action){
+function syncAgentResults(){
+ const thoughts={},s=B.getState();let changed=false;
+ for(const j of latest.runs||[]){
+   if(j.companyId!==companyId())continue;
+   if(isWorking(j.status))thoughts[j.employeeId]=j.thought||'Working in OpenMausBot';
+   if(j.status==='review')thoughts[j.employeeId]='Draft ready for CEO review';
+   const t=s.tasks.find(t=>t.companyId===j.companyId&&t.id===j.officeTaskId&&t.ownerId===j.employeeId);
+   if(!t)continue;
+   if(!t.openMausRunId)t.openMausRunId=j.id;
+   if(j.status==='review'&&t.openMausReviewedRunId!==j.id){
+     t.openMausReviewedRunId=j.id;
+     t.openMausResult=j.result||'OpenMausBot confirmed completion; review its conversation for the original output.';
+     t.output=t.openMausResult; // A real result, never invented or fabricated.
+     t.status='review';t.updatedAt=new Date().toISOString();
+     B.addActivity(j.employeeName,'OpenMausBot draft completed; sent to CEO for review','task',j.companyId);
+     changed=true;
+   }
+ }
+ window.OfficeHQMausThoughts=thoughts;
+ if(changed)B.save();
+}
+async function clicked(action,button){
  if(action==='refresh')return refresh();
  if(!isLocal)throw Error('OpenMausBot bridge is available on the computer only.');
  if($('#mausEmployee'))selected=$('#mausEmployee').value;
@@ -81,16 +117,30 @@ async function clicked(action){
  if(action==='send'){
   const task=tasks().find(t=>t.id===$('#mausTask')?.value);
   if(!task)throw Error('Choose a pending assignment owned by this employee.');
-  const result=await api({action:'send',companyId:companyId(),employeeId:e.id,title:task.title,
+  const result=await api({action:'send',companyId:companyId(),employeeId:e.id,officeTaskId:task.id,title:task.title,
    description:task.description||task.title,ownerConfirmed:$('#mausSendConfirm')?.checked===true});
-  task.openMausSendId=result.sendId;task.openMausBot=result.botName;task.updatedAt=new Date().toISOString();
+  task.openMausSendId=result.sendId;task.openMausRunId=result.runId;task.openMausBot=result.botName;task.openMausThreadId=result.threadId;task.updatedAt=new Date().toISOString();
   B.addActivity(e.name,'Submitted existing assignment to OpenMausBot for draft work; outcome pending','task',companyId());
-  B.save();await refresh();notice('Submitted to OpenMausBot. Open its conversation to review actual progress and approvals.');return;
+  B.save();await refresh();notice('OpenMausBot accepted the new task thread. Use Check real progress to retrieve actual updates.');return;
+ }
+ if(action==='check'){
+   const runId=button?.dataset.run,job=runs().find(j=>j.id===runId);
+   if(!job)throw Error('Choose an existing job.');
+   const result=await api({action:'check',companyId:job.companyId,runId:job.id});
+   await refresh();notice(result.run?.status==='review'?'Draft completed and submitted for CEO review.':'Actual OpenMausBot state: '+(result.run?.status||'unknown'));return;
+ }
+ if(action==='interrupt'){
+   const runId=button?.dataset.run,job=runs().find(j=>j.id===runId);
+   if(!job)throw Error('Choose a running job.');
+   if(!confirm('Stop this specific OpenMausBot conversation, including any active teammates?'))return;
+   await api({action:'interrupt',companyId:job.companyId,runId:job.id,ownerConfirmed:true});
+   B.addActivity('You · CEO','Requested stop for OpenMausBot task: '+job.title.slice(0,100),'task',companyId());
+   await refresh();notice('The official OpenMausBot interrupt command was sent.');return;
  }
 }
 document.addEventListener('click',ev=>{
  const b=ev.target.closest('[data-maus]');if(!b)return;
- ev.preventDefault();void clicked(b.dataset.maus).catch(e=>notice(e.message||'OpenMausBot operation unsuccessful.',true));
+ ev.preventDefault();void clicked(b.dataset.maus,b).catch(e=>notice(e.message||'OpenMausBot operation unsuccessful.',true));
 });
 document.addEventListener('change',ev=>{
  if(ev.target.id==='mausEmployee'){selected=ev.target.value;B.setView('openmaus');}

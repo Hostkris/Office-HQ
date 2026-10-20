@@ -64,6 +64,10 @@
      <p>${E(m.body)}</p><small>${m.kind==='alert'?'⚠ Alert':m.kind==='meeting'?'Meeting':'Internal company message'}</small></article>`).join('')||'<p class="muted">No company messages yet. Activity, approvals, and your CEO announcements will appear here.</p>';
   }
   function threadInner(){
+    if(window.OfficeHQSecureChat?.render){
+      const otherApprovals=approvalItems().filter(a=>!a.taskId||!S().tasks.some(t=>t.id===a.taskId&&t.ceoSecureDesk));
+      return `<div class="ops-thread-list">${window.OfficeHQDeviceSync?.markup(false)||''}${window.OfficeHQSecureChat.render()}<details><summary>Other CEO approval requests (${otherApprovals.length})</summary>${otherApprovals.map(approvalCard).join('')||'<p class="muted">No other requests waiting.</p>'}</details></div>`;
+    }
     // OFFICEHQ_VOICE_THREAD_PATCH_v2 — shared Mac and iOS inbox, approvals and microphone.
     return `<div class="ops-thread-list" aria-live="polite">
       ${window.OfficeHQDeviceSync?.markup(false)||''}

@@ -603,7 +603,7 @@ body.hq-immersive-office .view{padding:0!important;width:100%;max-width:none}
 
 
 /* Native details toggling can be unreliable inside an animated WebKit canvas view. */
-.hq-command-manage-toggle{display:flex;align-items:center;gap:9px;width:100%;min-height:42px;padding:7px 0;border:0;background:transparent;color:var(--muted);font:700 12px/1.4 inherit;text-align:left;cursor:pointer}
+.hq-command-manage-toggle{display:flex;align-items:center;gap:9px;width:100%;min-height:42px;padding:7px 0;border:0;background:transparent;color:var(--muted);font:700 12px/1.4 system-ui,-apple-system,sans-serif;text-align:left;cursor:pointer}
 .hq-command-manage-toggle::before{content:"⚙";font-size:15px}
 .hq-command-manage-toggle::after{content:"⌄";margin-left:auto;font-size:17px}
 .hq-command-manage-toggle[aria-expanded="true"]::after{content:"⌃"}

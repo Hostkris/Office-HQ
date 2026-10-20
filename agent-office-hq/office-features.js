@@ -52,7 +52,7 @@
       ${a.provider?`<p class="tiny">Provider: ${E(a.provider)}</p>`:''}
       ${t?.output?`<details><summary>Read draft before deciding</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:270px;overflow:auto">${E(t.output.slice(0,12000))}</pre></details>`:''}
       ${(a.kind==='campaign'||a.kind==='expense')?`<p class="tiny">Proposed spending cap: ${E(B.money(amount))}</p>`:''}
-      <div class="ops-actions">${button('approve-request','✓ Approve',a.id,'btn-primary')}${button('deny-request','✕ Deny',a.id,'btn-danger')}${t?button('review-work','Read full work',t.id):''}</div>
+      <div class="ops-actions">${button('approve-request','✓ Approve',a.id,'btn-primary')}${button('deny-request','✕ Deny',a.id,'btn-danger')}${button('dismiss-request','Dismiss',a.id)}${t?button('review-work','Read full work',t.id):''}</div>
       <div class="tiny muted">Approving here records a decision; it does not connect accounts or send money or messages.</div>
     </article>`;
   }

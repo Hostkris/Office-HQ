@@ -2,6 +2,8 @@
 
 **GitHub-ready, mobile-friendly, RPG-style multi-business workforce dashboard.** Create separate companies, assign narrowly scoped AI-employee roles, organize projects, review approvals and track manually entered budgets/inventory while animated characters move around a virtual office.
 
+**Lean workforce:** Every new company starts with **40 essential positions across 12 departments**, not 168. When an older browser workspace opens, additional profiles are archived inside the JSON backup, their unfinished jobs are held for CEO reassignment, and the twelve department heads and reporting lines are updated. Original instructions, original job scopes, and previous completed work remain available. No archived bot receives new permission or a task automatically. Back up from **Settings → Export JSON** before making substantial changes. Browser-local workspaces on other devices require the update on each device; secure Cloud HQ is separate.
+
 **Screenshots:** [Dashboard](docs/images/dashboard.png) · [Animated RPG office](docs/images/rpg-office.png) · [Mobile layout](docs/images/iphone.png)
 
 ![Agent Office HQ dashboard preview](docs/images/dashboard.png)
@@ -10,7 +12,7 @@
 
 ### Living RPG office actions and cleanable CEO threads
 
-The up-to-30 assigned RPG workers per level are drawn slightly larger and always display a **thought bubble, full employee name (shortened on canvas as needed) and job title**. Assigned-but-idle employees animate with different staggered activities: desk movement, standing/stretching, coffee, restroom, lunch and colleague conversations. Up to two workers are away from desks at once; coffee/restroom/lunch stations cannot be crowded by multiple workers simultaneously. **Only manually placed or newly task-assigned workers** take part in this simulation, not the entire 168-person directory at once. Every eligible employee can be placed on a floor over time; the 30-seat cap remains.
+The up-to-30 assigned RPG workers per level are drawn slightly larger and always display a **thought bubble, full employee name (shortened on canvas as needed) and job title**. Assigned-but-idle employees animate with different staggered activities: desk movement, standing/stretching, coffee, restroom, lunch and colleague conversations. Up to two workers are away from desks at once; coffee/restroom/lunch stations cannot be crowded by multiple workers simultaneously. **Only manually placed or newly task-assigned workers** take part in this simulation, not the entire 40-person essential directory at once. Every eligible employee can be placed on a floor over time; the 30-seat cap remains.
 
 Each Live RPG floor includes a distinct **CEO office and approval desk**, with an always-visible CEO avatar outside the 10-seat business-worker count. A worker with a matching pending CEO request can walk to that office; tapping the CEO office or its Approvals button takes the owner to real internal approval controls. Thought bubbles that say coffee, chatting or reviewing are **simulation states**, not evidence of external task execution. Handoffs still require existing internal task completion, and connected AI thought updates take precedence while working.
 
@@ -34,9 +36,9 @@ Creating a standard new Office HQ task (or sequential workflow stage) automatica
 ### Shared RPG roster and stable appearance
 The **Command Center** now includes a department-level selector and compact **Add to RPG / Remove from RPG** controls. These edit exactly the same placements as the **Live RPG Office** desk list. The 15 starting avatars are placed **only once per company** and never respawn automatically after removal. A new task can still add its assigned specialist when an appropriate department has a free desk. Up to 30 visible staff avatars per department level; the separate janitor and department head station do not consume a desk. Workers have consistent ID-derived skin tones, hair colors and outfit colors, keeping the same look whenever the scene refreshes. Names, complete role titles and changing idle/work thought bubbles remain above the visible workers. Larger 6-by-5 desk maps can be panned in Safari on iPhone or iPad.
 
-## Role-specific editable assignments for all 168 employees
+## Role-specific editable assignments for the 40 essential employees
 
-The **Assignments** form (from employee profiles, Live RPG office and Command Center, or the task board) offers two separate selectors: **Choose assignment title** and **Choose job description / acceptance criteria**. Each of the 168 authorized role specialties includes three different prewritten sub-jobs, for **504 built-in assignment choices** in total. The chosen title and success criteria automatically fill fully editable fields. A separate optional **Additional Commands** box saves supplemental instructions without overwriting the default role template. Saved instructions appear when opening a task and are included in local draft context or a configured AI-drafting request.
+The **Assignments** form (from employee profiles, Live RPG office and Command Center, or the task board) offers two separate selectors: **Choose assignment title** and **Choose job description / acceptance criteria**. Each of the 40 essential role specialties includes three prewritten sub-jobs, for **120 active assignment choices** in total. Older specialty templates remain preserved for backup compatibility. The chosen title and success criteria automatically fill fully editable fields. A separate optional **Additional Commands** box saves supplemental instructions without overwriting the default role template. Saved instructions appear when opening a task and are included in local draft context or a configured AI-drafting request.
 
 Each worker profile also starts with the existing official role description, which the owner can edit, extend, save, or restore to the original. Profile edits persist in browser storage; they do not change a worker's official job scope, title, reporting line, approval authority, or permission to access an outside website. Existing employee and task data are preserved. These selectors prepare assignments, not autonomous external website actions.
 
@@ -153,7 +155,7 @@ Netlify's static build does **not** run the optional Node AI drafting server. Ne
 |---|---|
 | Command center | Company overview, metrics, alerts and animated office preview |
 | RPG office | Three floors, moving pixel avatars, click employee for position and open work |
-| AI workforce | 52 unique company jobs and reporting lines, role naming, pause/resume positions |
+| AI workforce | 40 essential company positions, 12 departments and lean reporting lines, role naming, pause/resume positions |
 | Projects | Exclusive assignment to a single authorized job owner, tasks and progress tracking |
 | Managers | Project manager delegation, daily morning/evening brief templates and status summaries |
 | Finance | Manual budget allocations, income/expense records, requests for approval |

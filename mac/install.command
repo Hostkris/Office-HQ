@@ -144,11 +144,18 @@ if ! curl -fsS --connect-timeout 2 --max-time 4 'http://127.0.0.1:11434/api/tags
 fi
 curl -fsS --max-time 4 'http://127.0.0.1:11434/api/tags' >/dev/null || failed 'Local Ollama service failed to start.'
 say 'Verifying the llama3.2:3b local AI model...'
-"$OLLAMA" pull "$MODEL" || failed 'Ollama model download failed. Relaunch to retry.'
+if ! "$OLLAMA" list 2>/dev/null | grep -Fq "$MODEL"; then
+  "$OLLAMA" pull "$MODEL" || failed 'Ollama model download failed. Relaunch to retry.'
+else
+  say 'Local AI model is already installed. No download needed.'
+fi
 
 
 if curl -fsS --connect-timeout 2 --max-time 3 "$URL" 2>/dev/null | grep -q 'Agent Office HQ'; then
-  say 'Your Office HQ server is already running.'
+  if ! curl -fsS --max-time 4 'http://127.0.0.1:3000/api/device-sync/status' 2>/dev/null | grep -q '"paired"'; then
+    failed 'An older Office HQ server is still running on port 3000. Quit that Mac server and reopen Office HQ.app to activate the updated Ollama and sync engine.'
+  fi
+  say 'Your synced Office HQ Mac server is already running.'
 else
   if curl -fsS --connect-timeout 2 --max-time 3 "$URL" >/dev/null 2>&1; then
     failed 'Another app uses port 3000. It was not interrupted.'

@@ -6,7 +6,7 @@ const [share,html,landing,build,sw,macBuilder,macSetup]=await Promise.all([
  '../mac-share.js','../index.html','../mac.html','../scripts/build.mjs','../sw.js',
  '../../mac/build_download.py','../../mac/install.command'
 ].map(s=>readFile(new URL(s,import.meta.url),'utf8')));
-const URL='https://raw.githubusercontent.com/Hostkris/Office-HQ/main/downloads/Office_HQ_for_Mac.zip';
+const DOWNLOAD_URL='https://raw.githubusercontent.com/Hostkris/Office-HQ/main/downloads/Office_HQ_for_Mac.zip';
 function scene({shareFn,clipboardFn}={}){
  let click,notification='',navigation;
  const status={set textContent(t){notification=t},get textContent(){return notification}};
@@ -25,7 +25,7 @@ test('Office HQ supports direct Mac ZIP access from iOS on GitHub',()=>{
  assert.match(html,/href="\.\/mac.html"/);
  assert.match(html,/src="mac-share\.js"/);
  assert.match(landing,/data-mac-share/);
- assert.ok(landing.includes(URL));
+ assert.ok(landing.includes(DOWNLOAD_URL));
  assert.match(build,/mac\.html.*mac-share\.js/);
  assert.match(sw,/'\.\/mac\.html','\.\/mac-share\.js'/);
 });
@@ -33,7 +33,7 @@ test('iPhone share button offers AirDrop and Messages using real Mac download UR
  let shared;
  const session=scene({shareFn:async payload=>{shared=payload;}});
  session.fire();await new Promise(resolve=>setImmediate(resolve));
- assert.equal(shared.url,URL);
+ assert.equal(shared.url,DOWNLOAD_URL);
  assert.match(shared.text,/Mac/);
  assert.match(session.status(),/shared/);
 });
@@ -41,7 +41,7 @@ test('No share sheet: copy download link instead of giving iOS device credential
  let copied;
  const session=scene({clipboardFn:async value=>{copied=value;}});
  session.fire();await new Promise(resolve=>setImmediate(resolve));
- assert.equal(copied,URL);
+ assert.equal(copied,DOWNLOAD_URL);
  assert.match(session.status(),/copied/);
  assert.doesNotMatch(share,/localStorage|sessionStorage|cookie|password/);
 });

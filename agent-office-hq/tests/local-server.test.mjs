@@ -28,6 +28,16 @@ test('local server serves dashboard, reports draft-only status, and refuses AI c
     assert.equal((await fetch(base+'/ios-workstations.js')).status,200);
     assert.equal((await fetch(base+'/desktop-workstations.js')).status,200);
     assert.equal((await fetch(base+'/openmausbot.js')).status,200);
+    assert.equal((await fetch(base+'/workforce-runtime.js')).status,200);
+    const workforceStatus=await fetch(base+'/api/agent-workforce/status?companyId=company1');
+    assert.equal(workforceStatus.status,200);
+    const teamInfo=await workforceStatus.json();
+    assert.equal(teamInfo.roles.length,40);
+    assert.equal(teamInfo.installed,0);
+    const disallowed=await fetch(base+'/api/agent-workforce/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'provision',companyId:'company1',ownerConfirmed:true})});
+    assert.equal(disallowed.status,403);
+    assert.equal((await fetch(base+'/openmaus/workforce-engine.mjs')).status,404);
+    assert.equal((await fetch(base+'/openmaus/essential-workforce.json')).status,404);
     assert.equal((await fetch(base+'/research-center.js')).status,200);
     const reachStatus=await fetch(base+'/api/research/status');
     assert.equal(reachStatus.status,200);

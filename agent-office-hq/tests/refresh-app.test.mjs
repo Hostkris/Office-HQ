@@ -30,7 +30,7 @@ function makeRefresh({online=true,networkOk=true,serviceWorker}={}){
   requested.push({url:String(url),cache:opts.cache});
   const isSW=new URL(String(url)).pathname.endsWith('/sw.js');
   return {ok:networkOk,status:networkOk?200:503,
-   text:async()=>!networkOk?'':isSW?"const CACHE='agent-office-hq-v31-reliable-refresh';self.addEventListener('fetch',()=>{});":liveHTML};
+   text:async()=>!networkOk?'':isSW?"const CACHE='agent-office-hq-v32-mac-share';self.addEventListener('fetch',()=>{});":liveHTML};
  };
  vm.runInNewContext(source,{window:{location},document,navigator,localStorage,fetch,
   URL,Date,AbortController,setTimeout,clearTimeout,console},{filename:'refresh.js'});
@@ -93,7 +93,7 @@ function makeSW({offline=false}={}){
  };
  const caches={
   open:async()=>cache,
-  keys:async()=>['unrelated-app-cache','agent-office-hq-v30-reliable-refresh','agent-office-hq-v31-reliable-refresh'],
+  keys:async()=>['unrelated-app-cache','agent-office-hq-v30-reliable-refresh','agent-office-hq-v32-mac-share'],
   delete:async key=>{requests.push('delete:'+key);return true;},
   match:async req=>stored.get(req.url||String(req))
  };

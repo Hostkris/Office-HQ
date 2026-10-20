@@ -31,3 +31,48 @@
 .ceo-chat-note{margin:0;color:#91aeb8;font-size:10px;line-height:1.5}
 #officePhoneDrawer .office-phone-body{padding:8px 13px 18px}
 @media(max-width:520px){.ceo-chat-log{max-height:42vh}.ceo-chat-bubble{max-width:94%}.ceo-chat-title strong{font-size:17px}.ceo-chat-compose textarea{min-width:0}}
+
+
+/* CEO Messages uses the same persisted day/night palette as the rest of Office HQ. */
+.ceo-chat{--chat-primary:#2176e4;--chat-outgoing:#2176e4;--chat-border:var(--border)}
+.ceo-chat-compose{border-color:var(--chat-border);background:var(--panel);box-shadow:none}
+.ceo-chat-compose textarea{background:transparent!important;color:var(--text)!important;border:0!important;box-shadow:none!important;font-size:16px;min-width:0}
+.ceo-chat-compose textarea::placeholder{color:var(--muted)}
+.ceo-chat-buttons button{border-radius:999px;min-height:40px;min-width:40px}
+.ceo-chat-buttons .ceo-chat-send{background:var(--chat-primary);border-color:var(--chat-primary);color:#fff}
+.ceo-chat-bubble.sent{background:var(--chat-outgoing);color:#fff}
+.ceo-chat-title{border-color:var(--chat-border)}
+.ceo-chat-title strong,.ceo-job-head strong{color:var(--text)}
+.ceo-chat-title small,.ceo-chat-note,.ceo-job-people,.ceo-chat-empty,.ceo-job-head span{color:var(--muted)}
+.ceo-job{border-color:var(--chat-border);background:var(--panel)}
+.ceo-preview{border-color:var(--chat-border)}
+:root[data-theme="day"] .ceo-chat{--chat-primary:#096f73;--chat-outgoing:#147d8f;--chat-border:#d3e0e6}
+:root[data-theme="day"] .ceo-chat-compose{background:#fff!important;border:1px solid #c9d9e1!important;color:#1c3542;box-shadow:0 1px 3px #263c4908}
+:root[data-theme="day"] .ceo-chat-compose textarea{background:transparent!important;color:#183844!important;border:0!important}
+:root[data-theme="day"] .ceo-chat-compose textarea::placeholder{color:#68818b}
+:root[data-theme="day"] .ceo-chat-buttons button{background:#edf5f6;color:#244955;border:1px solid #ccdde2}
+:root[data-theme="day"] .ceo-chat-buttons .ceo-chat-send{background:#096f73!important;border-color:#096f73!important;color:#fff!important}
+:root[data-theme="day"] .ceo-chat-bubble.received{background:#eaf1f5;color:#213d4b;border:1px solid #d8e4e9}
+:root[data-theme="day"] .ceo-chat-bubble.sent{background:#147d8f;color:#fff}
+:root[data-theme="day"] .ceo-chat-bubble{box-shadow:none}
+:root[data-theme="day"] .ceo-chat-title strong,:root[data-theme="day"] .ceo-job-head strong{color:#1c3542}
+:root[data-theme="day"] .ceo-chat-title small,:root[data-theme="day"] .ceo-chat-note,:root[data-theme="day"] .ceo-job-people,:root[data-theme="day"] .ceo-chat-empty,:root[data-theme="day"] .ceo-job-head span{color:#536e7a}
+:root[data-theme="day"] .ceo-job{background:#f8fbfc;border:1px solid #d8e5e9}
+:root[data-theme="day"] .ceo-job button{background:#e9f3f5;color:#224b55;border-color:#bed7dd}
+:root[data-theme="day"] .ceo-job-actions button:first-child{background:#dff3e8;color:#176344;border-color:#b9ddcc}
+:root[data-theme="day"] .ceo-job-actions button:nth-child(2){background:#faecec;color:#843c43;border-color:#e5c6c8}
+:root[data-theme="day"] .ceo-preview{border-color:#d8e5e9}
+:root[data-theme="day"] .ceo-preview summary{color:#096f73}
+:root[data-theme="night"] .ceo-chat-compose{background:#152d3a}
+:root[data-theme="night"] .ceo-chat-compose textarea{color:#f3fcfc!important}
+:root[data-theme="night"] .ceo-job{background:#1e3745}
+:root[data-theme="night"] .ceo-chat-bubble.received{background:#2b4250;color:#eef7f8}
+:root[data-theme="night"] .ceo-chat-title strong,:root[data-theme="night"] .ceo-job-head strong{color:#f4f9fb}
+@media(max-width:520px){
+ .ceo-chat{gap:9px}
+ .ceo-chat-title{padding:8px 4px 11px}
+ .ceo-chat-log{max-height:46vh;padding:10px 2px}
+ .ceo-chat-compose{gap:6px;padding:6px;border-radius:20px}
+ .ceo-chat-buttons{gap:4px}
+ .ceo-chat-buttons button{min-width:39px;padding:8px}
+}

@@ -23,6 +23,29 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;pa
 .theme-toggle .theme-icon{font-size:18px}
 .cloud-header-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:520px){.cloud-header-actions{gap:5px}.theme-toggle{padding:6px 8px}.theme-label{display:none}header a{font-size:12px}}
+
+
+/* Complete day-mode cloud parity — same pale sage/turquoise Office HQ palette. */
+[data-theme="day"] .tabs button:not([aria-selected="true"]){
+  background:#e6f0f3;color:#254b59;border-color:#bdcfd7;
+}
+[data-theme="day"] .tabs button[aria-selected="true"]{
+  background:#0a777c;color:#fff;border-color:#0a777c;
+}
+[data-theme="day"] .links a:hover,
+[data-theme="day"] .connection-card a.button:hover{
+  background:#d8e9ed;color:#1d4350;border-color:#9dbcc5;
+}
+[data-theme="day"] .error{color:#a53842}
+[data-theme="day"] .notice{color:#775519}
+[data-theme="day"] .theme-toggle{background:#edf5f6;color:#244955;border-color:#b7ced6}
+[data-theme="day"] .theme-toggle:hover{background:#e0eff1}
+[data-theme="day"] header a{color:#096f73}
+[data-theme="day"] .item{border-top-color:#c9dbe1}
+[data-theme="day"] code{color:#096f73}
+[data-theme="day"] .connection-card .pill{background:#e3f1ee;color:#256057}
+[data-theme="day"] input::placeholder,
+[data-theme="day"] textarea::placeholder{color:#5a7480}
 </style></head>
 <body><header><div><strong>▦ AGENT OFFICE · SECURE CLOUD HQ</strong><div class="muted small">Connected to Supabase · private company records</div></div><div class="cloud-header-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Night mode active. Switch to day mode"><span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Night Mode</span></button><a href="./">← Local Office-HQ</a></div></header>
 <main><div class="eyebrow">Cloud operations</div><h1>Secure Cloud HQ</h1><p class="muted">Sign in to create real, private company records and CEO approvals. Your animated office and existing local records stay separate until migration is added.</p>

@@ -65,6 +65,7 @@ fi
 say "Using Node.js $("$NODE" --version)"
 
 NEW_INSTALL=0
+UPDATED_CODE=0
 if [ ! -d "$TARGET" ]; then
   NEW_INSTALL=1
   say 'Downloading your Office HQ application from GitHub...'
@@ -91,18 +92,26 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/b
     STAMP="$(date +%Y%m%d-%H%M%S)"
     BACKUP="$TARGET/.native-engine-backups/$STAMP-mac-sync"
     mkdir -p "$BACKUP"
-    for item in server.mjs index.html app.js office-features.js officehq-voice.js \
-      officehq-voice.css officehq-device-sync.js officehq-sync.css sw.js styles.css \
-      refresh.js cloud.html cloud.js openmaus/workforce-engine.mjs; do
-      if [ -f "$SOURCE/$item" ]; then
-        mkdir -p "$BACKUP/$(dirname "$item")" "$WEB/$(dirname "$item")"
-        if [ -f "$WEB/$item" ]; then cp -p "$WEB/$item" "$BACKUP/$item"; fi
-        cp "$SOURCE/$item" "$WEB/$item"
-      fi
+    # Update the COMPLETE approved browser app and local engine modules, not
+    # only the pre-chat assets. Never copy .env, credentials or local records.
+    for item in \
+      server.mjs index.html cloud.html cloud.js mac.html mac-share.js \
+      assignment-library.js workforce-lean.js app.js office-features.js \
+      officehq-voice.js officehq-voice.css ceo-secure-chat.js ceo-secure-chat.css \
+      officehq-device-sync.js officehq-sync.css project-floor.js office-life.js \
+      department-offices.js deliverables.js integration-center.js \
+      desktop-workstations.js openmausbot.js workforce-runtime.js research-center.js \
+      ios-workstations.js refresh.js theme.js styles.css sw.js icon.svg \
+      manifest.webmanifest \
+      native-engine/bridge.mjs device-sync/mac-worker.mjs \
+      openmaus/bridge.mjs openmaus/workforce-engine.mjs openmaus/team.mjs \
+      research/reach-bridge.mjs; do
+      [ -f "$SOURCE/$item" ] || failed "Latest GitHub release is missing $item. Existing files were not intentionally deleted."
+      mkdir -p "$BACKUP/$(dirname "$item")" "$WEB/$(dirname "$item")"
+      if [ -f "$WEB/$item" ]; then cp -p "$WEB/$item" "$BACKUP/$item"; fi
+      cp "$SOURCE/$item" "$WEB/$item"
     done
-    mkdir -p "$WEB/native-engine" "$WEB/device-sync"
-    cp "$SOURCE/native-engine/bridge.mjs" "$WEB/native-engine/bridge.mjs"
-    cp "$SOURCE/device-sync/mac-worker.mjs" "$WEB/device-sync/mac-worker.mjs"
+    UPDATED_CODE=1
     say "Application code updated. Previous versions saved in $BACKUP"
   fi
 fi
@@ -157,6 +166,9 @@ fi
 if curl -fsS --connect-timeout 2 --max-time 3 "$URL" 2>/dev/null | grep -q 'Agent Office HQ'; then
   if ! curl -fsS --max-time 4 'http://127.0.0.1:3000/api/device-sync/status' 2>/dev/null | grep -q '"paired"'; then
     failed 'An older Office HQ server is still running on port 3000. Quit that Mac server and reopen Office HQ.app to activate the updated Ollama and sync engine.'
+  fi
+  if [ "$UPDATED_CODE" -eq 1 ]; then
+    failed 'The updated files are installed and backed up, but the previous Office HQ server is still running on port 3000. Quit that old Office HQ process, then reopen Office HQ.app to activate the new version. No running process was terminated automatically.'
   fi
   say 'Your synced Office HQ Mac server is already running.'
 else

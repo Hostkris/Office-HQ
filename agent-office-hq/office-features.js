@@ -52,7 +52,7 @@
       ${a.provider?`<p class="tiny">Provider: ${E(a.provider)}</p>`:''}
       ${t?.output?`<details><summary>Read draft before deciding</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:270px;overflow:auto">${E(t.output.slice(0,12000))}</pre></details>`:''}
       ${(a.kind==='campaign'||a.kind==='expense')?`<p class="tiny">Proposed spending cap: ${E(B.money(amount))}</p>`:''}
-      <div class="ops-actions">${button('approve-request','✓ Approve',a.id,'btn-primary')}${button('deny-request','✕ Deny',a.id,'btn-danger')}${t?button('review-work','Read full work',t.id):''}</div>
+      <div class="ops-actions">${button('approve-request','✓ Approve',a.id,'btn-primary')}${button('deny-request','✕ Deny',a.id,'btn-danger')}${button('dismiss-request','Dismiss',a.id)}${t?button('review-work','Read full work',t.id):''}</div>
       <div class="tiny muted">Approving here records a decision; it does not connect accounts or send money or messages.</div>
     </article>`;
   }
@@ -64,6 +64,10 @@
      <p>${E(m.body)}</p><small>${m.kind==='alert'?'⚠ Alert':m.kind==='meeting'?'Meeting':'Internal company message'}</small></article>`).join('')||'<p class="muted">No company messages yet. Activity, approvals, and your CEO announcements will appear here.</p>';
   }
   function threadInner(){
+    if(window.OfficeHQSecureChat?.render){
+      const otherApprovals=approvalItems().filter(a=>!a.taskId||!S().tasks.some(t=>t.id===a.taskId&&t.ceoSecureDesk));
+      return `<div class="ops-thread-list" aria-live="polite">${window.OfficeHQDeviceSync?.markup(false)||''}${window.OfficeHQSecureChat.render()}<section class="ceo-chat-legacy" aria-label="Employee messages and other requests"><h3>Other CEO approval requests (${otherApprovals.length})</h3>${otherApprovals.map(approvalCard).join('')||'<p class="muted">No other requests waiting.</p>'}<h3>Employee updates</h3>${recentMessages()}<div class="ops-actions">${button('clear-messages','Clear internal messages')}</div></section></div>`;
+    }
     // OFFICEHQ_VOICE_THREAD_PATCH_v2 — shared Mac and iOS inbox, approvals and microphone.
     return `<div class="ops-thread-list" aria-live="polite">
       ${window.OfficeHQDeviceSync?.markup(false)||''}

@@ -87,7 +87,7 @@ function markup(compact=false){
  '<form data-hq-sync-form="login" data-hq-sync-auth><label>Office HQ Cloud email<input type="email" name="email" required autocomplete="username" placeholder="Email address"></label>'+
  '<label>Password<input type="password" name="password" required autocomplete="current-password"></label>'+
  '<button type="submit" class="btn btn-primary">Sign in & enable secure assignment sync</button>'+
- '<p class="tiny muted">Use your existing Secure Cloud HQ login on both devices. Credentials are sent only to Supabase Auth, never to your employees.</p></form>'+
+ '<p class="tiny muted">Use your existing Secure Cloud HQ login on both devices. Credentials are sent only to Supabase Auth, never to your employees. If you have not registered, <a href="./cloud.html">create your Cloud HQ account</a> first.</p></form>'+
  '<div data-hq-sync-paired hidden><p class="tiny">Signed in to your private Office HQ sync account.</p>'+
  '<button type="button" class="btn btn-sm" data-hq-sync-action="check">↻ Check sync</button> '+
  '<button type="button" class="btn btn-sm btn-danger" data-hq-sync-action="disconnect">Disconnect this device</button></div>'+
@@ -96,6 +96,7 @@ function markup(compact=false){
  '<label>Authorized Mac specialist<select data-hq-sync-employee></select></label>'+
  '<button type="button" class="btn btn-sm" data-hq-sync-action="grant">Authorize selected employee for synced drafts</button> '+
  '<button type="button" class="btn btn-sm" data-hq-sync-action="dispatch">Enable local Ollama drafts</button></div>':'')+
+ '<p class="tiny muted">Both devices must have matching company names and an active specialist in the same role. The Mac bot executes only if explicitly authorized.</p>'+ 
  '<p role="status" aria-live="polite" class="tiny muted" data-hq-sync-feedback></p></details></section>';
 }
 function employeeOptions(){

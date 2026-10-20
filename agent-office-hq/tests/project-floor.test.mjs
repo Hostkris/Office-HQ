@@ -98,8 +98,8 @@ test('Manually place specialists by project and keep independently selected extr
  assert.equal(first.placements.find(p=>p.seat===20).projectId,'projectA');
  assert.equal(d.projects[0].members[0],'worker35');
  s.click('new-floor');
- assert.equal(d.floors.length,2);
- assert.equal(d.floors[1].placements.length,0);
+ assert.equal(d.floors.length,3);
+ assert.equal(d.floors[2].placements.length,0);
  assert.equal(d.floors[0].placements.length,16);
 });
 test('Task handoff preserves actual task status instead of claiming work was done',()=>{

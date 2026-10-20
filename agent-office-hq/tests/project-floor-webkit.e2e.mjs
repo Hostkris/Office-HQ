@@ -74,7 +74,7 @@ test('iPad: project groups and 30 worker cap, with independent empty second floo
   await page.locator('.pf-status').getByText('0 / 30').waitFor({timeout:7000});
   assert.equal(await page.locator('#pfProject').inputValue(),'all');
   const floors=await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.projectFloor.floors);
-  assert.equal(floors.length,13);assert.equal(floors.find(f=>f.id===floor1.id).placements.length,30);assert.equal(floors[12].placements.length,0);
+  assert.equal(floors.length,14);assert.equal(floors.find(f=>f.id===floor1.id).placements.length,30);assert.equal(floors.at(-1).placements.length,0);
   assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
@@ -238,7 +238,7 @@ test('iPhone: tap empty Assignments on a specific employee, save a job, and reop
    B.workerModal(e.id);
    return {id:e.id,name:e.name,companyId:e.companyId,scope:B.roleFor(e).scope,roles:B.getRoles().length};
   });
-  assert.ok(subject.roles>=160,'All specialist roles should support direct profile assignments');
+  assert.equal(subject.roles,40,'Every essential specialist must support direct profile assignments');
   await page.locator('#modalRoot .pf-assignment-empty').waitFor();
   assert.match(await page.locator('#modalRoot .pf-assignment-empty').innerText(),/No tasks assigned yet/i);
   await page.locator('#modalRoot .pf-assignment-empty').click();

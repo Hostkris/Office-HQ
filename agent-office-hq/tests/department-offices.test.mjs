@@ -10,7 +10,7 @@ const source=await readFile(join(root,'department-offices.js'),'utf8');
 function make(){
  let seq=0,saveCount=0;
  const cid='company1';
- const roleKeys=['chief_staff','coo','cfo','cmo','cto','chro','cro','counsel','chief_audit','pmo_dir','customer_mgr','product_mgr'];
+ const roleKeys=['chief_staff','coo','cfo','cmo','cto','hr_dir','cro','counsel','chief_audit','project_mgr','support_lead','product_mgr'];
  const staff=roleKeys.map((roleKey,i)=>({id:'w'+i,roleKey,companyId:cid,name:'Head '+roleKey,active:true}));
  const data={companies:[{id:cid,name:'Test firm'}],employees:staff,tasks:[],approvals:[],
   enterprise:{projectFloor:{floors:[{id:'old_floor',companyId:cid,name:'Level 1',placements:[],janitor:false}],projects:[],selected:{}}}};

@@ -36,10 +36,31 @@ function setup(cid){
  }
  window.OfficeHQDepartments?.ensure(cid,d);
  floors=d.floors.filter(f=>f.companyId===cid);
+ let hub=floors.find(f=>f.kind==='hq_hub');
+ if(!hub){
+  hub={id:B.uid('floor'),companyId:cid,kind:'hq_hub',name:'HQ Collaboration · All Departments',department:null,
+   placements:[],janitor:false,createdAt:time()};
+  d.floors.unshift(hub);floors.unshift(hub);B.save();
+ }
  const chosen=d.selected[cid]||{};
+ // Populate the shared HQ only when it is the owner's active/start floor; other
+ // department offices retain their assigned employees and are never silently emptied.
+ d.hqHubInitialized??={};
+ if((!chosen.floorId||chosen.floorId===hub.id)&&!d.hqHubInitialized[cid]){
+  const placed=new Set(floors.flatMap(f=>(f.placements||[]).map(p=>p.employeeId)));
+  const newcomers=companyStaff(cid).filter(e=>e.roleKey!=='ceo'&&!placed.has(e.id));
+  for(const worker of newcomers.slice(0,Math.max(0,INITIAL_WORKERS-hub.placements.length))){
+   const seat=Array.from({length:LIMIT},(_,i)=>i).find(i=>!hub.placements.some(p=>p.seat===i));
+   if(seat===undefined)break;
+   hub.placements.push({seat,employeeId:worker.id,projectId:null,taskId:null,placedAt:time(),demoPresence:true});
+  }
+  d.hqHubInitialized[cid]=true;
+  B.save();
+ }
  const existingPlacements=floors.some(f=>(f.placements||[]).length>0);
- // New workspaces begin with an Operations team, where fifteen matching workers exist.
- const initial=floors.find(f=>f.department==='Operations')||floors[0];
+ // The shared HQ supports fifteen real, distinct specialists from different departments.
+ // The twelve separate department offices still restrict their own worker placements.
+ const initial=hub;
  const floor=floors.find(f=>f.id===chosen.floorId)||(existingPlacements?floors[0]:initial);
  d.selected[cid]={floorId:floor.id,projectId:chosen.projectId||'all'};
  // One-time welcome population from real company employees; never refill after

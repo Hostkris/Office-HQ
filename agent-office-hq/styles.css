@@ -510,3 +510,10 @@ body.hq-immersive-office .view{padding:0!important;width:100%;max-width:none}
 [data-theme="day"] .btn-primary:hover{background:#08656a;color:#fff}
 [data-theme="day"] .btn-danger:hover{background:#f4d8d8;color:#812e34}
 [data-theme="day"] :is(.app-refresh-button,.office-phone-btn):focus-visible{outline-color:#096f73}
+
+
+/* Two legacy inline accent colors were too pale on sunlit cards.
+   Selector specificity alone cannot override inline style, so constrain
+   these !important exceptions strictly to their day-mode components. */
+[data-theme="day"] .hero-band .eyebrow{color:#745411!important}
+[data-theme="day"] .budget-row .tiny[style*="color"]{color:#a13d30!important}

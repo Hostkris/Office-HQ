@@ -338,3 +338,24 @@ test('iPhone: all forty separate runtime specialties are shown and private execu
    assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
+
+
+test('iPhone and iPad: Send to Mac shares the published installer and Mac page supports updating',async()=>{
+ for(const device of ['iPhone 13','iPad Pro 11']){
+  const {page,context,errors}=await pageFor(device);
+  try{
+   await page.evaluate(()=>{
+    Object.defineProperty(navigator,'share',{configurable:true,value:async payload=>{window.__officeMacShare=payload;}});
+   });
+   await page.locator('.mac-share-top[data-mac-share]').click();
+   await page.waitForFunction(()=>Boolean(window.__officeMacShare),null,{timeout:5000});
+   const shared=await page.evaluate(()=>window.__officeMacShare);
+   assert.match(shared.url,/\/downloads\/Office_HQ_for_Mac\.zip$/);
+   assert.match(shared.text,/install or update/i);
+   await page.goto(base+'/mac.html');
+   await page.locator('h1').filter({hasText:'Install or update Office HQ on your Mac'}).waitFor();
+   assert.equal(await page.locator('[data-mac-share]').count(),1);
+   assert.deepEqual(errors,[]);
+  }finally{await context.close();}
+ }
+});

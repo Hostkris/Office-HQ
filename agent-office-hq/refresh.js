@@ -17,6 +17,20 @@
    ]).finally(()=>clearTimeout(timer));
  };
  async function checkPublishedApp(){
+   // sw.js is intentionally excluded from the SW cache allowlist, so this is
+   // an actual network check even when Safari incorrectly reports online.
+   const probe=new URL('./sw.js',document.baseURI);
+   probe.searchParams.set('hq_probe',String(Date.now()));
+   const probeController=new AbortController();
+   const probeTimer=setTimeout(()=>probeController.abort(),8000);
+   try{
+     const probeResult=await fetch(probe.href,{cache:'no-store',signal:probeController.signal});
+     if(!probeResult.ok)throw Error('Cannot reach the published version');
+     const source=await probeResult.text();
+     if(!source.includes("agent-office-hq-v")||!source.includes("addEventListener('fetch'")){
+       throw Error('The published update manifest was not recognized.');
+     }
+   }finally{clearTimeout(probeTimer);}
    const url=new URL('./index.html',document.baseURI);
    url.searchParams.set('hq_check',String(Date.now()));
    const controller=new AbortController();

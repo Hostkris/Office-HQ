@@ -43,6 +43,20 @@ function setup(cid){
   d.floors.unshift(hub);floors.unshift(hub);B.save();
  }
  const chosen=d.selected[cid]||{};
+ // Populate the shared HQ only when it is the owner's active/start floor; other
+ // department offices retain their assigned employees and are never silently emptied.
+ d.hqHubInitialized??={};
+ if((!chosen.floorId||chosen.floorId===hub.id)&&!d.hqHubInitialized[cid]){
+  const placed=new Set(floors.flatMap(f=>(f.placements||[]).map(p=>p.employeeId)));
+  const newcomers=companyStaff(cid).filter(e=>e.roleKey!=='ceo'&&!placed.has(e.id));
+  for(const worker of newcomers.slice(0,Math.max(0,INITIAL_WORKERS-hub.placements.length))){
+   const seat=Array.from({length:LIMIT},(_,i)=>i).find(i=>!hub.placements.some(p=>p.seat===i));
+   if(seat===undefined)break;
+   hub.placements.push({seat,employeeId:worker.id,projectId:null,taskId:null,placedAt:time(),demoPresence:true});
+  }
+  d.hqHubInitialized[cid]=true;
+  B.save();
+ }
  const existingPlacements=floors.some(f=>(f.placements||[]).length>0);
  // The shared HQ supports fifteen real, distinct specialists from different departments.
  // The twelve separate department offices still restrict their own worker placements.

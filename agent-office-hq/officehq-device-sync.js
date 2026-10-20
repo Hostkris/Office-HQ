@@ -213,7 +213,16 @@ async function refresh(){
  if(inFlight)return;
  inFlight=true;
  try{
-  if(!auth){set({connected:false,reason:'Sign in with your Office HQ Cloud account on both devices.'});return;}
+  if(!auth){
+   if(local()){
+    try{
+     const r=await fetch('/api/device-sync/status',{cache:'no-store'});
+     if(r.ok){const d=await r.json();set({connected:verified(d),
+      reason:d.reason||'This Mac is waiting for its paired iPhone or iPad.',checkedAt:Date.now()});return;}
+    }catch{}
+   }
+   set({connected:false,reason:'Sign in with your Office HQ Cloud account on both devices.'});return;
+  }
   if(navigator.onLine===false){set({connected:false,reason:'This device is offline.'});return;}
   await token();
   if(local()){

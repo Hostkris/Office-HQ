@@ -94,5 +94,7 @@ test('Static website includes UI and RPG status, but never bundles private engin
  const ui=await readFile(new URL('../openmausbot.js',import.meta.url),'utf8');
  assert.match(html,/data-view="openmaus"/);assert.match(html,/src="openmausbot.js"/);
  assert.match(build,/openmausbot.js/);assert.doesNotMatch(build,/bridge.mjs/);
- assert.match(floor,/OfficeHQMausThoughts/);assert.match(ui,/CEO review/);
+ assert.match(floor,/OfficeHQMausThoughts/);assert.match(ui,/Mac is not remotely connected/);
+ const voice=await readFile(new URL('../officehq-voice.js',import.meta.url),'utf8');
+ assert.match(voice,/SpeechRecognition/);assert.match(voice,/voiceAssigned/);
 });

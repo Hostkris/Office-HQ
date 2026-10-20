@@ -517,3 +517,26 @@ body.hq-immersive-office .view{padding:0!important;width:100%;max-width:none}
    these !important exceptions strictly to their day-mode components. */
 [data-theme="day"] .hero-band .eyebrow{color:#745411!important}
 [data-theme="day"] .budget-row .tiny[style*="color"]{color:#a13d30!important}
+
+
+/* Share the GitHub-hosted Mac launcher directly from iPhone/iPad Office HQ. */
+.mac-share-top{
+ display:inline-flex;align-items:center;justify-content:center;gap:6px;
+ padding:8px 11px;min-height:41px;border:1px solid var(--border);
+ background:var(--panel2);color:var(--text);border-radius:10px;
+ font:750 12px/1.25 system-ui,sans-serif;white-space:nowrap;
+}
+.mac-share-top:hover,.mac-share-top:focus-visible{border-color:var(--turq)}
+.mac-share-small{display:none}
+[data-theme="day"] .mac-share-top{
+ background:#eaf5f5;color:#175a64;border-color:#b4d2d6;
+}
+[data-theme="day"] .mac-share-top:hover{background:#d8eded}
+@media(max-width:760px){
+ .mac-share-top{min-height:40px;padding:7px 8px;gap:3px}
+ .mac-share-label{display:none}
+ .mac-share-small{display:inline}
+}
+@media(max-width:380px){
+ .mac-share-top{font-size:11px;padding:7px}
+}

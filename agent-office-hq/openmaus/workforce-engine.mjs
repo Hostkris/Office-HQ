@@ -135,7 +135,7 @@ export function createWorkforceEngine({root,invoke=localCli,allowSend=process.en
    if(!safeId(body.companyId)||!safeId(body.requestId))throw fail('Invalid access request.');
    const s=await load(),g=s.permissions.find(x=>x.companyId===body.companyId&&x.id===body.requestId);
    if(!g)throw fail('Permission request missing.',404);
-   if(body.action==='permission-revoke'&&!['pending','approved'].includes(g.status))throw fail('Permission is already inactive.',409);
+   if(body.action==='permission-revoke'&&!['pending','approved-policy'].includes(g.status))throw fail('Permission is already inactive.',409);
    if(body.action!=='permission-revoke'&&g.status!=='pending')throw fail('Permission is no longer pending.',409);
    g.status=body.action==='permission-approve'?'approved-policy':body.action==='permission-deny'?'denied':'revoked';
    // approved-policy is a planning record only; it can never activate tools or OAuth tokens.

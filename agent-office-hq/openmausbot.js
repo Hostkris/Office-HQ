@@ -20,7 +20,7 @@ function render(){
  return '<div class="page-head"><div class="eyebrow">OFFICE HQ · INDEPENDENT AGENT ENGINE</div><h1>AI Workforce Runtime</h1>'+
  '<p class="muted">40 SEPARATE AGENT IDENTITIES across 12 departments. Each requires a real, authorized local runtime before work can execute.</p></div>'+
  '<section class="card"><h2>Mac agent execution: 0 / 40 verified in this browser</h2>'+
- '<p>Office HQ has '+team.length+' registered company employees. This iPhone/iPad view cannot verify, provision or authorize Mac workers. Tasks sent here are browser-local until secure sync and the Mac engine are connected.</p>'+
+ '<p>Office HQ has '+team.length+' registered company employees. This iPhone/iPad view cannot verify, provision or authorize Mac workers. Your Mac is not remotely connected to this site. Tasks sent here are browser-local until secure sync and the Mac engine are connected.</p>'+
  '<button type="button" class="btn btn-sm" data-workforce="provision" disabled>Provision on Mac (requires local authorization)</button> '+
  '<button type="button" class="btn btn-sm" data-workforce="bind" disabled>Bind employee (Mac only)</button> '+
  '<button type="button" class="btn btn-sm" data-workforce="send" disabled>Run agent (Mac only)</button> '+

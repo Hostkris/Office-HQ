@@ -122,8 +122,7 @@ async function login(form){
  // server; the server checks with Supabase and stores credentials mode 0600.
  if(local()){
   const r=await fetch('/api/device-sync/action',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'pair',access_token:auth.access_token,refresh_token:auth.refresh_token,
-       expires_in:value.expires_in,ownerConfirmed:true})});
+    body:JSON.stringify({action:'pair',email,password,ownerConfirmed:true})});
   if(!r.ok)throw Error('The Mac sync engine did not accept pairing.');
  }
  sessionStorage.setItem(SKEY,JSON.stringify(auth));
@@ -217,6 +216,7 @@ async function refresh(){
   if(navigator.onLine===false){set({connected:false,reason:'This device is offline.'});return;}
   await token();
   if(local()){
+   await uploadPending();
    await downloadTasks();
    const r=await fetch('/api/device-sync/status',{cache:'no-store'});
    if(!r.ok)throw Error('Mac sync engine unavailable.');

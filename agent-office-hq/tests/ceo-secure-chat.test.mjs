@@ -174,3 +174,19 @@ test('Mac runtime failures block tasks and never claim completed agent work',asy
   assert.match(f.window.OfficeHQSecureChat.render(),/could not complete the draft/);
   assert.equal(f.state.approvals.length,0);
 });
+
+
+test('older iPhone jobs need a new CEO tap before entering the Mac queue',()=>{
+  const f=setup();f.send('Research free office scheduling apps');
+  const job=f.chat().jobs[0],task=f.state.tasks[0];
+  task.cloudSyncRequested=false;task.cloudSynced=false;
+  f.calls.pushed.length=0;
+  assert.match(f.window.OfficeHQSecureChat.render(),/Send saved assignment to Mac/);
+  assert.equal(f.calls.pushed.length,0,'older jobs are not silently dispatched');
+  f.click('sync',job.id);
+  assert.equal(task.cloudSyncRequested,true);
+  assert.deepEqual(f.calls.pushed,[task.id]);
+  assert.doesNotMatch(f.window.OfficeHQSecureChat.render(),/Send saved assignment to Mac/);
+  assert.match(f.window.OfficeHQSecureChat.render(),/Queued for secure Mac sync/);
+  assert.equal(f.calls.fetch,0,'public Safari still cannot directly access a local Mac service');
+});

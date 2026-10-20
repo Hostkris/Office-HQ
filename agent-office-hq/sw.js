@@ -2,7 +2,7 @@
  * Online requests always prefer published files rather than older cached HTML.
  * A URL's refresh query is ignored in the offline cache key, never in its network request.
  */
-const CACHE='agent-office-hq-v30-reliable-refresh';
+const CACHE='agent-office-hq-v31-reliable-refresh';
 const PREFIX='agent-office-hq-v';
 const FILES=['./','./index.html','./cloud.html','./cloud.js','./assignment-library.js','./workforce-lean.js','./app.js','./office-features.js','./officehq-voice.js','./officehq-voice.css','./project-floor.js','./office-life.js','./department-offices.js','./deliverables.js','./integration-center.js','./desktop-workstations.js','./openmausbot.js','./workforce-runtime.js','./research-center.js','./ios-workstations.js','./refresh.js','./theme.js','./styles.css','./icon.svg','./manifest.webmanifest'];
 const allowed=new Set(FILES.map(p=>new URL(p,self.registration.scope).pathname));

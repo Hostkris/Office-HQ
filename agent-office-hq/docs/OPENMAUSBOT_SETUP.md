@@ -15,6 +15,10 @@ If the installed OpenMausBot desktop requires pairing for write/send commands, g
 8. Job sending is disabled by default. After checking the actual OpenMausBot restrictions, restart Office HQ with OFFICE_HQ_OPENMAUS_SEND=1 set in your own environment. Review and confirm each draft-only assignment before sending.
 9. Use **Check real progress** to read the specific task thread from OpenMausBot. Office HQ will show working, approval-needed, failed, or completed states from the actual backend. Finished draft output is copied into that employee's existing assignment as **CEO review required**, never approved automatically. You can also Stop that specific conversation after explicit confirmation. The actual OpenMausBot conversation remains the authoritative place to answer approval cards.
 
+## iPhone and iPad Safari
+
+The uploaded OpenMausBot source includes a separate **paired phone web app**. To use it, configure OpenMausBot's approved HTTPS remote connection on your computer (managed HTTPS, Tailscale, or a properly authenticated HTTPS reverse proxy), pair Safari using a one-time code, and optionally choose **Add to Home Screen**. See https://github.com/milind-soni/OpenMausBot/blob/main/docs/phone-web-app.md. This is a separate OpenMausBot workspace, not remote activation of Office HQ's localhost bridge. Do not forward the Office HQ port 3000 or its unauthenticated API to the internet.
+
 ## Boundaries
 
 - This is local-only. Never deploy server.mjs publicly or expose the unauthenticated localhost HTTP port through a tunnel or port forwarding.

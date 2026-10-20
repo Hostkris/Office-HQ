@@ -193,6 +193,7 @@ async function downloadTasks(){
    },'?id=eq.'+encodeURIComponent(r.id)+'&status=eq.review','return=minimal');
   }else if(r.status==='review'&&r.draft&&t.cloudLastReview!==r.updated_at){
    t.cloudLastReview=r.updated_at;t.output=r.draft;t.status='review';t.updatedAt=r.updated_at;
+   window.OfficeHQFloor?.onTaskStatus?.(t);
    s.enterprise??={};s.enterprise.messages??=[];
    s.enterprise.messages.unshift({id:B.uid('sms'),author:'Mac Ollama · '+r.employee_label,
     body:'Synced draft is ready for CEO review: '+r.title,companyId:t.companyId,
@@ -204,8 +205,13 @@ async function downloadTasks(){
     s.approvals.unshift(a);t.approvalId=a.id;
    }
    touched=true;
-  }else if(r.status==='in_progress'&&t.status==='queued'){t.status='in_progress';touched=true;}
-  else if(r.status==='blocked'&&t.status==='queued'){t.status='blocked';touched=true;}
+  }else if(r.status==='in_progress'&&r.note==='Ollama drafting started'&&t.status==='queued'){
+   // Queue claim alone is not proof of execution; wait for the Mac to confirm AI acceptance.
+   t.status='in_progress';t.updatedAt=r.updated_at;window.OfficeHQFloor?.onTaskStatus?.(t);touched=true;
+  }else if(r.status==='blocked'&&['queued','in_progress'].includes(t.status)){
+   t.status='blocked';t.runError=String(r.note||'Mac agent could not finish').slice(0,250);
+   t.updatedAt=r.updated_at;window.OfficeHQFloor?.onTaskStatus?.(t);touched=true;
+  }
   if(!t.cloudSynced){t.cloudSynced=true;touched=true;}
  }
  if(touched){B.save();window.OfficeHQCompanyInbox?.refresh?.();}

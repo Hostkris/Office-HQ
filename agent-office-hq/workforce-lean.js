@@ -102,7 +102,7 @@ function consolidate(state,roles,catalog,seedEmployees){
   state.workforceArchivedGrants??=[];
   state.enterprise.grants=state.enterprise.grants.filter(g=>{
    if(!retiredIds.has(g.employeeId))return true;
-   state.workforceArchivedGrants.push({...g,archivedAt:now,revokedByWorkforceConsolidation:true});
+   state.workforceArchivedGrants.push({id:g.id,companyId:g.companyId,employeeId:g.employeeId,provider:g.provider,scope:g.scope,archivedAt:now,revokedByWorkforceConsolidation:true});
    return false;
   });
  }

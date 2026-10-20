@@ -3,7 +3,18 @@
 import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
-import {localCli} from './bridge.mjs';
+// Legacy CLI stays optional. Older Mac launchers replace bridge.mjs with the
+// independent Ollama bridge, which intentionally does not export localCli.
+// A static named import used to crash the *entire* Office HQ local server at
+// startup ("does not provide an export named 'localCli'"). Lazy resolution
+// preserves the UI and lets the owner use the native Ollama engine instead.
+const localCli=async (...args)=>{
+  const bridge=await import('./bridge.mjs');
+  if(typeof bridge.localCli!=='function'){
+    throw Object.assign(new Error('Legacy OpenMausBot CLI is not installed. Use the independent Office HQ Ollama engine.'),{status:503});
+  }
+  return bridge.localCli(...args);
+};
 import {manifest,roles,roleFor,botName,safeId,POLICY} from './team.mjs';
 
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});

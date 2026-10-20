@@ -600,3 +600,14 @@ body.hq-immersive-office .view{padding:0!important;width:100%;max-width:none}
 :root[data-theme="day"] .hq-command-manage{border-color:#d5e1e6}
 :root[data-theme="day"] .hq-command-manage>summary{color:#526e78}
 :root[data-theme="day"] .hq-command-manage[open]>summary{color:#233d49}
+
+
+/* Native details toggling can be unreliable inside an animated WebKit canvas view. */
+.hq-command-manage-toggle{display:flex;align-items:center;gap:9px;width:100%;min-height:42px;padding:7px 0;border:0;background:transparent;color:var(--muted);font:700 12px/1.4 inherit;text-align:left;cursor:pointer}
+.hq-command-manage-toggle::before{content:"⚙";font-size:15px}
+.hq-command-manage-toggle::after{content:"⌄";margin-left:auto;font-size:17px}
+.hq-command-manage-toggle[aria-expanded="true"]::after{content:"⌃"}
+.hq-command-manage-panel{padding-top:5px}
+.hq-command-manage-panel[hidden]{display:none!important}
+:root[data-theme="day"] .hq-command-manage-toggle{color:#526e78}
+:root[data-theme="day"] .hq-command-manage-toggle[aria-expanded="true"]{color:#233d49}

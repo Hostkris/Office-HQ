@@ -78,11 +78,12 @@
     return {id:B.uid('task'),companyId:job.companyId,conversationId:job.id,
       title:instruction.slice(0,110),description:instruction,scope:role.scope,ownerId:person.id,
       delegatedBy:'owner',status:'queued',priority:'Medium',due:'',createdAt:date,updatedAt:date,
-      output:'',requiresApproval:true,approvalId:null,ceoSecureDesk:true};
+      output:'',requiresApproval:true,approvalId:null,ceoSecureDesk:true,cloudSyncRequested:true};
   }
   async function attemptDispatch(job,tasks){
     if(!['localhost','127.0.0.1'].includes(location.hostname)){
-      log(job.companyId,'Office HQ Assistant','These are saved assignments, not running remote bots. Live execution from this device requires the secured Office HQ backend.', 'notice',job.id);
+      const synced=window.OfficeHQDeviceSync?.snapshot?.();
+      log(job.companyId,'Office HQ Assistant',synced?.connected?'The assignment was submitted for secure Mac sync. It will run only if the Mac is online, local drafting is enabled, and this employee has been approved.':'The assignment is saved and eligible for secure Mac sync. Connect both devices in Company Messages and authorize this employee on your Mac to start a draft.', 'notice',job.id);
       refresh();return;
     }
     let status;
@@ -106,7 +107,7 @@
           body:JSON.stringify({action:'send',companyId:job.companyId,employeeId:task.ownerId,officeTaskId:task.id,title:task.title,description:task.description,ownerConfirmed:true})});
         const data=await response.json();
         if(!response.ok)throw Error(data.error||'Agent run could not start');
-        task.openMausRunId=data.runId;task.status='in_progress';
+        task.openMausRunId=data.runId;task.status='in_progress';task.ceoLastNotifiedStatus='in_progress';
         log(job.companyId,B.getEmployee(task.ownerId)?.name||'Employee','The authorized local draft has started.', 'progress',job.id);
       }catch(e){
         log(job.companyId,'Office HQ Assistant','Could not start '+(B.getEmployee(task.ownerId)?.name||'the agent')+': '+String(e.message).slice(0,150), 'notice',job.id);
@@ -166,6 +167,58 @@
     }else intake(text,cid);
     refresh();
   }
+  function syncJobUpdates(){
+    const all=B.getState().tasks;
+    for(const job of db().jobs){
+      if(['approved','denied'].includes(job.status))continue;
+      for(const id of job.currentTaskIds||[]){
+        const task=all.find(t=>t.id===id);
+        if(!task||task.status===task.ceoLastNotifiedStatus)continue;
+        if(task.status==='in_progress'){
+          task.ceoLastNotifiedStatus='in_progress';
+          log(job.companyId,B.getEmployee(task.ownerId)?.name||'Assigned employee','The authorized Mac engine has accepted my draft assignment.', 'progress',job.id);
+        }else if(task.status==='review'&&task.output){
+          task.ceoLastNotifiedStatus='review';
+          log(job.companyId,B.getEmployee(task.ownerId)?.name||'Assigned employee','My draft is ready for your review: '+task.title, 'progress',job.id);
+        }else if(task.status==='blocked'){
+          task.ceoLastNotifiedStatus='blocked';
+          log(job.companyId,'Office HQ Assistant',(B.getEmployee(task.ownerId)?.name||'Employee')+' could not complete the draft. '+String(task.runError||'Check Mac agent status and permissions.').slice(0,180),'notice',job.id);
+        }
+      }
+    }
+  }
+  let localPollBusy=false;
+  async function pollLocalRuns(){
+    if(!['localhost','127.0.0.1'].includes(location.hostname)||document.hidden||localPollBusy)return;
+    const tasks=B.getState().tasks.filter(t=>t.ceoSecureDesk&&t.openMausRunId&&['queued','in_progress'].includes(t.status));
+    if(!tasks.length)return;
+    localPollBusy=true;
+    try{
+      const res=await fetch('/api/openmaus/status',{cache:'no-store'});
+      if(!res.ok)throw Error('Mac runtime status unavailable');
+      const data=await res.json();let changed=false;
+      for(const task of tasks){
+        const run=(data.runs||[]).find(r=>r.id===task.openMausRunId&&r.companyId===task.companyId&&r.employeeId===task.ownerId&&r.officeTaskId===task.id);
+        if(!run)continue;
+        const old=task.status;
+        if(run.status==='review'&&run.result){
+          task.output=String(run.result).slice(0,16000);task.status='review';
+          if(!B.getState().approvals.some(a=>a.taskId===task.id&&a.status==='pending')){
+            const a={id:B.uid('approve'),companyId:task.companyId,kind:'task',taskId:task.id,title:'Review draft: '+task.title,
+              note:'Review the actual Mac AI draft before accepting it.',status:'pending',createdAt:now()};
+            B.getState().approvals.unshift(a);task.approvalId=a.id;
+          }
+        }else if(['failed','stopped','paused'].includes(run.status)){
+          task.status='blocked';task.runError=String(run.reason||run.thought||run.status).slice(0,250);
+        }else if(run.status==='running'||run.status==='submitted')task.status='in_progress';
+        if(task.status!==old){task.updatedAt=now();window.OfficeHQFloor?.onTaskStatus?.(task);changed=true;}
+      }
+      if(changed){B.save();refresh();}
+    }catch{/* Keep last verified state; never simulate a successful run when the engine is unreachable. */}
+    finally{localPollBusy=false;}
+  }
+  setInterval(()=>{if(!document.hidden){void pollLocalRuns();}},4000);
+
   function card(job){
     const tasks=job.currentTaskIds.map(id=>B.getState().tasks.find(t=>t.id===id)).filter(Boolean);
     const previews=tasks.filter(t=>t.output&&t.status==='review');
@@ -181,10 +234,14 @@
       if(job.status!=='approved'&&job.status!=='denied')html+='<button type="button" data-ceo-chat-action="hold" data-job="'+E(job.id)+'">Wait</button><button type="button" data-ceo-chat-action="revise" data-job="'+E(job.id)+'">Request changes</button>';
       html+='</div>';
     }else if(job.status==='needs-answer')html+='<button type="button" class="ceo-reply" data-ceo-chat-action="reply" data-job="'+E(job.id)+'">Answer question</button>';
-    else if(!['approved','denied'].includes(job.status))html+='<button type="button" class="ceo-reply" data-ceo-chat-action="revise" data-job="'+E(job.id)+'">Add instructions</button>';
+    else if(!['approved','denied'].includes(job.status)){
+      html+='<button type="button" class="ceo-reply" data-ceo-chat-action="revise" data-job="'+E(job.id)+'">Add instructions</button>';
+      if(['localhost','127.0.0.1'].includes(location.hostname)&&tasks.some(t=>t.status==='queued'))html+='<button type="button" class="ceo-reply" data-ceo-chat-action="retry" data-job="'+E(job.id)+'">Start authorized Mac draft</button>';
+    }
     html+='</section>';return html;
   }
   function render(){
+    syncJobUpdates();
     const cid=companyId();const data=db(),entries=data.entries.filter(m=>m.companyId===cid).slice(-65);
     const jobs=active(cid).slice(0,8);
     const stamp=x=>{try{return new Date(x).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}catch{return ''}};
@@ -208,6 +265,11 @@
     if(input){input.dataset.replyJob=jobId;input.placeholder='Reply with the details or changes…';input.focus();}
   }
   function decision(job,kind){
+    if(kind==='retry'){
+      const tasks=job.currentTaskIds.map(id=>B.getState().tasks.find(t=>t.id===id)).filter(t=>t?.status==='queued');
+      if(tasks.length)void attemptDispatch(job,tasks);
+      return;
+    }
     if(kind==='reply'||kind==='revise'){
       if(['approved','denied'].includes(job.status)){B.toast('That assignment is closed. Send a new request to make further changes.','error');return;}
       setReply(job.id);return;

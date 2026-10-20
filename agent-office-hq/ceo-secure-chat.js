@@ -121,7 +121,7 @@
     for(const task of tasks){B.getState().tasks.unshift(task);window.OfficeHQFloor?.onTaskAssigned(task);}
     job.currentTaskIds=tasks.map(t=>t.id);job.taskIds.push(...job.currentTaskIds);job.status='queued';job.updatedAt=now();
     log(job.companyId,'Office HQ Assistant',(revision?'Revision':'Assignment')+' prepared for '+assigned(job)+'. '+(names.length>1?'Each specialist has a separate job. ':'')+'I will show actual results when the engine returns them.', 'progress',job.id);
-    B.save();window.OfficeHQDeviceSync?.pushTask?.(tasks[0]);
+    B.save();for(const task of tasks)window.OfficeHQDeviceSync?.pushTask?.(task);
     refresh();void attemptDispatch(job,tasks);
   }
   function intake(instruction,cid){
@@ -316,6 +316,6 @@
       ev.preventDefault();send();
     }
   });
-  window.OfficeHQSecureChat={render,route};
+  window.OfficeHQSecureChat={render,route,pollLocalRuns,syncJobUpdates};
   queueMicrotask(()=>{if(location.hash==='#/thread')refresh();});
 })();

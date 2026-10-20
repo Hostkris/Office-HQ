@@ -350,6 +350,7 @@ test('iPhone and iPad: Send to Mac shares the published installer and Mac page s
     Object.defineProperty(navigator,'share',{configurable:true,value:async payload=>{window.__officeMacShare=payload;}});
    });
    await page.locator('#menuToggle').click();
+   await page.locator('.hq-nav-group').last().locator('summary').click();
    await page.locator('.mac-share-sidebar[data-mac-share]').click();
    await page.waitForFunction(()=>Boolean(window.__officeMacShare),null,{timeout:5000});
    const shared=await page.evaluate(()=>window.__officeMacShare);
@@ -396,6 +397,7 @@ test('iPhone premium UI: day and night modes style the company messages composer
  const {page,context,errors}=await pageFor('iPhone 13');
  try{
   await page.locator('#menuToggle').click();
+  await page.locator('.hq-nav-group').last().locator('summary').click();
   await page.locator('.nav-theme-sidebar[data-theme-toggle]').click();
   const toggled=await page.evaluate(()=>document.documentElement.dataset.theme);
   assert.equal(toggled,'night');

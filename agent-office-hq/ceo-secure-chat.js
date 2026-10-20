@@ -7,7 +7,7 @@
   if(!B)return;
   const E=B.E;
   const RULES=[
-    ['exec_assistant',/\b(assistant|secretary|inbox|email|calendar|remind|schedule|appointment|errand|dry clean|coffee)\b/i],
+    ['exec_assistant',/\b(assistant|secretary|inbox|email|calendar|remind|schedule|appointment|errand|dry clean(?:ing|ers)?|coffee)\b/i],
     ['project_mgr',/\b(project|coordinate|milestone|rollout|timeline|launch plan)\b/i],
     ['cfo',/\b(financial strategy|cash flow|investment|finance plan)\b/i],
     ['budget_officer',/\b(budget|cost forecast|spending plan)\b/i],
@@ -115,7 +115,7 @@
     B.save();refresh();
   }
   function queue(job,revision){
-    const names=(revision?[job.employeeIds[0]]:job.employeeIds).map(id=>B.getEmployee(id)).filter(Boolean);
+    const names=job.employeeIds.map(id=>B.getEmployee(id)).filter(Boolean);
     const tasks=names.map(employee=>taskFor(job,employee,job.instruction));
     for(const task of tasks){B.getState().tasks.unshift(task);window.OfficeHQFloor?.onTaskAssigned(task);}
     job.currentTaskIds=tasks.map(t=>t.id);job.taskIds.push(...job.currentTaskIds);job.status='queued';job.updatedAt=now();
@@ -135,15 +135,17 @@
     log(cid,'Office HQ Assistant','Routing to '+assigned(job)+'. You can review and request changes in this same conversation.', 'progress',job.id);
     queue(job,false);
   }
+  let replyTargetJobId='';
   function send(){
     const box=document.querySelector('[data-ceo-chat-input]:focus')||document.querySelector('#officePhoneDrawer:not([hidden]) [data-ceo-chat-input]')||document.querySelector('[data-ceo-chat-input]');
     const cid=companyId(),text=box?.value.trim();
     if(!cid||!text)return;
     if(text.length<3){B.toast('Please enter a little more detail.','error');return;}
-    const jobId=box.dataset.replyJob;
-    box.value='';box.dataset.replyJob='';
+    const jobId=box.dataset.replyJob||replyTargetJobId;
+    box.value='';box.dataset.replyJob='';replyTargetJobId='';
     const job=jobId?db().jobs.find(j=>j.id===jobId&&j.companyId===cid):null;
     if(job){
+      if(['approved','denied'].includes(job.status)){B.toast('That assignment is closed. Start a new message instead.','error');return;}
       log(cid,'You · CEO',text,'own',job.id);
       if(job.status==='needs-answer'){
         job.instruction+=' \nAdditional details: '+text;job.question='';
@@ -168,14 +170,16 @@
     const tasks=job.currentTaskIds.map(id=>B.getState().tasks.find(t=>t.id===id)).filter(Boolean);
     const previews=tasks.filter(t=>t.output&&t.status==='review');
     const approvals=previews.map(t=>B.getState().approvals.find(a=>a.taskId===t.id&&a.status==='pending')).filter(Boolean);
-    const fmt=job.status==='needs-answer'?'Needs your answer':job.status==='held'?'On hold':job.status==='approved'?'Approved':job.status==='denied'?'Denied':previews.length?'Draft ready for review':tasks.some(t=>t.status==='in_progress')?'Agent working':'Queued — waiting for an authorized agent';
+    const allReady=tasks.length>0&&previews.length===tasks.length;
+    const fmt=job.status==='needs-answer'?'Needs your answer':job.status==='held'?'On hold':job.status==='approved'?'Approved':job.status==='denied'?'Denied':allReady?'Draft ready for review':previews.length?'Some drafts ready; waiting for team':tasks.some(t=>t.status==='in_progress')?'Agent working':'Queued — waiting for an authorized agent';
     let html='<section class="ceo-job" data-ceo-job="'+E(job.id)+'"><div class="ceo-job-head"><strong>Assignment</strong><span>'+E(fmt)+'</span></div>';
     html+='<p class="ceo-job-people">'+E(assigned(job))+'</p>';
     if(previews.length){
       for(const task of previews)html+='<details class="ceo-preview"><summary>Preview: '+E(B.getEmployee(task.ownerId)?.name||'Employee')+'</summary><pre>'+E(task.output.slice(0,14000))+'</pre></details>';
       html+='<div class="ceo-job-actions">';
-      if(approvals.length)html+='<button type="button" data-ceo-chat-action="approve" data-job="'+E(job.id)+'">✓ Approve</button><button type="button" data-ceo-chat-action="deny" data-job="'+E(job.id)+'">Deny</button>';
-      html+='<button type="button" data-ceo-chat-action="hold" data-job="'+E(job.id)+'">Wait</button><button type="button" data-ceo-chat-action="revise" data-job="'+E(job.id)+'">Request changes</button></div>';
+      if(allReady&&approvals.length===tasks.length&&job.status!=='approved'&&job.status!=='denied')html+='<button type="button" data-ceo-chat-action="approve" data-job="'+E(job.id)+'">✓ Approve</button><button type="button" data-ceo-chat-action="deny" data-job="'+E(job.id)+'">Deny</button>';
+      if(job.status!=='approved'&&job.status!=='denied')html+='<button type="button" data-ceo-chat-action="hold" data-job="'+E(job.id)+'">Wait</button><button type="button" data-ceo-chat-action="revise" data-job="'+E(job.id)+'">Request changes</button>';
+      html+='</div>';
     }else if(job.status==='needs-answer')html+='<button type="button" class="ceo-reply" data-ceo-chat-action="reply" data-job="'+E(job.id)+'">Answer question</button>';
     else if(!['approved','denied'].includes(job.status))html+='<button type="button" class="ceo-reply" data-ceo-chat-action="revise" data-job="'+E(job.id)+'">Add instructions</button>';
     html+='</section>';return html;
@@ -191,7 +195,7 @@
       html+='<div class="ceo-chat-bubble '+(item.kind==='own'?'sent':'received')+'"><div class="ceo-chat-name">'+E(item.author)+'</div><p>'+E(item.body)+'</p><time>'+E(stamp(item.at))+'</time></div>';
     }
     html+='</div><div class="ceo-chat-jobs">'+jobs.map(card).join('')+'</div>';
-    html+='<div class="ceo-chat-compose"><textarea data-ceo-chat-input rows="2" maxlength="2200" placeholder="Message Office HQ…"></textarea>';
+    html+='<div class="ceo-chat-compose"><textarea data-ceo-chat-input rows="2" maxlength="2200" placeholder="'+(replyTargetJobId?'Reply with the details or changes…':'Message Office HQ…')+'" data-reply-job="'+E(replyTargetJobId)+'"></textarea>';
     html+='<div class="ceo-chat-buttons"><button type="button" data-ceo-chat-action="mic" aria-label="Dictate a message">🎙</button><button type="button" class="ceo-chat-send" data-ceo-chat-action="send">Send ➤</button></div></div>';
     html+='<p class="ceo-chat-note">Internal messages are not SMS. Jobs require authorized agent engines; external posts, payments and account access remain separately controlled.</p></section>';
     return html;
@@ -199,11 +203,16 @@
   function refresh(){window.OfficeHQCompanyInbox?.refresh?.();}
   function setReply(jobId){
     const root=document.querySelector('#officePhoneDrawer:not([hidden])')||document;
+    replyTargetJobId=jobId;
     const input=root.querySelector('[data-ceo-chat-input]')||document.querySelector('[data-ceo-chat-input]');
     if(input){input.dataset.replyJob=jobId;input.placeholder='Reply with the details or changes…';input.focus();}
   }
   function decision(job,kind){
-    if(kind==='reply'||kind==='revise'){setReply(job.id);return;}
+    if(kind==='reply'||kind==='revise'){
+      if(['approved','denied'].includes(job.status)){B.toast('That assignment is closed. Send a new request to make further changes.','error');return;}
+      setReply(job.id);return;
+    }
+    if(['approved','denied'].includes(job.status))return;
     const tasks=job.currentTaskIds.map(id=>B.getState().tasks.find(t=>t.id===id)).filter(Boolean);
     if(kind==='hold'){
       if(!tasks.some(t=>t.status==='review')){B.toast('This assignment is queued or working. Wait applies to draft review only.','error');return;}

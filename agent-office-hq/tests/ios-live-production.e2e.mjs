@@ -1,4 +1,4 @@
-// Tests the REAL GitHub Pages Office HQ URL through WebKit iPhone/iPad emulation.
+// Tests the static built Office HQ website through WebKit iPhone/iPad emulation.\n// GitHub Pages has no Node /api/* routes; those requests are optional diagnostics, not missing assets.
 // NOT a test of Apple's signed Safari extension on an actual iPhone, and no
 // external websites or personal user accounts are accessed.
 import test from 'node:test';
@@ -45,7 +45,7 @@ test('Production iPhone WebKit: no missing scripts, assign a task, reload and pe
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('#iosJobs').getByText(unique).waitFor({timeout:12000});
   assert.deepEqual(errors,[]);
-  assert.deepEqual(failedResources.filter(x=>!x.endsWith('/api/status')),[], 'Unexpected missing production site assets');
+  assert.deepEqual(failedResources.filter(x=>!x.includes('/api/')),[], 'Unexpected missing production site assets');
  }finally{await context.close();}
 });
 test('Production iPad WebKit: simulated account authorization correctly fails without extension',async()=>{
@@ -61,6 +61,6 @@ test('Production iPad WebKit: simulated account authorization correctly fails wi
   await page.locator('#iosNotice').getByText(/Safari extension is not installed/i).waitFor({timeout:10000});
   assert.equal(await page.locator('#iosGrants .desktop-grant').count(),0);
   assert.deepEqual(errors,[]);
-  assert.deepEqual(failedResources.filter(x=>!x.endsWith('/api/status')),[], 'Unexpected missing production site assets');
+  assert.deepEqual(failedResources.filter(x=>!x.includes('/api/')),[], 'Unexpected missing production site assets');
  }finally{await context.close();}
 });

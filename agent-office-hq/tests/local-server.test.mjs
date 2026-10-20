@@ -53,7 +53,19 @@ test('local server serves dashboard, reports draft-only status, and refuses AI c
     assert.equal((await fetch(base+'/research/reach-bridge.mjs')).status,404);
     const mausStatus=await fetch(base+'/api/openmaus/status');
     assert.equal(mausStatus.status,200);
-    assert.equal(typeof (await mausStatus.json()).connected,'boolean');
+    const nativeStatus=await mausStatus.json();
+    assert.equal(typeof nativeStatus.connected,'boolean');
+    assert.equal(nativeStatus.engine,'Office HQ Native Agent Engine');
+    assert.equal(nativeStatus.externalActions,false);
+    const syncStatus=await fetch(base+'/api/device-sync/status');
+    assert.equal(syncStatus.status,200);
+    const syncInfo=await syncStatus.json();
+    assert.equal(syncInfo.connected,false,'unpaired Mac must never show illuminated sync bars');
+    const unapprovedGrant=await fetch(base+'/api/device-sync/action',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'grant',ownerConfirmed:false,companyId:'company',employeeId:'worker',roleKey:'social'})
+    });
+    assert.equal(unapprovedGrant.status,403);
     const denied=await fetch(base+'/api/openmaus/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'bind',companyId:'companyA',employeeId:'emp1',department:'Marketing',botName:'Office HQ Marketing Research',ownerConfirmed:false})});
     assert.equal(denied.status,403);
     assert.equal((await fetch(base+'/openmaus/bridge.mjs')).status,404);

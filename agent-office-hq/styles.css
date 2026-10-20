@@ -383,3 +383,130 @@ body.hq-immersive-office .view{padding:0!important;width:100%;max-width:none}
  .hq-print-sheet pre{white-space:pre-wrap;overflow-wrap:anywhere;font:10pt/1.4 monospace}
  .hq-print-sheet img{display:block;max-width:100%;max-height:600px;page-break-inside:avoid}
 }
+
+
+/* DAY-MODE COMPLETE UI AUDIT — 2026-10-20.
+   Keep these refinements scoped to day mode; night palette stays untouched.
+   The same contrast rules apply in Mac Safari, iOS Safari, and Home Screen PWA. */
+
+/* App chrome, primary navigation, highlights and status counts. */
+[data-theme="day"] .brand-mark{
+  background:#096f73;
+  color:#ffffff;
+  border:1px solid #075d62;
+}
+[data-theme="day"] .brand-mark span{color:#ffdd90}
+[data-theme="day"] :is(.nav-count,.office-phone-count,.office-phone-count-in){
+  background:#a55b25;
+  color:#ffffff;
+}
+[data-theme="day"] .hq-nav-group[open]{
+  background:#edf6f7;
+  border-color:#c5dce1;
+}
+[data-theme="day"] .hq-nav-group>summary:hover{background:#e0eff1}
+[data-theme="day"] .nav-pill{background:#d9f1e8;color:#1e5947}
+[data-theme="day"] .connected-dot{background:#25775a}
+
+/* Header feature banner had an unconverted dark gradient and light-only paragraph text. */
+[data-theme="day"] .hero-band{
+  background:linear-gradient(110deg,#e0f3f2 0%,#eef6f9 60%,#f7f0de 100%);
+  border-color:#b7d1d7;
+  color:#1c3542;
+}
+[data-theme="day"] .hero-band :is(h2,h3,strong){color:#1a414e}
+[data-theme="day"] .hero-band p{color:#466773}
+[data-theme="day"] .hero-band .btn-primary{background:#096f73;color:#fff;border-color:#096f73}
+[data-theme="day"] .hero-band .btn-gold{background:#e9cc77;color:#3b321c}
+
+/* Form labels, toggles, modal controls and data summaries. */
+[data-theme="day"] :is(.field label,.toggle,.close-modal,.field-hint){
+  color:#365967;
+}
+[data-theme="day"] .close-modal:hover{color:#9e393e}
+[data-theme="day"] .toggle input:not(:checked){background:#a8c4cd}
+[data-theme="day"] .toggle input:before{background:#fff}
+[data-theme="day"] .toggle input:checked{background:#337e68}
+[data-theme="day"] .toggle input:checked:before{background:#fff}
+[data-theme="day"] .modal-head{border-bottom-color:#cbdee4}
+[data-theme="day"] .info-box{background:#edf6f7;color:#294b59;border-color:#c0d6dc}
+[data-theme="day"] :is(.pill-stat,.lane-count,.chart-item small){
+  color:#345969;
+}
+[data-theme="day"] .feed-item{border-top-color:#d4e2e7}
+[data-theme="day"] .feed-title{color:#1b3541}
+[data-theme="day"] .timeline-event::before{border-color:#fff}
+[data-theme="day"] .pill-stat{border-color:#bcd4db}
+[data-theme="day"] .notice{color:#4a6672}
+[data-theme="day"] .brief{background:#ffffff;color:#224453}
+[data-theme="day"] .brief-entry{background:#f5fafb;color:#254553}
+[data-theme="day"] .chart-item small{color:#4d6874}
+[data-theme="day"] .office-legend{color:#516f7b}
+[data-theme="day"] .section-hint{color:#4c6975}
+[data-theme="day"] .org-branch{border-left-color:#b3ccd5}
+
+/* Employee, task and approval cards; prevent dark hover and muted label artifacts. */
+[data-theme="day"] .worker-mini.selected{background:#e2f2f2;border-color:#328b8d}
+[data-theme="day"] .task-card:hover{background:#e6f2f4}
+[data-theme="day"] :is(.task-card,.worker-mini,.employee-card,.org-node) strong{color:#1c3542}
+[data-theme="day"] .approval .top,
+[data-theme="day"] .approval :is(h3,strong){color:#203e4b}
+[data-theme="day"] .approval .details{color:#4d6a77}
+[data-theme="day"] .warning{color:#805522}
+[data-theme="day"] .tag.slate{color:#345366}
+
+/* Provider, workstation and research pages. */
+[data-theme="day"] .office-plan-form label{color:#355968}
+[data-theme="day"] .office-connector p{color:#4c6974}
+[data-theme="day"] .office-guide :is(h3,strong,p){color:#244553}
+[data-theme="day"] .office-connector-heading{color:#254655}
+[data-theme="day"] .desktop-label{color:#365d69}
+[data-theme="day"] .desktop-check{color:#355968}
+[data-theme="day"] .desktop-start code{color:#096f73}
+[data-theme="day"] .desktop-thought{background:#e6f4ed;color:#2b6148}
+[data-theme="day"] .desktop-summary{color:#265849}
+[data-theme="day"] .ios-guide{
+  background:linear-gradient(125deg,#e9f6f4,#edf5fa);
+  border-color:#b3d6ce;
+  color:#234854;
+}
+[data-theme="day"] .ios-guide :is(h2,h3,p,strong){color:#284e5b}
+[data-theme="day"] .ios-insert{border-top-color:#bdd3dd}
+[data-theme="day"] .ios-insert textarea{background:#fff;color:#1c3d4b;border-color:#b9d1d9}
+
+/* RPG controls: sunlit panels must not contain dark-only labels and selects. */
+[data-theme="day"] #pfDepartmentRouteForm>label{color:#355b67}
+[data-theme="day"] .pf-route-dept-picks label{background:#fff;color:#365763;border-color:#c2d7df}
+[data-theme="day"] .pf-route-dept-picks label:hover{background:#e7f4f3}
+[data-theme="day"] .pf-route-builder{background:#f5fafb;border-color:#c2d7df}
+[data-theme="day"] .pf-route-item{background:#fff;border-color:#cadce2}
+[data-theme="day"] .pf-dept-tile:focus-visible{outline-color:#096f73}
+[data-theme="day"] .pf-dept-tile small{color:#4a6c76}
+[data-theme="day"] .pf-footnote{color:#486774}
+[data-theme="day"] .pf-command-controls>p{color:#4b6975}
+[data-theme="day"] .pf-assignment-empty{color:#2a5961;border-color:#b5d0d8}
+[data-theme="day"] .pf-assignment-empty:hover{color:#14575f}
+[data-theme="day"] .pf-route-history p{color:#3d6270}
+
+/* Non-modal company thread elements when the phone drawer is used on mobile. */
+[data-theme="day"] .ops-msg-top{color:#1b3b49}
+[data-theme="day"] .ops-msg-top strong{color:#1c3c4b}
+[data-theme="day"] .ops-section-head{border-top-color:#c5d9df}
+[data-theme="day"] .ops-tag{background:#e2f1ed;color:#245e56;border-color:#bddbd0}
+[data-theme="day"] .ops-job p{color:#4f6b77}
+[data-theme="day"] .ops-message details pre{
+  background:#f5fafb;
+  color:#244753;
+  border-color:#cbdee3;
+}
+[data-theme="day"] .office-phone-header{background:#f5fafb}
+[data-theme="day"] .office-phone-footer{background:#f5fafb}
+[data-theme="day"] .office-phone-body{background:#fff;color:#1c3542}
+
+/* Day-mode input and button polish. Secondary surfaces stay pale, actions high contrast. */
+[data-theme="day"] :is(.ops-amount-row input,.office-plan-form input,.office-plan-form select){
+  background:#fff;color:#1c3542;border-color:#b4cbd4;
+}
+[data-theme="day"] .btn-primary:hover{background:#08656a;color:#fff}
+[data-theme="day"] .btn-danger:hover{background:#f4d8d8;color:#812e34}
+[data-theme="day"] :is(.app-refresh-button,.office-phone-btn):focus-visible{outline-color:#096f73}

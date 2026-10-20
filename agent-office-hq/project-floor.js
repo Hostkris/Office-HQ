@@ -40,7 +40,7 @@ function setup(cid){
  if(!hub){
   hub={id:B.uid('floor'),companyId:cid,kind:'hq_hub',name:'HQ Collaboration · All Departments',department:null,
    placements:[],janitor:false,createdAt:time()};
-  d.floors.push(hub);floors.push(hub);B.save();
+  d.floors.unshift(hub);floors.unshift(hub);B.save();
  }
  const chosen=d.selected[cid]||{};
  const existingPlacements=floors.some(f=>(f.placements||[]).length>0);

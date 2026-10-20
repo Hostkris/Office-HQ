@@ -48,11 +48,11 @@ test('YouTube video metadata uses a validated video ID and cannot turn into arbi
  let called;
  const b=createReachBridge({root,invoke:async(exe,args)=>{if(exe==='yt-dlp')called={exe,args};return fake(exe,args)},enabled:true});
  await assert.rejects(b.action({...data,channel:'youtube',target:'https://localhost/admin'}),/11-character/);
- const req=(await b.action({...data,channel:'youtube',target:'dQw4w9WgXc'})).request;
+ const req=(await b.action({...data,channel:'youtube',target:'dQw4w9WgXcQ'})).request;
  await b.action({action:'approve',companyId:data.companyId,requestId:req.id,ownerConfirmed:true});
  const res=await b.action({action:'run',companyId:data.companyId,requestId:req.id,ownerConfirmed:true});
  assert.equal(called.exe,'yt-dlp');assert.ok(called.args.includes('--skip-download'));
- assert.ok(called.args.includes('https://www.youtube.com/watch?v=dQw4w9WgXc'));
+ assert.ok(called.args.includes('https://www.youtube.com/watch?v=dQw4w9WgXcQ'));
  assert.equal(res.request.result.title,'Tutorial');
 }));
 test('CEO can revoke before execution; no financial, credentialed-social or arbitrary channel permitted',()=>sandbox(async root=>{

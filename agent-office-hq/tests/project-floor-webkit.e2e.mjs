@@ -296,3 +296,26 @@ test('iPad: Add assignment always stays assigned to the chosen bot even if form 
   assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
+
+test('iPhone: Public APIs catalog is searchable and an eligible employee can request CEO documentation review',async()=>{
+ const {page,context,errors}=await pageFor('iPhone 13');
+ try{
+   await page.evaluate(()=>window.OfficeHQBridge.setView('research'));
+   await page.locator('h1').filter({hasText:'Agent Reach + Public APIs'}).waitFor();
+   assert.equal(await page.locator('#researchPick option').count(),12);
+   await page.locator('#researchSearch').fill('Marketstack');
+   await page.locator('h3').filter({hasText:'Marketstack'}).waitFor();
+   await page.locator('#researchSearch').fill('');
+   await page.locator('#researchPick').selectOption('recalls');
+   const assignee=page.locator('#researchAssignee');
+   assert.ok((await assignee.locator('option').count())>0);
+   await assignee.selectOption({index:0});
+   await page.locator('#researchApiForm [name=reason]').fill('Evaluate read-only recall evidence for a product risk review.');
+   await page.locator('#researchApiForm button[type=submit]').click();
+   const proposals=await page.evaluate(()=>window.OfficeHQBridge.getState().approvals.filter(a=>a.kind==='api_discovery'));
+   assert.equal(proposals.length,1);
+   assert.equal(proposals[0].status,'pending');
+   assert.match(proposals[0].note,/No authentication, OAuth, API key/);
+   assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});

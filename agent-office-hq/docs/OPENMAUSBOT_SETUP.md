@@ -6,6 +6,7 @@ This first release connects the existing Office HQ local Node server to a runnin
 
 1. On your own Mac, Windows, or Linux computer, install Node 24+, OpenMausBot, a supported AI engine, and the OpenMausBot CLI (npm install -g openmausbot). Start the OpenMausBot desktop app.
 2. Run openmausbot doctor --json locally. OpenMausBot listens on local port 8799 by default. Set OFFICE_HQ_OPENMAUS_PORT for its actual local port if different.
+If the installed OpenMausBot desktop requires pairing for write/send commands, go to Settings → Phone → Set up a phone, get a one-time pairing code, and on your computer run: openmausbot connect http://127.0.0.1:8799 --code YOUR_ONE_TIME_CODE --out /PRIVATE/ABSOLUTE/PATH/openmausbot-token. Set OFFICE_HQ_OPENMAUS_TOKEN_FILE to the actual absolute path (not the contents). Never upload or paste the token into GitHub. The corresponding openmausbot CLI also supports private token-file authentication per upstream documentation.
 3. From the agent-office-hq directory, preview the starter template with: openmausbot team apply openmaus/office-hq-starter-team.json --dry-run
 4. Apply with: openmausbot team apply openmaus/office-hq-starter-team.json
 5. Inspect this bot inside OpenMausBot. Require Ask for approval, computer Off, browser disabled, no connected-app tools. Do NOT connect Gmail, social media or banking accounts to this starter bot.

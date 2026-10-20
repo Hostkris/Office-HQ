@@ -44,16 +44,19 @@
     return S().approvals.filter(x=>inScope(x)&&x.status==='pending').sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
   }
   function approvalCard(a){
+    const t=a.taskId?S().tasks.find(x=>x.id===a.taskId):null;
     const amount=Number(a.amount||0);
-    const canEdit=a.kind==='campaign'||a.kind==='expense';
-    return `<article class="ops-message ops-request" data-approval="${E(a.id)}">
-     <div class="ops-msg-top"><strong>${E(a.requester||'Employee request')}</strong><span>${fmt(a.createdAt)} <button type="button" class="ops-dismiss" data-ops="dismiss-request" data-id="${E(a.id)}" aria-label="Reject and remove request: ${E(a.title)}" title="Reject and remove this request">×</button></span></div>
-     <h3>${E(a.title)}</h3><p>${E(a.note||'Awaiting your decision.')}</p>
-     ${a.provider?`<p class="tiny">Service: <strong>${E(a.provider)}</strong></p>`:''}
-     ${canEdit?`<label class="ops-amount-label" for="amount_${E(a.id)}">Approved spending cap ($)</label><div class="ops-amount-row"><input id="amount_${E(a.id)}" type="number" step="0.01" min="0" max="100000" value="${amount.toFixed(2)}" aria-label="Proposed amount in dollars">${button('save-amount','Save amount',a.id)}</div>`:''}
-     <div class="ops-actions">${a.kind==='task'&&a.taskId?button('review-work','Open finished work & decide',a.taskId,'btn-primary'):button('approve-request','✓ Approve',a.id,'btn-primary')+button('deny-request','✕ Deny',a.id,'btn-danger')}${button('view-request','More details',a.id)}</div>
-     <div class="tiny muted">Approval does not connect an account, send a text, publish media, or charge a card.</div></article>`;
+    return \`<article class="ops-message ops-request" data-approval="\${E(a.id)}">
+      <div class="ops-msg-top"><strong>\${E(a.requester||'Employee request')}</strong><span>\${fmt(a.createdAt)}</span></div>
+      <h3>\${E(a.title)}</h3><p>\${E(a.note||'Awaiting your decision.')}</p>
+      \${a.provider?\`<p class="tiny">Provider: \${E(a.provider)}</p>\`:''}
+      \${t?.output?\`<details><summary>Read draft before deciding</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:270px;overflow:auto">\${E(t.output.slice(0,12000))}</pre></details>\`:''}
+      \${(a.kind==='campaign'||a.kind==='expense')?\`<p class="tiny">Proposed spending cap: \${E(B.money(amount))}</p>\`:''}
+      <div class="ops-actions">\${button('approve-request','✓ Approve',a.id,'btn-primary')}\${button('deny-request','✕ Deny',a.id,'btn-danger')}\${t?button('review-work','Read full work',t.id):''}</div>
+      <div class="tiny muted">Approving here records a decision; it does not connect accounts or send money or messages.</div>
+    </article>\`;
   }
+
   function recentMessages(){
     const msgs=ent().messages.filter(inScope);
     return msgs.slice(0,80).map(m=>`<article class="ops-message ${m.author==='You · CEO'?'ops-own':''}" data-message-id="${E(m.id)}">
@@ -61,10 +64,30 @@
      <p>${E(m.body)}</p><small>${m.kind==='alert'?'⚠ Alert':m.kind==='meeting'?'Meeting':'Internal company message'}</small></article>`).join('')||'<p class="muted">No company messages yet. Activity, approvals, and your CEO announcements will appear here.</p>';
   }
   function threadInner(){
-    return `<div class="ops-thread-list" aria-live="polite"><h3>Needs your authorization (${approvalItems().length})</h3>
-     ${approvalItems().map(approvalCard).join('')||'<div class="notice">No pending requests.</div>'}
-     <div class="ops-thread-heading"><h3 class="ops-section-head">Company text thread</h3><button class="btn btn-sm" type="button" data-ops="clear-messages">Clear messages</button></div>${recentMessages()}</div>`;
+    // OFFICEHQ_VOICE_THREAD_PATCH_v2 — shared Mac and iOS inbox, approvals and microphone.
+    return \`<div class="ops-thread-list" aria-live="polite">
+      <section class="hq-voice-composer" aria-label="Voice or typed assignments">
+        <h3>🎙 Give your employees an assignment</h3>
+        <p class="small muted">Speak or type. Office HQ chooses a specialist from your active company employees.</p>
+        <label class="tiny">Your assignment</label>
+        <textarea rows="3" data-voice-text maxlength="2200" placeholder="For example: Check important emails, draft responses, and bring me anything needing approval."></textarea>
+        <label class="tiny">Employee receiving the assignment</label>
+        <select data-voice-worker><option value="">Speak or type to choose a specialist</option></select>
+        <p class="tiny muted" role="status" data-voice-status>Tap the microphone and give your instruction. Or use keyboard Dictation and tap Assign task.</p>
+        <label class="hq-voice-option"><input type="checkbox" data-voice-run checked> Start a local AI draft if this employee is already authorized on the Mac</label>
+        <div class="hq-voice-actions">
+          <button class="btn btn-primary" type="button" data-voice-action="listen" aria-pressed="false">🎙 Speak assignment</button>
+          <button class="btn btn-sm" type="button" data-voice-action="assign">Assign task →</button>
+        </div>
+      </section>
+      <h3>Needs your approval (\${approvalItems().length})</h3>
+      \${approvalItems().map(approvalCard).join('')||'<p class="muted">No requests waiting for your decision.</p>'}
+      <div class="ops-thread-heading"><h3 class="ops-section-head">Employee messages, questions and results</h3></div>
+      \${recentMessages()}
+      <p class="tiny muted">Internal app messages are not SMS. External email needs an authorized provider connection. Different devices keep separate local records until secure sync is configured.</p>
+    </div>\`;
   }
+
   function updateDrawer(){const c=$('#opsDrawerContent');if(c)c.innerHTML=threadInner();badge();}
   function badge(){
     const n=approvalItems().length;
@@ -87,16 +110,10 @@
     $('#officePhoneBtn')?.focus();
   }
   function renderThread(){
-    const cid=currentCompany();
-    return page('Company text thread','Your internal CEO inbox, employee escalations, approval requests and decision log.',
-    `<div class="ops-grid"><div>${panel('Messages & requests',threadInner())}</div><div>${panel('Send a CEO instruction',
-       `<form id="opsMessageForm"><label for="opsText">Write to your company thread</label>
-       <textarea id="opsText" name="body" maxlength="800" required placeholder="Example: Marketing, prepare a $5 TikTok promotion proposal. Do not publish or spend until I approve."></textarea>
-       <label>Company</label><select name="companyId">${companies().map(c=>`<option value="${E(c.id)}" ${c.id===cid?'selected':''}>${E(c.name)}</option>`).join('')}</select>
-       <button class="btn btn-primary" type="submit">Post internal message</button></form>
-       <p class="tiny muted">Messages are stored in this browser only; agents do not receive real SMS.</p>`)}
-       ${panel('Request a campaign approval',campaignForm())}</div></div>${note}`);
+    return page('Company text thread','Your employee inbox: assignments, questions, completed work and decisions.',
+      \`<div class="hq-message-inbox">\${panel('Messages & requests',threadInner())}</div>\`);
   }
+
   function campaignForm(){
     const cid=currentCompany()==='all'?companies()[0]?.id:currentCompany();
     const ads=staff(cid).filter(e=>B.roleFor(e)?.scope==='paid_advertising'||B.roleFor(e)?.scope==='promotion_budgeting');
@@ -193,7 +210,7 @@
     const a=S().approvals.find(x=>x.id===id&&x.status==='pending');
     if(!a)return;
     const initialView=location.hash.replace('#/','');
-    if(a.kind==='task'&&a.taskId){closePhone();window.OfficeHQDeliverables?.openTask(a.taskId);return;}
+    // Task approvals are now actionable directly inside the company message thread.
     B.decideApproval(id,decision);
     // CEO decisions made inside the phone or company thread should remain there.
     if(initialView&&initialView!=='approvals')B.setView(initialView);
@@ -216,6 +233,7 @@
       message(actor,body,companyId,type==='approval'?'request':'alert');
     }
   };
+  window.OfficeHQCompanyInbox={message,refresh:refreshCurrent};
   window.OfficeHQExtraViews={thread:renderThread,connections:renderConnections,jobs:renderJobs,health:renderHealth,workflows:renderWorkflows,meetings:renderMeetings};
   document.addEventListener('click',ev=>{
     const action=ev.target.closest('[data-ops]');

@@ -46,15 +46,15 @@
   function approvalCard(a){
     const t=a.taskId?S().tasks.find(x=>x.id===a.taskId):null;
     const amount=Number(a.amount||0);
-    return \`<article class="ops-message ops-request" data-approval="\${E(a.id)}">
-      <div class="ops-msg-top"><strong>\${E(a.requester||'Employee request')}</strong><span>\${fmt(a.createdAt)}</span></div>
-      <h3>\${E(a.title)}</h3><p>\${E(a.note||'Awaiting your decision.')}</p>
-      \${a.provider?\`<p class="tiny">Provider: \${E(a.provider)}</p>\`:''}
-      \${t?.output?\`<details><summary>Read draft before deciding</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:270px;overflow:auto">\${E(t.output.slice(0,12000))}</pre></details>\`:''}
-      \${(a.kind==='campaign'||a.kind==='expense')?\`<p class="tiny">Proposed spending cap: \${E(B.money(amount))}</p>\`:''}
-      <div class="ops-actions">\${button('approve-request','✓ Approve',a.id,'btn-primary')}\${button('deny-request','✕ Deny',a.id,'btn-danger')}\${t?button('review-work','Read full work',t.id):''}</div>
+    return `<article class="ops-message ops-request" data-approval="${E(a.id)}">
+      <div class="ops-msg-top"><strong>${E(a.requester||'Employee request')}</strong><span>${fmt(a.createdAt)}</span></div>
+      <h3>${E(a.title)}</h3><p>${E(a.note||'Awaiting your decision.')}</p>
+      ${a.provider?`<p class="tiny">Provider: ${E(a.provider)}</p>`:''}
+      ${t?.output?`<details><summary>Read draft before deciding</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:270px;overflow:auto">${E(t.output.slice(0,12000))}</pre></details>`:''}
+      ${(a.kind==='campaign'||a.kind==='expense')?`<p class="tiny">Proposed spending cap: ${E(B.money(amount))}</p>`:''}
+      <div class="ops-actions">${button('approve-request','✓ Approve',a.id,'btn-primary')}${button('deny-request','✕ Deny',a.id,'btn-danger')}${t?button('review-work','Read full work',t.id):''}</div>
       <div class="tiny muted">Approving here records a decision; it does not connect accounts or send money or messages.</div>
-    </article>\`;
+    </article>`;
   }
 
   function recentMessages(){
@@ -65,7 +65,7 @@
   }
   function threadInner(){
     // OFFICEHQ_VOICE_THREAD_PATCH_v2 — shared Mac and iOS inbox, approvals and microphone.
-    return \`<div class="ops-thread-list" aria-live="polite">
+    return `<div class="ops-thread-list" aria-live="polite">
       <section class="hq-voice-composer" aria-label="Voice or typed assignments">
         <h3>🎙 Give your employees an assignment</h3>
         <p class="small muted">Speak or type. Office HQ chooses a specialist from your active company employees.</p>
@@ -80,12 +80,12 @@
           <button class="btn btn-sm" type="button" data-voice-action="assign">Assign task →</button>
         </div>
       </section>
-      <h3>Needs your approval (\${approvalItems().length})</h3>
-      \${approvalItems().map(approvalCard).join('')||'<p class="muted">No requests waiting for your decision.</p>'}
+      <h3>Needs your approval (${approvalItems().length})</h3>
+      ${approvalItems().map(approvalCard).join('')||'<p class="muted">No requests waiting for your decision.</p>'}
       <div class="ops-thread-heading"><h3 class="ops-section-head">Employee messages, questions and results</h3></div>
-      \${recentMessages()}
+      ${recentMessages()}
       <p class="tiny muted">Internal app messages are not SMS. External email needs an authorized provider connection. Different devices keep separate local records until secure sync is configured.</p>
-    </div>\`;
+    </div>`;
   }
 
   function updateDrawer(){const c=$('#opsDrawerContent');if(c)c.innerHTML=threadInner();badge();}
@@ -111,7 +111,7 @@
   }
   function renderThread(){
     return page('Company text thread','Your employee inbox: assignments, questions, completed work and decisions.',
-      \`<div class="hq-message-inbox">\${panel('Messages & requests',threadInner())}</div>\`);
+      `<div class="hq-message-inbox">${panel('Messages & requests',threadInner())}</div>`);
   }
 
   function campaignForm(){

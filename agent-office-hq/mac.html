@@ -44,10 +44,10 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text)}
 <li>On your iPhone or iPad, tap <strong>Send to Mac (AirDrop)</strong>, choose AirDrop, and select your Mac. You can also share the link through Messages.</li>
 <li>On your Mac, open the received link and download <strong>Office_HQ_for_Mac.zip</strong>.</li>
 <li>Double-click the ZIP, then open <strong>Office HQ.app</strong>. macOS may require you to review and explicitly open the unsigned application.</li>
-<li>Approve the first-run setup. Office HQ installs into your home folder if it is not already present and opens your local workspace.</li>
+<li>Approve setup on your Mac. Office HQ installs the independent Ollama engine and the <strong>llama3.2:3b</strong> local model, then opens your Mac workspace. A large model download is required.</li>
 </ol>
 <div class="mac-note">
-<strong>Important:</strong> This is a one-click Mac web-server launcher, not a signed offline Mac app or remote iPhone-to-Mac controller. It preserves your existing Mac Office HQ installation, including any previously installed native AI engine. A new Mac setup needs internet and macOS 14 or later. Connecting an actual AI runtime and synchronizing company data between your iPhone and Mac require separate setup and permissions.
+<strong>Important:</strong> This is an unsigned Mac launcher, not an offline App Store application or a remote installer. After your approval, it installs the full independent local Ollama runtime and downloads its llama3.2:3b model, requiring several GB of disk space, internet, and macOS 14+. To synchronize assignments, sign in to the same Office HQ Cloud account under Company Messages on the Mac and iPhone/iPad. The Mac can draft with Ollama only for explicitly authorized employees; outside account actions remain disabled. iPhone/iPad sync runs while its Office HQ web app is open.
 </div>
 <p><a class="mac-small-link" href="https://github.com/Hostkris/Office-HQ/tree/main/mac">Review the Mac installer source on GitHub</a></p>
 </section>

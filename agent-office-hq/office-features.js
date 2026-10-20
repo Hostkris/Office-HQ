@@ -66,6 +66,7 @@
   function threadInner(){
     // OFFICEHQ_VOICE_THREAD_PATCH_v2 — shared Mac and iOS inbox, approvals and microphone.
     return `<div class="ops-thread-list" aria-live="polite">
+      ${window.OfficeHQDeviceSync?.markup(false)||''}
       <section class="hq-voice-composer" aria-label="Voice or typed assignments">
         <h3>🎙 Give your employees an assignment</h3>
         <p class="small muted">Speak or type. Office HQ chooses a specialist from your active company employees.</p>
@@ -88,7 +89,7 @@
     </div>`;
   }
 
-  function updateDrawer(){const c=$('#opsDrawerContent');if(c)c.innerHTML=threadInner();badge();}
+  function updateDrawer(){const c=$('#opsDrawerContent');if(c)c.innerHTML=threadInner();badge();window.OfficeHQDeviceSync?.draw();}
   function badge(){
     const n=approvalItems().length;
     for(const selector of ['#officePhoneCount','#officePhoneDrawerCount']){

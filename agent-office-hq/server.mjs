@@ -5,6 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createDesktopService} from './desktop/runner.mjs';
 import {createOpenMausBridge} from './openmaus/bridge.mjs';
+import {createWorkforceEngine} from './openmaus/workforce-engine.mjs';
 import {createReachBridge} from './research/reach-bridge.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const host=process.env.HOST||'127.0.0.1';
@@ -14,8 +15,9 @@ const apiKey=process.env.OPENAI_API_KEY;
 const model=process.env.OPENAI_MODEL||'gpt-4.1-mini';
 const desktop=createDesktopService({root,apiKey,model});
 const openmaus=createOpenMausBridge({root});
+const workforceEngine=createWorkforceEngine({root});
 const research=createReachBridge({root});
-const files={'/':'index.html','/index.html':'index.html','/cloud.html':'cloud.html','/cloud.js':'cloud.js','/app.js':'app.js','/workforce-lean.js':'workforce-lean.js','/assignment-library.js':'assignment-library.js','/office-features.js':'office-features.js','/project-floor.js':'project-floor.js','/office-life.js':'office-life.js','/department-offices.js':'department-offices.js','/deliverables.js':'deliverables.js','/integration-center.js':'integration-center.js','/research-center.js':'research-center.js','/ios-workstations.js':'ios-workstations.js','/desktop-workstations.js':'desktop-workstations.js','/openmausbot.js':'openmausbot.js','/refresh.js':'refresh.js','/theme.js':'theme.js','/styles.css':'styles.css','/icon.svg':'icon.svg','/manifest.webmanifest':'manifest.webmanifest','/sw.js':'sw.js'};
+const files={'/':'index.html','/index.html':'index.html','/cloud.html':'cloud.html','/cloud.js':'cloud.js','/app.js':'app.js','/workforce-lean.js':'workforce-lean.js','/assignment-library.js':'assignment-library.js','/office-features.js':'office-features.js','/project-floor.js':'project-floor.js','/office-life.js':'office-life.js','/department-offices.js':'department-offices.js','/deliverables.js':'deliverables.js','/integration-center.js':'integration-center.js','/research-center.js':'research-center.js','/ios-workstations.js':'ios-workstations.js','/desktop-workstations.js':'desktop-workstations.js','/openmausbot.js':'openmausbot.js','/workforce-runtime.js':'workforce-runtime.js','/refresh.js':'refresh.js','/theme.js':'theme.js','/styles.css':'styles.css','/icon.svg':'icon.svg','/manifest.webmanifest':'manifest.webmanifest','/sw.js':'sw.js'};
 const types={html:'text/html; charset=utf-8',js:'text/javascript; charset=utf-8',css:'text/css; charset=utf-8',svg:'image/svg+xml',webmanifest:'application/manifest+json'};
 function send(res,status,content,type='application/json'){res.writeHead(status,{'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; img-src 'self' data:; worker-src 'self';"});res.end(content)}
 async function parseJson(req){let input='';for await(const c of req){input+=c;if(input.length>24000)throw Error('Payload too large')}return JSON.parse(input)}
@@ -47,6 +49,16 @@ const server=http.createServer(async(req,res)=>{try{
   if(url.pathname==='/api/research/action'&&req.method==='POST'){
     try{const payload=await parseJson(req);send(res,200,JSON.stringify(await research.action(payload)));}
     catch(err){send(res,Number(err.status)||400,JSON.stringify({error:String(err.message||'Research operation failed.').slice(0,260)}));}
+    return;
+  }
+  if(url.pathname==='/api/agent-workforce/status'&&req.method==='GET'){
+    try{send(res,200,JSON.stringify(await workforceEngine.status(url.searchParams.get('companyId'))));}
+    catch{send(res,503,JSON.stringify({error:'Local workforce engine unavailable.'}));}
+    return;
+  }
+  if(url.pathname==='/api/agent-workforce/action'&&req.method==='POST'){
+    try{const payload=await parseJson(req);send(res,200,JSON.stringify(await workforceEngine.action(payload)));}
+    catch(err){send(res,Number(err.status)||400,JSON.stringify({error:String(err.message||'Workforce action failed.').slice(0,260)}));}
     return;
   }
   if(url.pathname==='/api/openmaus/status'&&req.method==='GET'){

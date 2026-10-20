@@ -23,7 +23,7 @@ export async function localCli(args,input='',options={}){
   return await new Promise((resolve,reject)=>{
     let output='',settled=false;
     const child=spawn(process.env.OFFICE_HQ_OPENMAUS_BIN||'openmausbot',cliArgs,{shell:false,env,stdio:['pipe','pipe','pipe']});
-    const timer=setTimeout(()=>child.kill('SIGKILL'),12000);
+    const timer=setTimeout(()=>child.kill('SIGKILL'),Math.min(180000,Math.max(1000,Number(options.timeoutMs)||12000)));
     child.stdout.on('data',b=>{output+=b.toString();if(output.length>300000)child.kill('SIGKILL');});
     child.stderr.on('data',()=>{}); // Do not send CLI debug logs or credentials to Safari.
     child.once('error',()=>{if(!settled){settled=true;clearTimeout(timer);reject(fail('OpenMausBot CLI unavailable. Install the CLI and start the application.',503));}});

@@ -21,23 +21,23 @@ function loadTheme(script,storage){
   vm.runInNewContext(script,{document,window:win,CustomEvent,localStorage:storage});
   return {html,attrs,icon,label,click:()=>listeners.get('click')({target:{closest:sel=>sel==='[data-theme-toggle]'?button:null}}),api:win.OfficeHQTheme};
 }
-test('manual theme toggles on every visit and preserves original night default',async()=>{
+test('manual theme toggles on every visit and defaults new installations to readable day mode',async()=>{
   const script=await readFile(path.join(root,'theme.js'),'utf8');
   const saved=new Map();
   const storage={getItem:key=>saved.get(key)||null,setItem:(key,value)=>saved.set(key,value)};
   const first=loadTheme(script,storage);
-  assert.equal(first.html.dataset.theme,'night');
-  assert.equal(first.label.textContent,'Night Mode');
-  first.click();
   assert.equal(first.html.dataset.theme,'day');
-  assert.equal(first.attrs.get('aria-pressed'),'true');
+  assert.equal(first.label.textContent,'Day Mode');
   assert.equal(first.attrs.get('meta:content'),'#f5f8fa');
-  assert.equal(saved.get('office-hq-theme-v1'),'day');
-  const next=loadTheme(script,storage);
-  assert.equal(next.html.dataset.theme,'day');
-  next.click();
-  assert.equal(next.html.dataset.theme,'night');
+  first.click();
+  assert.equal(first.html.dataset.theme,'night');
+  assert.equal(first.attrs.get('aria-pressed'),'false');
   assert.equal(saved.get('office-hq-theme-v1'),'night');
+  const second=loadTheme(script,storage);
+  assert.equal(second.html.dataset.theme,'night','an explicit user preference must remain night');
+  second.click();
+  assert.equal(second.html.dataset.theme,'day');
+  assert.equal(saved.get('office-hq-theme-v1'),'day');
 });
 test('day theme is shared by both Office HQ entrypoints and cached for offline use',async()=>{
   const index=await readFile(path.join(root,'index.html'),'utf8');
@@ -54,7 +54,7 @@ test('day theme is shared by both Office HQ entrypoints and cached for offline u
 test('the canvas RPG office and its command view share daytime scenery without recoloring agents',async()=>{
   const themeScript=await readFile(path.join(root,'theme.js'),'utf8');
   const sceneScript=await readFile(path.join(root,'office-life.js'),'utf8');
-  const saved=new Map();
+  const saved=new Map([['office-hq-theme-v1','night']]);
   const theme=loadTheme(themeScript,{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v)});
   const nightBackdrop=theme.api.sceneColor('#243c4a');
   const originalSkin='#f5d6bd';
@@ -93,4 +93,15 @@ test('RPG employee controls follow both modes and reduced-motion still repaints'
   assert.match(floor,/officehq:themechange/);
   assert.match(floor,/if\(ctx&&\$\('#officeCanvas'\)\)renderFloor\(ctx,performance\.now\(\)\)/);
   assert.match(floor,/sceneColor\(focused\?/,'fallback RPG scene also obeys appearance switch');
+});
+
+test('company inbox voice fields and message headings use high-contrast light colors',async()=>{
+  const css=await readFile(path.join(root,'officehq-voice.css'),'utf8');
+  assert.match(css,/\[data-theme="day"\] \.hq-voice-composer :is\(textarea,select\)/);
+  assert.match(css,/\[data-theme="day"\] \.ops-thread-list \.ops-message/);
+  assert.match(css,/\[data-theme="day"\] \.ops-thread-list \.ops-message :is\(\.ops-msg-top/);
+  // WCAG contrast checks for our explicit day-mode text/background pairs.
+  function luminance(hex){const rgb=hex.match(/[0-9a-f]{2}/gi).map(v=>parseInt(v,16)/255).map(x=>x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;}
+  function contrast(a,b){const x=luminance(a.slice(1)),y=luminance(b.slice(1));return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
+  for(const [fg,bg] of [['#193744','#ffffff'],['#193744','#f0f6f8'],['#355a67','#f1f9fa'],['#4b6672','#ffffff']])assert.ok(contrast(fg,bg)>=4.5,fg+' on '+bg+' below AA contrast');
 });

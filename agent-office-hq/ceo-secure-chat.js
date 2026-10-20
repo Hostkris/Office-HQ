@@ -241,6 +241,7 @@
     else if(!['approved','denied'].includes(job.status)){
       html+='<button type="button" class="ceo-reply" data-ceo-chat-action="revise" data-job="'+E(job.id)+'">Add instructions</button>';
       if(['localhost','127.0.0.1'].includes(location.hostname)&&tasks.some(t=>t.status==='queued'))html+='<button type="button" class="ceo-reply" data-ceo-chat-action="retry" data-job="'+E(job.id)+'">Start authorized Mac draft</button>';
+      if(!['localhost','127.0.0.1'].includes(location.hostname)&&tasks.some(t=>t.status==='queued'&&!t.cloudSyncRequested))html+='<button type="button" class="ceo-reply" data-ceo-chat-action="sync" data-job="'+E(job.id)+'">Send saved assignment to Mac</button>';
     }
     html+='</section>';return html;
   }
@@ -269,6 +270,19 @@
     if(input){input.dataset.replyJob=jobId;input.placeholder='Reply with the details or changes…';input.focus();}
   }
   function decision(job,kind){
+    if(kind==='sync'){
+      // Older iPhone assignments were saved before cloudSyncRequested existed.
+      // Only a fresh CEO button press opts these older tasks into the owner-authenticated Mac queue.
+      if(['approved','denied'].includes(job.status))return;
+      const pending=job.currentTaskIds.map(id=>B.getState().tasks.find(t=>t.id===id))
+        .filter(t=>t?.ceoSecureDesk&&t.status==='queued'&&!t.cloudSyncRequested);
+      if(!pending.length)return;
+      for(const task of pending){task.cloudSyncRequested=true;window.OfficeHQDeviceSync?.pushTask?.(task);}
+      B.save();
+      log(job.companyId,'You · CEO','Send my previously saved assignment to the authorized Mac draft queue.','own',job.id);
+      log(job.companyId,'Office HQ Assistant','Queued for secure Mac sync. Execution still requires a connected Mac and separately authorized employee.', 'notice',job.id);
+      refresh();return;
+    }
     if(kind==='retry'){
       const tasks=job.currentTaskIds.map(id=>B.getState().tasks.find(t=>t.id===id)).filter(t=>t?.status==='queued');
       if(tasks.length)void attemptDispatch(job,tasks);

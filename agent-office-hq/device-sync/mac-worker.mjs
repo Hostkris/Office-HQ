@@ -171,8 +171,9 @@ export function createMacSyncService({bridge}={}){
  async function tick(){
   if(busy||!creds)return;busy=true;
   try{
-   await token();await presence();
-   await processQueue();await reportJobs();lastError='';
+   await token();await processQueue();await reportJobs();
+   // Signal a successful synchronization only AFTER cloud queue exchange succeeds.
+   await presence();lastError='';
   }catch(e){lastError=clip(e.message,150);}
   finally{busy=false;}
  }

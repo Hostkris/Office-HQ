@@ -24,10 +24,13 @@ test('GitHub Pages root redirect preserves iPhone workstation hash and search st
 test('installed iPhone app caches essential account and workstation controls',async()=>{
  const sw=await readFile(join(root,'agent-office-hq/sw.js'),'utf8');
  const refresh=await readFile(join(root,'agent-office-hq/refresh.js'),'utf8');
- for(const name of ['assignment-library.js','app.js','integration-center.js','desktop-workstations.js','ios-workstations.js','project-floor.js','office-life.js','department-offices.js','theme.js']){
+ for(const name of ['assignment-library.js','app.js','integration-center.js','desktop-workstations.js','ios-workstations.js','project-floor.js','office-life.js','department-offices.js','theme.js','refresh.js','officehq-voice.css']){
   assert.ok(sw.includes("'./"+name+"'"),'offline cache missing '+name);
-  assert.ok(refresh.includes("'./"+name+"'"),'Refresh App missing '+name);
  }
+ assert.match(refresh,/checkPublishedApp/,'Refresh App must validate the live shell');
+ assert.match(refresh,/searchParams\.set\('hq_refresh'/,'Manual update must bust the iPhone PWA document cache');
+ assert.match(refresh,/location\.replace/,'Manual update must reopen the current screen');
+ assert.doesNotMatch(refresh,/localStorage\.clear|caches\.delete/,'Refresh must preserve workspace records and app cache');
  assert.match(sw,/agent-office-hq-v[0-9]+/);
 });
 test('published site skips nonexistent localhost AI endpoint unless served locally',async()=>{

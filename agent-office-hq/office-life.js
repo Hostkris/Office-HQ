@@ -201,7 +201,7 @@ function ensurePlan(key,placements){
 function busyTask(tasks,p){
  // A queued cloud task may remain marked in progress after the Mac goes offline.
  // Never display the CEO Secure Desk agent as actively drafting without a verified runtime path.
- const mac=['localhost','127.0.0.1'].includes(location.hostname);
+ const mac=typeof location!=='undefined'&&['localhost','127.0.0.1'].includes(location.hostname);
  const paired=window.OfficeHQDeviceSync?.snapshot?.()?.connected===true;
  return tasks.find(t=>t.ownerId===p.employeeId&&t.status==='in_progress'&&
    (!t.ceoSecureDesk||(mac?!!t.openMausRunId:!!t.cloudSynced&&paired)));

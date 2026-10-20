@@ -28,7 +28,9 @@ function makeRefresh({online=true,networkOk=true,serviceWorker}={}){
  const localStorage={clear(){dataCleared=true;},removeItem(){dataCleared=true;}};
  const fetch=async(url,opts)=>{
   requested.push({url:String(url),cache:opts.cache});
-  return {ok:networkOk,status:networkOk?200:503,text:async()=>networkOk?liveHTML:''};
+  const isSW=new URL(String(url)).pathname.endsWith('/sw.js');
+  return {ok:networkOk,status:networkOk?200:503,
+   text:async()=>!networkOk?'':isSW?"const CACHE='agent-office-hq-v31-reliable-refresh';self.addEventListener('fetch',()=>{});":liveHTML};
  };
  vm.runInNewContext(source,{window:{location},document,navigator,localStorage,fetch,
   URL,Date,AbortController,setTimeout,clearTimeout,console},{filename:'refresh.js'});
@@ -42,9 +44,10 @@ test('Refresh App bypasses old HTML cache and preserves the current phone thread
  assert.equal(url.pathname,'/Office-HQ/agent-office-hq/');
  assert.equal(url.hash,'#/thread');
  assert.ok(url.searchParams.has('hq_refresh'));
- assert.equal(app.requested.length,1,'only the live shell is checked, not a fragile batch of 20 files');
- assert.ok(new URL(app.requested[0].url).searchParams.has('hq_check'));
- assert.equal(app.requested[0].cache,'no-store');
+ assert.equal(app.requested.length,2,'check only live service-worker script and shell, not a fragile asset batch');
+ assert.ok(new URL(app.requested[0].url).searchParams.has('hq_probe'));
+ assert.ok(new URL(app.requested[1].url).searchParams.has('hq_check'));
+ assert.ok(app.requested.every(x=>x.cache==='no-store'));
  assert.equal(app.readDataClear(),false,'must never wipe records to refresh the app');
 });
 test('Refresh App updates and activates a waiting service worker before opening new page',async()=>{
@@ -90,7 +93,7 @@ function makeSW({offline=false}={}){
  };
  const caches={
   open:async()=>cache,
-  keys:async()=>['unrelated-app-cache','agent-office-hq-v29-day-palette-audit','agent-office-hq-v30-reliable-refresh'],
+  keys:async()=>['unrelated-app-cache','agent-office-hq-v30-reliable-refresh','agent-office-hq-v31-reliable-refresh'],
   delete:async key=>{requests.push('delete:'+key);return true;},
   match:async req=>stored.get(req.url||String(req))
  };
@@ -138,6 +141,6 @@ test('Service worker leaves unrelated site caches untouched on upgrade',async()=
  const sw=makeSW();let work;
  sw.handlers.get('activate')({waitUntil:p=>work=p});
  await work;
- assert.ok(sw.requests.includes('delete:agent-office-hq-v29-day-palette-audit'));
+ assert.ok(sw.requests.includes('delete:agent-office-hq-v30-reliable-refresh'))
  assert.ok(!sw.requests.includes('delete:unrelated-app-cache'));
 });

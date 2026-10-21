@@ -56,7 +56,7 @@ test('Canvas paints Western desert, sunrise and sunset without changing worker s
  vm.runInContext(lifeCode,context);
  const c={
   fillStyle:'',font:'',textAlign:'',
-  fillRect(x,y,w,h){fills.push({x,y,w,h,color:this.fillStyle});if(x===-25&&y===-57&&w===50)workerHats.push(this.fillStyle);},
+  fillRect(x,y,w,h){fills.push({x,y,w,h,color:this.fillStyle});if(x===-28&&y===-60&&w===56)workerHats.push(this.fillStyle);},
   fillText(s){texts.push(String(s));},save(){},restore(){},translate(){},
   beginPath(){},roundRect(){},fill(){},moveTo(){},lineTo(){},closePath(){},arc(){},
   createLinearGradient(){return {addColorStop(){}};}

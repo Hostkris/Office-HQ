@@ -15,3 +15,14 @@ The Mac launcher installs or reuses Office HQ and downloads the full independent
 The iPhone cannot silently install software on your Mac. AirDrop/Share sends the link; downloading and launching require the Mac owner's action. **Automatic assignments sync:** In Company Messages on both devices, open **Connect devices / manage sync** and sign into the same private Office HQ Cloud account. On the Mac, separately authorize any specialist allowed to handle synced draft-only tasks. The Mac server polls for assignments even when its browser is closed. iOS sends and retrieves updates while Office HQ is open; Apple does not allow this web app to run continuously after you close it. The iPhone-style signal bars display full strength only when both signed-in devices recently exchanged data, and an X when disconnected.
 
 [Open Office HQ on iOS or desktop](https://hostkris.github.io/Office-HQ/) · [Mac installer source](./mac/) · [Full Office HQ README](./agent-office-hq/README.md)
+
+
+## Latest workforce update
+
+Open **Department activation** to authorize a department's individual Mac AI
+specialists and their phone-sync mappings. Use **Department teams** for one
+combined report across one or all 12 departments, **Ask / chat** in Company
+Messages for local AI conversations, and **Agent Health → Fix It** to check and
+resume eligible interrupted drafts. The Mac launcher is version 1.0.2. Your Mac
+must run the update and remain awake; outside account access is separately
+controlled. See the [workforce instructions](agent-office-hq/README.md).

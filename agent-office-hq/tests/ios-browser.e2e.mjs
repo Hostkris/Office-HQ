@@ -102,3 +102,44 @@ test('iPhone Safari emulation: manually completed job can be passed to a chosen 
   assert.equal(errors.length,0,'page errors: '+errors.join('; '));
  }finally{await context.close();}
 });
+
+
+test('iPhone department setup, company-wide jobs and Agent Health remain usable without claiming Mac completion',async()=>{
+ const {page,context,errors}=await mobilePage('iPhone 13');
+ try{
+  await page.goto(base+'/#/connections');
+  await page.getByRole('heading',{name:'Department activation',exact:true}).waitFor();
+  assert.equal(await page.locator('[data-department-pick]').count(),12);
+  await page.locator('[data-department-pick="Marketing"]').click();
+  await page.getByRole('heading',{name:'Connect Marketing',exact:true}).waitFor();
+  assert.equal(await page.locator('.department-connect').count(),4);
+  await page.locator('[data-department-action="next"]').click();
+  await page.getByRole('heading',{name:'Activate Marketing workers',exact:true}).waitFor();
+  assert.match(await page.locator('.department-progress').innerText(),/0 of 6 workers/);
+  await page.goto(base+'/#/workflows');
+  await page.locator('[data-team-select="All departments"]').click();
+  await page.locator('#departmentTeamInstruction').fill('Prepare a complete product launch plan with a separate draft from every authorized specialist.');
+  await page.locator('#departmentTeamForm button[type="submit"]').click();
+  await page.locator('[data-department-project]').waitFor();
+  assert.match(await page.locator('.department-team-card').innerText(),/0\/39 verified drafts returned/);
+  assert.equal(await page.locator('[data-team-decision="approve"]').count(),0,'queueing work must not create an approval or fake report');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'department controls must fit the phone');
+  await page.goto(base+'/#/health');
+  await page.getByRole('heading',{name:'Agent Health',exact:true}).waitFor();
+  assert.equal(await page.locator('[data-agent-health="check"]').count(),1);
+  assert.equal(errors.length,0,'page errors: '+errors.join('; '));
+ }finally{await context.close();}
+});
+test('iPad Company Messages separates conversations from assignments and queues a real Mac reply',async()=>{
+ const {page,context,errors}=await mobilePage('iPad Pro 11');
+ try{
+  await page.goto(base+'/#/thread');
+  await page.locator('[data-ceo-chat-mode]').selectOption('conversation');
+  await page.locator('[data-ceo-chat-department]').waitFor();
+  await page.locator('[data-ceo-chat-input]').fill('What does the research team need from me to prepare a draft?');
+  await page.locator('[data-ceo-chat-action="send"]').click();
+  await page.locator('.ceo-chat-log').getByText(/Your question is queued/).waitFor();
+  assert.equal(await page.locator('[data-ceo-chat-action="approve"]').count(),0);
+  assert.equal(errors.length,0,'page errors: '+errors.join('; '));
+ }finally{await context.close();}
+});

@@ -278,6 +278,7 @@ window.addEventListener('hashchange',()=>{
 });
 }
 setup();
-if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+// A local Mac needs its running server, not a cached copy of a retired interface.
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')&&!['127.0.0.1','localhost'].includes(location.hostname))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 })();
 

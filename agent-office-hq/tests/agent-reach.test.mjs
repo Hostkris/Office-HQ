@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {scriptPaths} from './html-assets.mjs';
 import {mkdtemp,rm,readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
@@ -68,7 +69,7 @@ test('source-derived public API directory is loaded but no backend credentials a
  const ui=await readFile(new URL('../research-center.js',import.meta.url),'utf8');
  const build=await readFile(new URL('../scripts/build.mjs',import.meta.url),'utf8');
  assert.match(html,/data-view="research"/);
- assert.match(html,/src="research-center.js"/);
+ assert.ok(scriptPaths(html).includes('research-center.js'));
  for(const item of ['Open Food Facts','Marketstack','US Recalls MCP','ShapelessAI MCP','VirusTotal'])assert.ok(ui.includes(item));
  assert.match(build,/research-center.js/);
  assert.doesNotMatch(build,/reach-bridge.mjs/);

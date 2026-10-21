@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {scriptPaths} from './html-assets.mjs';
 import {readFile} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import {join,resolve} from 'node:path';
@@ -18,7 +19,7 @@ test('Mac and iPhone load the exact same workspace scripts and dedicated routes'
   assert.match(app,new RegExp(screen+":"));
  }
  for(const asset of ['office-features.js','ceo-secure-chat.js','website-access.js','coding-tasks.js','officehq-device-sync.js'])
-  assert.ok(html.includes('src="'+asset+'"'),'Missing '+asset);
+  assert.ok(scriptPaths(html).includes(asset),'Missing '+asset);
  assert.match(website,/OfficeHQExtraViews\.access\s*=\s*function/);
  assert.match(coding,/OfficeHQExtraViews\.coding\s*=\s*render/);
  assert.match(app,/hq-unavailable-view/,'Missing modules must not be redirected to Command Center');
@@ -42,7 +43,7 @@ test('Mac updater checks all requested modules, preserves backups, and restarts 
  assert.match(installer,/for item in "\$\{FILES\[@\]\}"/);
  assert.match(installer,/lsof -a -p/);
  assert.match(installer,/kill -TERM "\$ACTIVE_PID"/);
- assert.match(installer,/cmp -s "\$TEMP\/\$module" "\$WEB\/\$module"/);
+ assert.match(installer,/cmp -s "\$TEMP\/\$module" "\$WEB\/\$local_file"/);
  for(const f of ['website-access.js','coding-tasks.js','ceo-secure-chat.js'])
   assert.ok(installer.includes(f),'Mac update must validate '+f);
  assert.match(installer,/hq_update/);

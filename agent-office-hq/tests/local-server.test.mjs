@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
+import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:net';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -24,7 +25,18 @@ test('local server serves dashboard, reports draft-only status, and refuses AI c
     assert.ok(ready,'local server did not start');
     const res=await fetch(base+'/');
     assert.equal(res.status,200);
-    assert.match(await res.text(),/Agent Office HQ/);
+    const shell=await res.text();
+    assert.match(shell,/Agent Office HQ/);
+    // Exercise the versioned URLs used by real browsers, not just hardcoded
+    // filenames that can pass while a new screen is absent from the server.
+    for(const match of shell.matchAll(/\b(?:src|href)="([^"]+)"/g)){
+      const url=new URL(match[1],base+'/');
+      if(url.origin!==base||!(/\.(?:js|css)$/.test(url.pathname)))continue;
+      const asset=await fetch(url);
+      assert.equal(asset.status,200,'Missing browser resource '+url.pathname+url.search);
+      assert.equal(await asset.text(),await readFile(path.join(root,url.pathname.slice(1)),'utf8'));
+      assert.equal(asset.headers.get('cache-control'),'no-store');
+    }
     assert.equal((await fetch(base+'/ios-workstations.js')).status,200);
     assert.equal((await fetch(base+'/desktop-workstations.js')).status,200);
     assert.equal((await fetch(base+'/openmausbot.js')).status,200);

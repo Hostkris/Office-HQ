@@ -1,5 +1,23 @@
 # Agent Office HQ 🏢
 
+## Mac screen repair — launcher 1.0.6
+
+If Mac pages go blank, Website Access or Coding Tasks shows Command Center, or
+Company Messages still shows the retired assignment form, download the current
+Mac launcher, extract it, open that new Office HQ.app, and choose **Update Office HQ**.
+Reopening the old v1.2 app or pressing Refresh App does not update its installed
+source files. The updater backs up application code, validates all new JavaScript
+before replacement, restarts only the verified local Office HQ server, and checks
+the actual shell plus every referenced script and style over HTTP. Workspace
+records, sign-ins and existing employee authorizations stay separate.
+
+The local Mac interface now reads files directly from its running server; it does
+not register an offline worker. Existing Office HQ workers at the exact local
+app scope are unregistered without clearing localStorage or IndexedDB. iPhone
+offline support remains available. Startup failures show an update/retry screen
+instead of an empty page. Browser tests accept versioned asset URLs while still
+checking each required script identity.
+
 ## Coding tasks with a real work loop
 
 Open **Coding tasks** in Connections & settings. The first worker supports a bounded
@@ -7,7 +25,7 @@ JavaScript/Node repository task: inspect and search approved source, record a pl
 edit a separate checkout, run approved checks, repair failures, and return a diff
 and acceptance evidence for independent CEO review.
 
-1. Update Office HQ on your Mac with launcher **1.0.5**. In Department activation,
+1. Update Office HQ on your Mac with launcher **1.0.6**. In Department activation,
    authorize a Backend Engineer, Frontend Engineer or Systems Integration Engineer
    and enable approved AI drafts. Coding work uses the same serialized native queue.
 2. On the Mac, expand **Set up model & repository permissions**. Enter the name of

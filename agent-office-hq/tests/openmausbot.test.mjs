@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {scriptPaths} from './html-assets.mjs';
 import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -92,7 +93,7 @@ test('Static website includes UI and RPG status, but never bundles private engin
  const build=await readFile(new URL('../scripts/build.mjs',import.meta.url),'utf8');
  const floor=await readFile(new URL('../project-floor.js',import.meta.url),'utf8');
  const ui=await readFile(new URL('../openmausbot.js',import.meta.url),'utf8');
- assert.match(html,/data-view="openmaus"/);assert.match(html,/src="openmausbot.js"/);
+ assert.match(html,/data-view="openmaus"/);assert.ok(scriptPaths(html).includes('openmausbot.js'));
  assert.match(build,/openmausbot.js/);assert.doesNotMatch(build,/bridge.mjs/);
  assert.match(floor,/OfficeHQMausThoughts/);assert.match(ui,/Mac is not remotely connected/);
  const voice=await readFile(new URL('../officehq-voice.js',import.meta.url),'utf8');

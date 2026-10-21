@@ -178,3 +178,19 @@ rejects remote grant creation and expired/unconfirmed controls, strips local pat
 from catalogs and returns bounded receipts. The phone adopts only newer catalogs;
 old receipts cannot restore a revoked grant. No schema, service key or new hosted
 backend was introduced. Static build output includes only the new JS/CSS controls.
+
+
+## Mac startup and update integrity
+
+`app-startup.js` runs before the workspace modules and retains a usable update/retry
+view if initialization or a dedicated route module fails. The Mac updater validates
+new script syntax before replacing code, then compares the served HTML and every
+referenced versioned script/style with installed bytes after restarting its own
+verified server. Static publication tests normalize script URLs, including their
+cache query, instead of rejecting a valid cache-busting release.
+
+The localhost app does not register an offline service worker; only an existing
+Office HQ worker at its exact scope is retired. Saved company records and
+authenticated cloud sessions are not erased. The hosted iOS interface retains
+its offline worker. Neither startup recovery nor an application update grants
+account or employee execution permission.

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {scriptPaths} from './html-assets.mjs';
 import {mkdtemp,rm,readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
@@ -119,8 +120,8 @@ test('browser build includes runtime controller but not private engine, prompts 
  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
  const bundle=await readFile(new URL('../scripts/build.mjs',import.meta.url),'utf8');
  const ui=await readFile(new URL('../workforce-runtime.js',import.meta.url),'utf8');
- assert.doesNotMatch(html,/src="workforce-runtime.js"/);
- assert.match(html,/src="officehq-voice.js"/);
+ assert.ok(!scriptPaths(html).includes('workforce-runtime.js'));
+ assert.ok(scriptPaths(html).includes('officehq-voice.js'));
  assert.match(bundle,/workforce-runtime.js/);
  assert.doesNotMatch(bundle,/workforce-engine.mjs|essential-workforce.json/);
  assert.match(ui,/data-workforce/);

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {scriptPaths} from './html-assets.mjs';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import path from 'node:path';
@@ -44,7 +45,7 @@ test('day theme is shared by both Office HQ entrypoints and cached for offline u
   const cloud=await readFile(path.join(root,'cloud.html'),'utf8');
   const sw=await readFile(path.join(root,'sw.js'),'utf8');
   const css=await readFile(path.join(root,'styles.css'),'utf8');
-  for(const html of [index,cloud]){assert.match(html,/src="\.?\/?theme\.js"/);assert.match(html,/data-theme-toggle/);}
+  for(const html of [index,cloud]){assert.ok(scriptPaths(html).includes('theme.js'));assert.match(html,/data-theme-toggle/);}
   assert.match(sw,/'\.\/theme\.js'/);
   assert.match(css,/:root\[data-theme="day"\]/);
   assert.match(css,/:root\[data-theme="night"\]/);

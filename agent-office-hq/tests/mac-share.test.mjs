@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {scriptPaths} from './html-assets.mjs';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const [share,html,landing,build,sw,macBuilder,macSetup]=await Promise.all([
@@ -23,7 +24,7 @@ function scene({shareFn,clipboardFn}={}){
 test('Office HQ supports direct Mac ZIP access from iOS on GitHub',()=>{
  assert.match(html,/data-mac-share/);
  assert.match(html,/href="\.\/mac.html"/);
- assert.match(html,/src="mac-share\.js"/);
+ assert.ok(scriptPaths(html).includes('mac-share.js'));
  assert.match(landing,/data-mac-share/);
  assert.ok(landing.includes(DOWNLOAD_URL));
  assert.match(build,/mac\.html.*mac-share\.js/);

@@ -95,7 +95,7 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ]; then
     # Update the COMPLETE approved browser app and local engine modules, not
     # only the pre-chat assets. Never copy .env, credentials or local records.
     FILES=(
-      server.mjs index.html cloud.html cloud.js mac.html mac-share.js \
+      server.mjs package.json index.html app-startup.js cloud.html cloud.js mac.html mac-share.js \
       assignment-library.js workforce-lean.js app.js office-features.js \
       officehq-voice.js officehq-voice.css ceo-secure-chat.js ceo-secure-chat.css \
       officehq-device-sync.js officehq-sync.css project-floor.js office-life.js \
@@ -113,6 +113,9 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ]; then
     # Verify all update assets BEFORE overwriting a single existing file.
     for item in "${FILES[@]}"; do
       [ -f "$SOURCE/$item" ] || failed "Latest GitHub release is missing $item. Existing files were not modified."
+      case "$item" in
+        *.js|*.mjs) "$NODE" --check "$SOURCE/$item" >/dev/null || failed "Latest GitHub file is invalid: $item. Existing files were not modified." ;;
+      esac
     done
     for item in "${FILES[@]}"; do
       mkdir -p "$BACKUP/$(dirname "$item")" "$WEB/$(dirname "$item")"
@@ -206,7 +209,7 @@ fi
 
 
 # Validate the same shared browser modules that render on iPhone/iPad.
-for module in app.js office-features.js ceo-secure-chat.js website-access.js coding-tasks.js officehq-device-sync.js server.mjs; do
+for module in app-startup.js app.js office-features.js ceo-secure-chat.js website-access.js coding-tasks.js officehq-device-sync.js server.mjs; do
   "$NODE" --check "$WEB/$module" >/dev/null || failed "Updated Office HQ module failed syntax validation: $module"
 done
 
@@ -255,13 +258,27 @@ if ! curl -fsS --connect-timeout 2 --max-time 3 "$URL" 2>/dev/null | grep -q 'Ag
   done
   [ "$OK" = 1 ] || failed "Mac server did not start. See $LOG/officehq.log"
 fi
-# Verify the actual Mac HTTP server exposes all three requested screens.
-for module in website-access.js coding-tasks.js ceo-secure-chat.js; do
+# Check the actual shell and EVERY script/style it references, including version
+# queries. A three-file probe misses partial installs and stale startup scripts.
+"$NODE" --input-type=module - "$WEB/index.html" > "$TEMP/browser-assets.txt" <<'BROWSER_ASSETS'
+import {readFile} from 'node:fs/promises';
+const html=await readFile(process.argv[2],'utf8');
+const assets=new Set(['index.html']);
+for(const match of html.matchAll(/\b(?:src|href)="([^"]+)"/g)){
+  const url=new URL(match[1],'http://127.0.0.1/');
+  if(url.origin!=='http://127.0.0.1'||!(/\.(?:js|css)$/.test(url.pathname)))continue;
+  if(!(/^\/[a-z0-9-]+\.(?:js|css)$/i.test(url.pathname)))throw Error('Unexpected app asset path.');
+  assets.add(url.pathname.slice(1)+url.search);
+}
+console.log([...assets].join('\n'));
+BROWSER_ASSETS
+while IFS= read -r module; do
+  local_file="${module%%\?*}"
   curl -fsS --connect-timeout 2 --max-time 6 "$URL$module" -o "$TEMP/$module" ||
     failed "Mac health check could not load $module."
-  cmp -s "$TEMP/$module" "$WEB/$module" ||
+  cmp -s "$TEMP/$module" "$WEB/$local_file" ||
     failed "Mac is serving outdated $module. Close the old server and reopen Office HQ."
-done
+done < "$TEMP/browser-assets.txt"
 say 'Mac screen and module health checks passed.'
 say 'Success. Opening Office HQ on this Mac.'
 say 'This installs the web app server. Optional local AI runtime requires separate consent/setup.'

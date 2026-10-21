@@ -165,10 +165,16 @@ export function createMacSyncService({bridge,desktop=null,cloudRequest=request,s
     const state=await desktop.status(companyId);
     if(!state.websiteAccess.accounts.some(a=>a.id===command.site))throw error('Account does not belong to this company.',403);
     result=await desktop.action({action:'open',companyId,site:command.site});
-   }else if(command.kind==='run')result=await desktop.action({action:'run',companyId,grantId:command.grantId,prompt:command.prompt,mode:command.mode,commandId:task.client_task_key});
+   }else if(command.kind==='run'){
+    const current=await desktop.status(companyId),g=current.websiteAccess.grants.find(g=>g.id===command.grantId&&g.active);
+    if(!g||!ai.bindings.some(b=>b.companyId===companyId&&b.employeeId===g.employeeId&&b.roleKey===g.roleKey))throw error('Authorize this specialist on the Mac before starting browser work.',403);
+    result=await desktop.action({action:'run',companyId,grantId:command.grantId,prompt:command.prompt,mode:command.mode,commandId:task.client_task_key});
+   }
    else if(['pause','resume','approve','reject'].includes(command.kind)){
     const state=await desktop.status(companyId);
-    if(!state.jobs.some(j=>j.id===command.jobId))throw error('Browser job not found for this company.',403);
+    const job=state.jobs.find(j=>j.id===command.jobId);
+    if(!job)throw error('Browser job not found for this company.',403);
+    if(['resume','approve'].includes(command.kind)&&!ai.bindings.some(b=>b.companyId===companyId&&b.employeeId===job.employeeId&&b.roleKey===job.roleKey))throw error('This specialist is no longer authorized on the Mac.',403);
     if(command.kind==='approve'&&(!command.approvalId||!state.jobs.some(j=>j.id===command.jobId&&j.approval?.id===command.approvalId)))throw error('This action approval changed. Check the current Mac request.',409);
     result=await desktop.action({action:command.kind,jobId:command.jobId,approvalId:command.approvalId});
    }else if(command.kind!=='status')throw error('Unsupported website permission command.');
@@ -181,7 +187,7 @@ export function createMacSyncService({bridge,desktop=null,cloudRequest=request,s
    const receipt={compactIds:true,kind:command.kind,requestKey:command.requestKey||request?.clientRequestId,...result,websiteAccess:undefined,
      request:request?{id:request.id,status:request.status,decision:request.decision,mode:request.mode,conversationId:request.conversationId,expiresAt:request.expiresAt}:null,
      accounts:accounts.map(a=>({id:a.id,origin:a.origin})),roles:workers.map(w=>w.roleKey),matrix,
-     jobs:state.jobs.filter(j=>!command.jobId||j.id===command.jobId).slice(0,5).map(j=>({id:j.id,employeeName:j.employeeName,site:j.site,status:j.status,thought:j.thought,summary:j.summary,approval:j.approval}))};
+     jobs:state.jobs.filter(j=>!command.jobId||j.id===command.jobId).slice(0,5).map(j=>({id:j.id,grantId:j.grantId,roleKey:j.roleKey,employeeName:j.employeeName,site:j.site,status:j.status,thought:j.thought,summary:j.summary,approval:j.approval}))};
    while(JSON.stringify(receipt).length>16000&&receipt.jobs.length)receipt.jobs.pop();
    const draft=JSON.stringify(receipt);
    if(draft.length>16000)throw error('Receipt too large. Refresh one request at a time.');
@@ -197,7 +203,7 @@ export function createMacSyncService({bridge,desktop=null,cloudRequest=request,s
   for(const task of pending){
    const matched=mappings.find(x=>x.roleKey===task.employee_role&&
      x.companyName.toLowerCase()===task.company_label.toLowerCase()&&
-     ai.bindings.some(b=>b.companyId===x.companyId&&b.employeeId===x.employeeId&&b.roleKey===x.roleKey));
+     (task.description?.startsWith(ACCESS_PREFIX)||ai.bindings.some(b=>b.companyId===x.companyId&&b.employeeId===x.employeeId&&b.roleKey===x.roleKey)));
    // An unmatched company or unapproved specialist must not run.
    if(!matched)continue;
    if(task.description?.startsWith(ACCESS_PREFIX)){await websiteCommand(task,matched,mappings,ai);continue;}
@@ -228,7 +234,7 @@ export function createMacSyncService({bridge,desktop=null,cloudRequest=request,s
   for(const task of rows){
    if(task.description?.startsWith(ACCESS_PREFIX)){
     if(task.status==='in_progress'){
-     const matched=mappings.find(m=>m.roleKey===task.employee_role&&m.companyName.toLowerCase()===task.company_label.toLowerCase()&&snapshot.bindings.some(b=>b.companyId===m.companyId&&b.employeeId===m.employeeId&&b.roleKey===m.roleKey));
+     const matched=mappings.find(m=>m.roleKey===task.employee_role&&m.companyName.toLowerCase()===task.company_label.toLowerCase());
      let command;try{command=JSON.parse(task.description.slice(ACCESS_PREFIX.length));}catch{}
      if(command?.kind==='approve')await rest('hq_device_synced_assignments','PATCH',{status:'blocked',note:'Previous action outcome is uncertain. Review the Mac browser before any new approval.',updated_at:done()},'?id=eq.'+encodeURIComponent(task.id));
      else if(matched)await websiteCommand(task,matched,mappings,snapshot,true);

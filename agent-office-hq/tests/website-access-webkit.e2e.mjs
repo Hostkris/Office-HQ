@@ -57,7 +57,17 @@ test('iPad: selecting all agents queues the exact reviewed websites and waits fo
   const data=await page.evaluate(()=>({tasks:window.fixtureCommands.map(t=>t.description),grants:window.OfficeHQBridge.getState().enterprise.websiteAccess.grants}));
   assert.equal(data.tasks.length,1);const command=JSON.parse(data.tasks[0].slice('OFFICE_HQ_WEBSITE_ACCESS_V1:'.length));
   assert.equal(command.roles.length,39);assert.equal(command.decision,'relevant');assert.deepEqual(command.relevantUrls,['https://docs.google.com/']);assert.equal(command.ownerConfirmed,true);
-  assert.equal(data.grants.length,0,'a queued owner decision is not yet an active Mac permission');assert.deepEqual(outbound,[]);assert.deepEqual(errors,[]);
+  assert.equal(data.grants.length,0,'a queued owner decision is not yet an active Mac permission');
+  await page.evaluate(async()=>{
+   const s=window.OfficeHQBridge.getState(),r=s.enterprise.websiteAccess.requests.at(-1),t=window.fixtureCommands[0],roles=r.workers.map(w=>w.roleKey),ids=roles.map((_,n)=>(n+1).toString(16).padStart(32,'0'));
+   t.output=JSON.stringify({compactIds:true,kind:'decide',requestKey:r.clientRequestId,request:{id:'mac-request',status:'allowed',decision:'relevant',conversationId:r.conversationId},accounts:[{id:'mac-account1',origin:'https://github.com'},{id:'mac-account2',origin:'https://docs.google.com'}],roles,matrix:[ids,ids.map(x=>'f'+x.slice(1))],jobs:[{id:'fixture-browser-job',roleKey:'research',grantId:ids[roles.indexOf('research')].replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/,'$1-$2-$3-$4-$5'),employeeName:'Fixture researcher',status:'paused',thought:'Waiting for owner',site:'mac-account1'}]});
+   t.status='done';await window.OfficeHQWebsiteAccess.refresh();
+  });
+  await page.locator('#webAccessRequests').getByText('Access granted',{exact:true}).waitFor();
+  const active=await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.websiteAccess.grants);assert.equal(active.length,78);assert.match(active[0].id,/^[a-f0-9]{8}-/);
+  await page.locator('#webAccessJobs').getByRole('button',{name:'Resume',exact:true}).click();
+  const resumed=await page.evaluate(()=>{const t=window.fixtureCommands.at(-1),s=window.OfficeHQBridge.getState();return {command:JSON.parse(t.description.slice('OFFICE_HQ_WEBSITE_ACCESS_V1:'.length)),role:s.employees.find(e=>e.id===t.ownerId).roleKey};});
+  assert.equal(resumed.command.kind,'resume');assert.equal(resumed.role,'research','browser commands must use the matching specialist mapping');assert.deepEqual(outbound,[]);assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
 test('closing an undecided request preserves it and never silently grants account access',async()=>{

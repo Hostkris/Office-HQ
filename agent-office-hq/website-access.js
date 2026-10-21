@@ -32,9 +32,9 @@ function form(){
  '<section class="card web-browser-activity"><h2>Browser work</h2><div id="webAccessJobs"></div></section></div></div><p class="notice" role="status" id="webAccessFeedback">'+E(feedback)+'</p>';
 }
 function requestCard(r){
- const grants=state().grants.filter(g=>g.requestId===(r.macRequestId||r.id)&&g.active),pending=r.status==='pending',queued=r.status==='queued';
+ const grants=state().grants.filter(g=>g.requestId===(r.macRequestId||r.id)&&g.active&&(!g.expiresAt||Date.parse(g.expiresAt)>Date.now())),pending=r.status==='pending',queued=r.status==='queued';
  const label=pending?'Waiting for your decision':queued?'Waiting for Mac confirmation':grants.length?'Access granted':r.status==='denied'?'Denied':r.status==='allowed'?'Access ended':r.status;
- return '<article class="web-request"><div class="web-request-domain">'+globe+'<strong>'+E(r.accounts?.[0]?.host||new URL(r.url).hostname)+'</strong></div><p>'+E(r.accountLabel||r.accounts?.[0]?.accountLabel||'My account')+' · '+r.workers.length+' '+(r.workers.length===1?'agent':'agents')+'</p><p class="web-request-state">'+E(label)+'</p>'+
+ return '<article class="web-request"><div class="web-request-domain">'+globe+'<strong>'+E(r.accounts?.[0]?.host||new URL(r.url).hostname)+'</strong></div><p>'+E(r.accountLabel||r.accounts?.[0]?.accountLabel||'My account')+' · '+r.workers.length+' '+(r.workers.length===1?'agent':'agents')+'</p><p class="web-request-state">'+E(label)+'</p>'+(r.error?'<p role="alert">'+E(r.error)+'</p>':'')+
  '<details><summary>Review request details</summary><p>'+E(r.prompt)+'</p><p>'+E(r.mode==='draft'?'Prepare work; separate approval for account changes.':'Read and summarize.')+'</p><ul>'+r.accounts.map(a=>'<li>'+E(a.origin)+'</li>').join('')+'</ul><p>'+E(r.workers.map(w=>w.employeeName).join(', '))+'</p></details>'+
  (pending?button('Review access request','review',r.id):'')+(r.status==='blocked'&&!local?button('Retry Mac confirmation','retry',r.id):'')+
  (queued?'<p class="tiny muted">This decision is queued. Access changes take effect after your Mac confirms them.</p>':'')+
@@ -45,6 +45,7 @@ function panels(){
  const requests=$('#webAccessRequests'),jobs=$('#webAccessJobs');
  if(requests){const list=state().requests.filter(r=>r.companyId===company()).slice(-20).reverse();requests.innerHTML=list.length?list.map(requestCard).join(''):'<div class="web-access-empty">'+globe+'<p>No website access has been granted.</p><small>Your permission requests will appear here.</small></div>';}
  if(jobs){const list=state().jobs.filter(j=>!j.companyId||j.companyId===company());jobs.innerHTML=list.length?list.slice(0,8).map(j=>'<article class="web-request"><strong>'+E(j.employeeName)+'</strong><p class="web-request-state">'+E(j.status.replaceAll('_',' '))+'</p><p>'+E(j.thought||'')+'</p>'+(j.summary?'<pre class="web-job-result">'+E(j.summary)+'</pre>':'')+(j.approval?'<p><strong>Account action requires your approval:</strong> '+E(j.approval.description)+'</p><p class="tiny muted">Review the exact target in your Mac browser before approving one click.</p>'+button('Approve one click','approve',j.id)+button('Reject action','reject',j.id):'')+(['running','queued'].includes(j.status)?button('Pause','pause',j.id):j.status==='paused'?button('Resume','resume',j.id):'')+'</article>').join(''):'<p class="muted">Approved work appears here after the Mac browser starts it.</p>';}
+ const feedbackNode=$('#webAccessFeedback');if(feedbackNode)feedbackNode.textContent=feedback;
  const connection=$('#webMacState');if(connection)connection.textContent=local?(lastLocal?(lastLocal.aiReady?'Mac browser service connected':'Mac connected · browser AI setup needed'):'Mac service unavailable'):(window.OfficeHQDeviceSync?.snapshot()?.connected?'Paired Mac connected':'Pair Mac in Company Messages');
 }
 function close(){const modal=$('#websitePermissionOverlay');if(!modal)return;modal.remove();document.body.classList.remove('web-permission-open');modalRequest=null;if(focusBefore?.isConnected)focusBefore.focus();}
@@ -99,7 +100,7 @@ function receipts(){
    for(let a=0;a<result.accounts.length;a++)for(let w=0;w<result.roles.length;w++){
     let grantId=result.matrix[a]?.[w];if(!grantId)continue;if(result.compactIds&&/^[a-f0-9]{32}$/i.test(grantId))grantId=grantId.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/,'$1-$2-$3-$4-$5');
     const person=r.workers.find(p=>p.roleKey===result.roles[w]);if(!person)continue;
-    state().grants.push({...person,id:grantId,companyId:r.companyId,requestId:r.macRequestId,site:result.accounts[a].id,origin:result.accounts[a].origin,accountLabel:r.accountLabel,mode:r.mode,duration:r.decision,conversationId:r.conversationId,active:true});
+    state().grants.push({...person,id:grantId,companyId:r.companyId,requestId:r.macRequestId,site:result.accounts[a].id,origin:result.accounts[a].origin,accountLabel:r.accountLabel,mode:r.mode,duration:r.decision,conversationId:r.conversationId,expiresAt:r.decision==='chat'?result.request.expiresAt:null,active:true});
    }
   }
   if(result.jobs)state().jobs=result.jobs.map(j=>({...j,companyId:t.companyId}));changed=true;
@@ -130,7 +131,7 @@ async function action(kind,id){
  if(['pause','resume','approve','reject'].includes(kind)){
   const job=state().jobs.find(j=>j.id===id);if(!job)throw Error('Browser job no longer available.');
   if(local){await api({action:kind,jobId:id,approvalId:job.approval?.id});await refresh();}
-  else queue({kind,jobId:id,approvalId:job.approval?.id});message('Browser command '+(local?'applied.':'queued for Mac confirmation.'));
+  else{const person=state().grants.find(g=>g.id===job.grantId)||workers(staff()).find(w=>w.roleKey===job.roleKey);if(!person)throw Error('This browser worker has no matching specialist on this device.');queue({kind,jobId:id,approvalId:job.approval?.id},{workers:[person]});}message('Browser command '+(local?'applied.':'queued for Mac confirmation.'));
  }
 }
 document.addEventListener('submit',ev=>{if(ev.target.id!=='websiteAccessForm')return;ev.preventDefault();const f=new FormData(ev.target),ids=new Set(f.getAll('worker'));void request({url:f.get('url'),accountLabel:f.get('accountLabel'),prompt:f.get('prompt'),mode:f.get('mode'),relevantUrls:String(f.get('relevantUrls')||'').split(/\n/).map(x=>x.trim()).filter(Boolean),workers:workers(staff().filter(e=>ids.has(e.id)))}).catch(e=>message(e.message));});

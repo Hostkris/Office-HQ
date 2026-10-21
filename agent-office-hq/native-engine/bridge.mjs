@@ -151,6 +151,7 @@ export function createOpenMausBridge({publicTools=null,conversation=null,request
    if(s.runs.some(r=>r.companyId===body.companyId&&r.officeTaskId===body.officeTaskId&&['submitted','running','review','paused','failed'].includes(r.status)))throw err('This task already has a run. Check Agent Health to resume it.',409);
    const title=short(body.title,140).trim();let description=String(body.description??'').slice(0,4000).trim();
    // Team metadata only reconstructs the owner's report on the other device. It never supplies permissions.
+   if(description.startsWith('OFFICE_HQ_WEBSITE_ACCESS_V1:'))throw err('Website permissions must use the owner browser controls, not the draft model.',403);
    if(description.startsWith('OFFICE_HQ_TEAM_V1:')){const end=description.indexOf('\n');if(end<0)throw err('Invalid team assignment.');description=description.slice(end+1);}
    if(title.length<3||description.length<8)throw err('Provide clear task instructions.');
    let chat=null;

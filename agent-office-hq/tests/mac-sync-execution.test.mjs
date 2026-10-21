@@ -92,6 +92,7 @@ test('phone access decisions reach the real permission store even when the draft
   const receipt=JSON.parse(rows[0].draft);assert.equal(receipt.request.status,'allowed');assert.equal(receipt.matrix[0].length,1);
   const status=await desktop.status('co1');assert.equal(status.websiteAccess.grants.filter(g=>g.active).length,1);assert.equal(status.websiteAccess.grants[0].employeeId,'e1');
   assert.equal(bridge.actions.filter(a=>a.action==='send').length,0,'control records must never go to the text model');
+  bridge.state.bindings=[]; // The owner must still be able to revoke after removing a draft-worker binding.
   rows.push(permissionCommand('revoke',{kind:'revoke',requestId:receipt.request.id}));await service.tick();assert.equal(rows[1].status,'review');
   assert.equal((await desktop.status('co1')).websiteAccess.grants.filter(g=>g.active).length,0);
  });

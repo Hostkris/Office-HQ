@@ -22,6 +22,59 @@ const CATALOG=[
 ];
 const RESEARCH_ROLES=new Set(['research','social','content','cmo','product_mgr','catalog','pricing_analyst','integrator','security','backend_engineer','frontend_engineer','cto']);
 let status={agentReachReady:false,enabled:false,requests:[],channels:{}},query='',filter='All',pick=CATALOG[0].id,who='',channel='github',busy=false;
+let publicStatus={providers:[],grants:[]},publicBusy=false;
+const ZERO_KEY=[
+ {id:'github-public',name:'GitHub public repositories',departments:['Technology','PMO','Marketing','Product']},
+ {id:'frankfurter',name:'Frankfurter currency rates',departments:['Finance','Audit','Operations']},
+ {id:'openfoodfacts',name:'Open Food Facts product barcodes',departments:['Operations','Product']}
+];
+function publicPanel(){
+ const company=getCompany(),grants=publicStatus.grants.filter(g=>g.companyId===company);
+ const eligible=members().filter(e=>ZERO_KEY.some(p=>p.departments.includes(B.roleFor(e)?.dept)));
+ return '<section class="card" style="margin-bottom:15px"><div class="section-top"><h2>One-click · Free public API tools</h2><span class="ops-tag">'+(isLocal?grants.length+' employee/API permissions':'Mac setup required')+'</span></div>'+
+ '<p class="notice">Three read-only services need no OAuth or API key. Activate them together for eligible employees on your Mac. Each permission is saved separately for that employee and provider. There is no access to private GitHub repositories, email, social accounts, payments or publishing.</p>'+
+ '<div class="key-list">'+ZERO_KEY.map(p=>'<span class="pill-stat">'+E(p.name)+' · '+grants.filter(g=>g.provider===p.id).length+' grants</span>').join('')+'</div>'+
+ (isLocal?'<p class="small muted">'+eligible.length+' active eligible specialists · '+grants.length+' recorded grants for this company. Access is off until you authorize it.</p>'+
+ '<div class="inline-actions"><button type="button" class="btn btn-primary" data-public-action="enable"'+(eligible.length===0?' disabled':'')+'>✓ Enable free read-only APIs</button>'+
+ '<button type="button" class="btn btn-sm" data-public-action="revoke"'+(grants.length===0?' disabled':'')+'>Revoke all free API permissions</button>'+
+ '<button type="button" class="btn btn-sm" data-public-action="check">Check Mac connection</button></div>'+
+ '<p class="tiny muted">After enabling, you can simply tell Company Messages: “Research GitHub repository public-apis/public-apis” or “Find the USD to EUR exchange rate” or “Look up food barcode 3017620422003.” A verified lookup is only used when an eligible authorized Mac agent drafts that assignment. Other requests still need the correct tools.</p>':
+ '<p class="notice"><strong>Open this same Research section inside Office HQ on your Mac</strong> and select “Enable free read-only APIs.” Your iPhone cannot enable a local-only service while the Mac is offline. You can continue assigning tasks from Company Messages once your devices are paired.</p>')+
+ '<p id="publicToolsNotice" class="tiny muted" aria-live="polite"></p></section>';
+}
+async function refreshPublic(){
+ if(!isLocal||publicBusy)return;
+ publicBusy=true;
+ try{const r=await fetch('/api/public-tools/status',{cache:'no-store'});if(!r.ok)throw Error('Mac public tools backend unavailable.');
+ publicStatus=await r.json();
+ if(location.hash.replace('#/','')==='research')B.setView('research');
+ }catch(e){const n=$('#publicToolsNotice');if(n)n.textContent=String(e.message);}
+ finally{publicBusy=false;}
+}
+async function publicAction(kind){
+ if(!isLocal)throw Error('Open this page on the local Mac Office HQ server.');
+ if(kind==='check'){await refreshPublic();return;}
+ const company=getCompany(),existing=publicStatus.grants.filter(g=>g.companyId===company);
+ const staff=members().filter(e=>ZERO_KEY.some(p=>p.departments.includes(B.roleFor(e)?.dept)));
+ if(kind==='enable'){
+  const expected=staff.reduce((sum,e)=>sum+ZERO_KEY.filter(p=>p.departments.includes(B.roleFor(e)?.dept)).length,0);
+  if(!expected)throw Error('No eligible active employees found in this company.');
+  if(!confirm('CEO authorization: enable ONLY public, read-only lookups across GitHub public repositories, Frankfurter exchange rates and Open Food Facts barcodes for '+staff.length+' eligible employees ('+expected+' employee/API permissions). Each worker receives only the matching department tools. No OAuth, passwords, private accounts, messages, purchases or publishing. Proceed?'))return;
+ }else if(kind==='revoke'){
+  if(!confirm('Revoke all '+existing.length+' free public API permissions for this company? Previously returned draft text will remain in your saved records.'))return;
+ }else return;
+ const body={action:kind==='enable'?'grant-batch':'revoke-company',companyId:company,ownerConfirmed:true};
+ if(kind==='enable')body.employees=staff.map(e=>({employeeId:e.id,roleKey:e.roleKey}));
+ const r=await fetch('/api/public-tools/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const data=await r.json();if(!r.ok)throw Error(data.error||'Could not update public API permissions.');
+ await refreshPublic();
+ const n=$('#publicToolsNotice');if(n)n.textContent=kind==='enable'?'Granted '+data.added+' new read-only employee/API permissions. Authorized agents can use the appropriate public APIs in drafts.':'Revoked '+data.revoked+' public API permissions.';
+}
+document.addEventListener('click',e=>{
+ const a=e.target.closest?.('[data-public-action]');if(!a)return;
+ e.preventDefault();void publicAction(a.dataset.publicAction).catch(err=>{const n=$('#publicToolsNotice');if(n)n.textContent=String(err.message).slice(0,220);});
+});
+
 const getCompany=()=>$('#companyPicker')?.value==='all'||!$('#companyPicker')?.value?B.getState().companies[0]?.id:$('#companyPicker').value;
 const members=()=>B.getState().employees.filter(x=>x.active&&x.companyId===getCompany());
 const compatible=entry=>members().filter(x=>entry.dept.includes(B.roleFor(x)?.dept));
@@ -82,7 +135,7 @@ async function refresh(){
  if(!isLocal||busy)return;
  busy=true;
  try{const r=await fetch('/api/research/status',{cache:'no-store'});if(!r.ok)throw Error('Research backend unavailable.');
- status=await r.json();if(location.hash.replace('#/','')==='research')B.setView('research');}
+ status=await r.json();await refreshPublic();if(location.hash.replace('#/','')==='research')B.setView('research');}
  catch(e){alertUser(e.message,true)}finally{busy=false}
 }
 async function action(type,id){

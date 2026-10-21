@@ -2,11 +2,10 @@
  * and exact check commands. Check processes run as the Mac user, not in an OS
  * sandbox. No model shell, credential, network, commit or push tool is exposed.
  */
-import {mkdir,readFile,writeFile,rename,chmod,realpath,lstat} from 'node:fs/promises';
+import {mkdir,readFile,writeFile,rename,chmod,realpath,lstat,unlink} from 'node:fs/promises';
 import {join,resolve,dirname,isAbsolute,relative} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {spawn} from 'node:child_process';
-import {INKLING_MODEL,checkInkling,streamInkling} from './openrouter-provider.mjs';
 
 export const CODING_PREFIX='OFFICE_HQ_CODING_V1:';
 export const CODING_CONTROL_PREFIX='OFFICE_HQ_CODING_CONTROL_V1:';
@@ -67,16 +66,25 @@ export function createCodingWorker({storage=resolve(process.env.OFFICE_HQ_NATIVE
  let statePromise,serial=Promise.resolve();const active=new Map();
  const file=join(storage,'coding.json'),workRoot=join(storage,'coding-runs');
  const lock=fn=>{const p=serial.then(fn);serial=p.catch(()=>{});return p;};
- async function get(){if(!statePromise)statePromise=readFile(file,'utf8').then(JSON.parse).catch(e=>{if(e.code==='ENOENT')return defaults();throw e;});return statePromise;}
+ async function get(){
+  if(!statePromise)statePromise=readFile(file,'utf8').then(JSON.parse).catch(e=>{if(e.code==='ENOENT')return defaults();throw e;}).then(async state=>{
+   // A previous cloud selection must not silently reconnect after the upgrade.
+   await unlink(join(storage,'openrouter-credential.json')).catch(e=>{if(e.code!=='ENOENT')throw e;});
+   if(state.config?.provider!=='ollama'){
+    state.config={provider:'ollama',model:'',numCtx:8192,thinking:'auto'};
+    await mkdir(storage,{recursive:true,mode:0o700});
+    const tmp=file+'.'+randomUUID();await writeFile(tmp,JSON.stringify(state,null,2),{mode:0o600});await rename(tmp,file);
+   }
+   return state;
+  });
+  return statePromise;
+ }
  async function save(s){await mkdir(storage,{recursive:true,mode:0o700});await chmod(storage,0o700).catch(()=>{});const temp=file+'.'+randomUUID();await writeFile(temp,JSON.stringify(s,null,2),{mode:0o600});await rename(temp,file);statePromise=Promise.resolve(s);}
- async function secret(){try{return JSON.parse(await readFile(join(storage,'openrouter-credential.json'),'utf8')).apiKey||'';}catch{return '';}}
- async function saveSecret(apiKey){await mkdir(storage,{recursive:true,mode:0o700});const dest=join(storage,'openrouter-credential.json'),tmp=dest+'.'+randomUUID();await writeFile(tmp,JSON.stringify({apiKey}),{mode:0o600});await rename(tmp,dest);}
  async function git(args,cwd,opts={}){
   const result=await processRunner('git',['-c','core.hooksPath=/dev/null','-c','core.fsmonitor=false',...args],{cwd,home:storage,...opts});
   if(result.code!==0)throw fail('Git operation failed: '+text(result.stderr,300));return result.stdout;
  }
  async function modelInfo(config){
-  if(config.provider==='openrouter')return checkInkling({request,apiKey:await secret()});
   if(!config.model)return {ready:false,message:'Choose an installed local model with tool calling on your Mac.',models:[]};
   try{
    const [tags,show]=await Promise.all([request(OLLAMA+'/api/tags',{signal:AbortSignal.timeout(4000)}),request(OLLAMA+'/api/show',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:config.model}),signal:AbortSignal.timeout(4000)})]);
@@ -92,7 +100,7 @@ export function createCodingWorker({storage=resolve(process.env.OFFICE_HQ_NATIVE
  }
  async function status(companyId){
   const s=await get(),health=await modelInfo(s.config);
-  return {localOnly:s.config.provider!=='openrouter',config:s.config,...health,grants:s.grants.filter(g=>!companyId||g.companyId===companyId),results:s.results.filter(r=>!companyId||r.companyId===companyId).slice(-30).reverse().map(({patch,...r})=>r),limits:{rounds:maxRounds,repairAttempts:2,taskMinutes:taskTimeout/60000},checkIsolation:'Check commands execute trusted repository code as your Mac user; this is not an OS sandbox.'};
+  return {localOnly:true,config:s.config,...health,grants:s.grants.filter(g=>!companyId||g.companyId===companyId),results:s.results.filter(r=>!companyId||r.companyId===companyId).slice(-30).reverse().map(({patch,...r})=>r),limits:{rounds:maxRounds,repairAttempts:2,taskMinutes:taskTimeout/60000},checkIsolation:'Check commands execute trusted repository code as your Mac user; this is not an OS sandbox.'};
  }
  async function inspect(repoPath){
   if(typeof repoPath!=='string'||!isAbsolute(repoPath)||repoPath.length>500)throw fail('Enter the absolute path of a repository already cloned on this Mac.');
@@ -111,16 +119,8 @@ export function createCodingWorker({storage=resolve(process.env.OFFICE_HQ_NATIVE
   if(!grant||!CODING_ROLES.includes(ctx.roleKey)||!await authorize(ctx))throw fail('Repository permission or specialist authorization is missing or revoked.',403);
   if(typeof payload.instruction!=='string'||payload.instruction.trim().length<10||payload.instruction.length>2000)throw fail('Describe one coding task in 10–2000 characters.');
   if(!Array.isArray(payload.criteria)||!payload.criteria.length||payload.criteria.length>6||payload.criteria.some(x=>typeof x!=='string'||x.trim().length<5||x.length>300))throw fail('Provide one to six specific acceptance criteria.');
-  if((payload.provider||'ollama')!==(s.config.provider||'ollama'))throw fail('The selected coding engine changed. Review and approve a new task for the current engine.',409);
-  if(s.config.provider==='openrouter'){
-   if(payload.publicDataConfirmed!==true)throw fail('Confirm this task and all supplied data are public and contain no confidential or personal data before using free Inkling.',403);
-   if(!grant.repository)throw fail('Free Inkling is limited to a verified public GitHub repository snapshot. Use Ollama for private work.',403);
-   try{
-    const base='https://api.github.com/repos/'+grant.repository;
-    const [repo,commit]=await Promise.all([request(base,{headers:{Accept:'application/vnd.github+json'},redirect:'error',signal:AbortSignal.timeout(8000)}),request(base+'/commits/'+grant.baseCommit,{headers:{Accept:'application/vnd.github+json'},redirect:'error',signal:AbortSignal.timeout(8000)})]);
-    if(!repo.ok||!commit.ok||(await repo.json()).private!==false||(await commit.json()).sha!==grant.baseCommit)throw Error('Not public');
-   }catch{throw fail('This commit could not be verified as public on GitHub. Use Ollama for private or unverified work.',403);}
-  }
+  if(payload.provider&&payload.provider!=='ollama')throw fail('Only local Ollama coding is supported.',403);
+  if((s.config.provider||'ollama')!=='ollama')throw fail('The coding worker requires a local Ollama model.',409);
   const health=await modelInfo(s.config);if(!health.ready)throw fail(health.message,503);
   return {grant:structuredClone(grant),config:structuredClone(s.config),health};
  }
@@ -132,18 +132,12 @@ export function createCodingWorker({storage=resolve(process.env.OFFICE_HQ_NATIVE
   if(body?.ownerConfirmed!==true)throw fail('Owner confirmation required.',403);
   if(body.action==='configure')return lock(async()=>{
    if(active.size)throw fail('Stop running coding tasks before changing the model.',409);
-   if(body.provider==='openrouter'){
-    if(body.publicDataConfirmed!==true)throw fail('Acknowledge the free endpoint’s public-data policy on the Mac first.',403);
-    const key=typeof body.apiKey==='string'&&body.apiKey.trim()?body.apiKey.trim():await secret();if(!/^[A-Za-z0-9_-]{20,300}$/.test(key))throw fail('Enter a valid OpenRouter API key on this Mac.');
-    const health=await checkInkling({request,apiKey:key});if(!health.ready)throw fail(health.message,503);
-    const s=await get(),config={provider:'openrouter',model:INKLING_MODEL,numCtx:16384,thinking:'auto'};await saveSecret(key);s.config=config;await save(s);return {configured:true,config,...health};
-   }
+   if(body.provider&&body.provider!=='ollama')throw fail('Only local Ollama coding is supported.',403);
    if(typeof body.model!=='string'||!/^[\w./:@-]{1,120}$/.test(body.model)||!['auto','fast','deep'].includes(body.thinking||'auto'))throw fail('Choose a local model and thinking mode.');
    const numCtx=Number(body.numCtx||8192);if(![4096,8192,16384,32768].includes(numCtx))throw fail('Choose a supported context size.');
    const config={provider:'ollama',model:body.model,numCtx,thinking:body.thinking||'auto'},health=await modelInfo(config);if(!health.ready)throw fail(health.message,503);
    const s=await get();s.config=config;await save(s);return {configured:true,config,...health};
   });
-  if(body.action==='remove-openrouter-key')return lock(async()=>{if(active.size)throw fail('Stop running coding tasks before removing the key.',409);await saveSecret('');return {removed:true};});
   if(body.action==='revoke')return lock(async()=>{
    const s=await get(),g=s.grants.find(g=>g.id===body.grantId&&g.companyId===body.companyId);if(!g)throw fail('Permission not found.',404);g.active=false;g.revokedAt=stamp();for(const a of active.values())if(a.grantId===g.id)a.controller.abort(fail('Repository permission revoked.',403));await save(s);return {revoked:true};
   });
@@ -240,8 +234,7 @@ export function createCodingWorker({storage=resolve(process.env.OFFICE_HQ_NATIVE
     const values=health.thinking?.values||[];const thinking=config.thinking==='fast'?(values.includes('low')?'low':values.includes(false)?false:undefined):config.thinking==='deep'?(values.includes('high')?'high':values.includes(true)?true:undefined):undefined;
     if(thinking!==undefined)body.think=thinking;
     let data;const turnSignal=AbortSignal.any([combined,AbortSignal.timeout(180000)]);
-    if(config.provider==='openrouter')data=await streamInkling({request,apiKey:await secret(),messages,tools,signal:turnSignal,thinking:config.thinking});
-    else{const response=await request(OLLAMA+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:turnSignal});if(!response.ok)throw fail('Local coding model returned HTTP '+response.status,503);data=await response.json();}
+    const response=await request(OLLAMA+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:turnSignal});if(!response.ok)throw fail('Local coding model returned HTTP '+response.status,503);data=await response.json();
     await checkAccess();
     metrics.generatedTokens+=Number(data.eval_count)||0;metrics.promptTokens+=Number(data.prompt_eval_count)||0;metrics.loadMs+=(Number(data.load_duration)||0)/1e6;metrics.generationMs+=(Number(data.eval_duration)||0)/1e6;
     metrics.reasoningTokens+=Number(data.reasoning_tokens)||0;metrics.cachedTokens+=Number(data.cached_tokens)||0;metrics.reportedCost+=Number(data.cost)||0;if(data.first_token_ms!=null)metrics.lastFirstTokenMs=data.first_token_ms;
@@ -261,7 +254,7 @@ export function createCodingWorker({storage=resolve(process.env.OFFICE_HQ_NATIVE
    await checkAccess();metrics.finishedAt=stamp();metrics.elapsedMs=Date.parse(metrics.finishedAt)-Date.parse(metrics.startedAt);metrics.tokensPerSecond=metrics.generationMs?Math.round(metrics.generatedTokens*10000/metrics.generationMs)/10:null;
    const result={id:runId,...ctx,grantId:grant.id,repository:grant.repository,baseCommit:grant.baseCommit,workspace,summary:finished.summary,criteria:payload.criteria,evidence:finished.evidence,paths:finished.paths,patch:finished.patch,checks:lastChecks,checkHistory,plan,metrics,events,reviewRequired:true,published:false,createdAt:stamp()};
    await lock(async()=>{const s=await get();s.results.push(result);s.results=s.results.slice(-60);await save(s);});
-   const report='CODING TASK · READY FOR OWNER REVIEW\n'+result.summary+'\n\nEngine: '+metrics.provider+' · '+metrics.model+'\nRepository: '+(grant.repository||'Local repository')+'\nStarting commit: '+grant.baseCommit+'\nChanged files: '+result.paths.join(', ')+'\n\nChecks:\n'+lastChecks.map(c=>(c.passed?'PASS':'FAIL')+' · '+c.command+' · exit '+c.exitCode).join('\n')+'\n\nAcceptance evidence (verify during review):\n'+result.evidence.map(e=>e.criterion+'. '+payload.criteria[e.criterion-1]+'\n'+e.evidence).join('\n\n')+'\n\n'+metrics.rounds+' model turns · '+metrics.toolCalls+' tool calls · '+Math.round(metrics.elapsedMs/1000)+' seconds'+(metrics.tokensPerSecond?' · '+metrics.tokensPerSecond+' generated tokens/sec':'')+(config.provider==='openrouter'?'\nProvider usage: '+metrics.reasoningTokens+' reasoning tokens · '+metrics.cachedTokens+' cached prompt tokens · reported cost '+metrics.reportedCost:'')+'\n\nSeparate checkout on your Mac: '+workspace+'\nOpen Coding tasks on the Mac to inspect the full diff. Owner review is still required. No commit, push or publication was performed.';
+   const report='CODING TASK · READY FOR OWNER REVIEW\n'+result.summary+'\n\nEngine: '+metrics.provider+' · '+metrics.model+'\nRepository: '+(grant.repository||'Local repository')+'\nStarting commit: '+grant.baseCommit+'\nChanged files: '+result.paths.join(', ')+'\n\nChecks:\n'+lastChecks.map(c=>(c.passed?'PASS':'FAIL')+' · '+c.command+' · exit '+c.exitCode).join('\n')+'\n\nAcceptance evidence (verify during review):\n'+result.evidence.map(e=>e.criterion+'. '+payload.criteria[e.criterion-1]+'\n'+e.evidence).join('\n\n')+'\n\n'+metrics.rounds+' model turns · '+metrics.toolCalls+' tool calls · '+Math.round(metrics.elapsedMs/1000)+' seconds'+(metrics.tokensPerSecond?' · '+metrics.tokensPerSecond+' generated tokens/sec':'')+'\n\nSeparate checkout on your Mac: '+workspace+'\nOpen Coding tasks on the Mac to inspect the full diff. Owner review is still required. No commit, push or publication was performed.';
    await note('review','Changes and checks are ready for owner review');return {result:text(report,15500),evidence:{repository:result.repository,baseCommit:result.baseCommit,paths:result.paths,checks:lastChecks.map(({output,...c})=>c),metrics,reviewRequired:true}};
   }finally{active.delete(runId);}
  }

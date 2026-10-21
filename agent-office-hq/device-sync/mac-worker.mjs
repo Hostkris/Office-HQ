@@ -205,8 +205,18 @@ export function createMacSyncService({bridge,desktop=null,coding=null,cloudReque
    const matched=mappings.find(x=>x.roleKey===task.employee_role&&
      x.companyName.toLowerCase()===task.company_label.toLowerCase()&&
      (task.description?.startsWith(ACCESS_PREFIX)||ai.bindings.some(b=>b.companyId===x.companyId&&b.employeeId===x.employeeId&&b.roleKey===x.roleKey)))||codingStatusMapping(task,mappings,ai);
-   // An unmatched company or unapproved specialist must not run.
-   if(!matched)continue;
+   // Keep the request queued until the owner authorizes an exact company/role.
+   // Show why it has not reached an agent; never silently report success.
+   if(!matched){
+    const known=mappings.some(m=>m.roleKey===task.employee_role&&m.companyName.toLowerCase()===task.company_label.toLowerCase());
+    const note=known?'Waiting for CEO to authorize this specialist for Mac AI drafts.':'Waiting for Mac setup: match the company and authorize the specialist in Company Messages.';
+    if(task.note!==note)await rest('hq_device_synced_assignments','PATCH',{note,updated_at:done()},
+      '?id=eq.'+encodeURIComponent(task.id)+'&status=eq.queued','return=minimal');
+    continue;
+   }
+   if(task.note?.startsWith('Waiting for '))await rest('hq_device_synced_assignments','PATCH',
+     {note:'Authorized Mac specialist matched; waiting for execution.',updated_at:done()},
+     '?id=eq.'+encodeURIComponent(task.id)+'&status=eq.queued','return=minimal');
    if(task.description?.startsWith(ACCESS_PREFIX)){await websiteCommand(task,matched,mappings,ai);continue;}
    if(task.description?.startsWith(CODING_CONTROL_PREFIX)){await codingCommand(task,matched,ai);continue;}
    if((!ai.connected&&!task.description?.startsWith(CODING_PREFIX))||!ai.dispatchEnabled)continue;

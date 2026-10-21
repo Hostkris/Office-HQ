@@ -27,7 +27,7 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const getBody=()=>B?.getState();
 let id=localStorage.getItem(DKEY);
 if(!id){id=TYPE+'-'+crypto.randomUUID();localStorage.setItem(DKEY,id);}
-let auth=null,inFlight=false,lastError='',status={connected:false,reason:'Sign in to pair your devices.',checkedAt:null,peer:''};
+let auth=null,inFlight=false,lastError='',unmatchedAssignments=0,status={connected:false,reason:'Sign in to pair your devices.',checkedAt:null,peer:''};
 try{auth=JSON.parse(sessionStorage.getItem(SKEY)||'null');}catch{}
 const fresh=x=>typeof x==='string'&&Number.isFinite(Date.parse(x))&&Date.now()-Date.parse(x)>=0&&Date.now()-Date.parse(x)<STALE;
 const notice=x=>{lastError=x;document.querySelectorAll('[data-hq-sync-feedback]').forEach(el=>el.textContent=x);};
@@ -76,7 +76,12 @@ function draw(){
   if(label)label.textContent=status.connected?'Synced':'Not synced';
  }
  for(const el of document.querySelectorAll('[data-hq-sync-explanation]')){
-  el.textContent=status.connected?'Mac and iPhone/iPad are exchanging assignments.':status.reason;
+  const queued=getBody()?.tasks?.filter(t=>t.delegatedBy==='owner'&&t.cloudSynced&&t.status==='queued')||[];
+  const waiting=queued.find(t=>t.cloudQueueNote?.startsWith('Waiting for '));
+  const detail=waiting?.cloudQueueNote||(
+   queued.length?queued.length+' synced assignment(s) queued — not yet accepted by Mac AI.':'No unstarted synced assignments on this device.');
+  const unmapped=unmatchedAssignments?' '+unmatchedAssignments+' cloud assignment(s) need a matching Mac company and active role.':'';
+  el.textContent=(status.connected?'Devices paired. '+detail:status.reason)+(status.connected?unmapped:'');
  }
  for(const el of document.querySelectorAll('[data-hq-sync-auth]')){
   el.hidden=!!auth?.access_token;
@@ -185,7 +190,7 @@ async function downloadTasks(){
  if(!B||!auth)return;
  const rows=await rest('hq_device_synced_assignments','GET',null,
   '?select=*&order=updated_at.desc&limit=100');
- const s=getBody();let touched=false;
+ const s=getBody();let touched=false,unmapped=0;
  for(const r of rows){
   const envelope=teamEnvelope(r.description);
   let t=s.tasks.find(x=>x.id===r.client_task_key);
@@ -193,7 +198,7 @@ async function downloadTasks(){
    if(r.source_device_id===id)continue;
    const company=s.companies.find(x=>x.name.toLowerCase()===r.company_label.toLowerCase());
    const employee=company&&s.employees.find(e=>e.companyId===company.id&&e.roleKey===r.employee_role);
-   if(!company||!employee)continue; // Never invent employee or company mappings.
+   if(!company||!employee){unmapped++;continue;} // Owner must explicitly match or create the correct local company and role.
    t={id:r.client_task_key,companyId:company.id,ownerId:employee.id,
     scope:B.roleFor(employee)?.scope||'',title:r.title,description:envelope?.description||r.description,
     websiteAccessCommand:r.description?.startsWith(ACCESS_PREFIX)===true,departmentProjectId:envelope?.meta.id||null,ceoConversation:r.description?.startsWith('OFFICE_HQ_CONVERSATION_V1:')===true,
@@ -202,6 +207,7 @@ async function downloadTasks(){
     cloudSynced:true,cloudSyncId:r.id};
    s.tasks.unshift(t);window.OfficeHQFloor?.onTaskAssigned(t);touched=true;
   }
+  if(t.status==='queued'&&t.cloudQueueNote!==r.note){t.cloudQueueNote=String(r.note||'').slice(0,350);touched=true;}
   if(r.description?.startsWith(ACCESS_PREFIX)||r.description?.startsWith(CODING_CONTROL_PREFIX)){
    if(r.description.startsWith(ACCESS_PREFIX))t.websiteAccessCommand=true;else t.codingControlCommand=true;
    if(r.status==='review'&&r.draft){t.output=r.draft;t.status='done';t.updatedAt=r.updated_at;t.cloudReceiptAt=r.updated_at;touched=true;await rest('hq_device_synced_assignments','PATCH',{status:'done',note:r.description.startsWith(ACCESS_PREFIX)?'Owner received website access receipt':'Owner received coding worker receipt',updated_at:new Date().toISOString()},'?id=eq.'+encodeURIComponent(r.id)+'&status=eq.review','return=minimal');}
@@ -254,6 +260,7 @@ async function downloadTasks(){
   }
   if(!t.cloudSynced){t.cloudSynced=true;touched=true;}
  }
+ unmatchedAssignments=unmapped;
  if(touched){B.save();window.OfficeHQCompanyInbox?.refresh?.();}
 }
 async function refresh(){

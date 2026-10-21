@@ -29,12 +29,12 @@ test.after(async()=>{
  await browser?.close();
  if(server){server.kill('SIGTERM');await sleep(300);}
 });
-async function mobilePage(deviceName){
+async function mobilePage(deviceName,view='workstations'){
  const context=await browser.newContext({...devices[deviceName]});
  const page=await context.newPage();
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/#/workstations',{waitUntil:'domcontentloaded'});
- await page.locator('h1').filter({hasText:'iOS browser workstations'}).waitFor({timeout:15000});
+ await page.goto(base+'/#/'+view,{waitUntil:'domcontentloaded'});
+ if(view==='workstations')await page.locator('h1').filter({hasText:'iOS browser workstations'}).waitFor({timeout:15000});
  return {page,context,errors};
 }
 test('iPhone Safari emulation: page loads, website deep links use Safari and staff can queue guided jobs',async()=>{
@@ -105,9 +105,8 @@ test('iPhone Safari emulation: manually completed job can be passed to a chosen 
 
 
 test('iPhone department setup, company-wide form and Agent Health remain usable without submitting real assignments',async()=>{
- const {page,context,errors}=await mobilePage('iPhone 13');
+ const {page,context,errors}=await mobilePage('iPhone 13','connections');
  try{
-  await page.goto(base+'/?test=department-setup#/connections');
   await page.getByRole('heading',{name:'Department activation',exact:true}).waitFor();
   assert.equal(await page.locator('[data-department-pick]').count(),12);
   await page.locator('[data-department-pick="Marketing"]').click();
@@ -116,23 +115,25 @@ test('iPhone department setup, company-wide form and Agent Health remain usable 
   await page.locator('[data-department-action="next"]').click();
   await page.getByRole('heading',{name:'Activate Marketing workers',exact:true}).waitFor();
   assert.match(await page.locator('.department-progress').innerText(),/0 of 6 workers/);
-  await page.goto(base+'/?test=department-team#/workflows');
+  await page.locator('#menuToggle').click();
+  await page.locator('#nav details').filter({has:page.locator('[data-view="workflows"]')}).locator('summary').click();
+  await page.locator('[data-view="workflows"]').click();
   await page.locator('[data-team-select="All departments"]').click();
   await page.locator('#departmentTeamInstruction').fill('Prepare a complete product launch plan with a separate draft from every authorized specialist.');
   assert.match(await page.locator('#departmentTeamForm').innerText(),/39 All departments workers/);
   assert.equal(await page.locator('[data-department-project]').count(),0,'form entry must not dispatch work');
   assert.equal(await page.locator('[data-team-decision="approve"]').count(),0,'queueing work must not create an approval or fake report');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'department controls must fit the phone');
-  await page.goto(base+'/?test=agent-health#/health');
+  await page.locator('#menuToggle').click();
+  await page.locator('[data-view="health"]').click();
   await page.getByRole('heading',{name:'Agent Health',exact:true}).waitFor();
   assert.equal(await page.locator('[data-agent-health="check"]').count(),1);
   assert.equal(errors.length,0,'page errors: '+errors.join('; '));
  }finally{await context.close();}
 });
 test('iPad Company Messages separates conversations from assignments without submitting a live message',async()=>{
- const {page,context,errors}=await mobilePage('iPad Pro 11');
+ const {page,context,errors}=await mobilePage('iPad Pro 11','thread');
  try{
-  await page.goto(base+'/?test=conversation#/thread');
   await page.locator('#view [data-ceo-chat-mode]').selectOption('conversation');
   await page.locator('#view [data-ceo-chat-department]').waitFor();
   await page.locator('#view [data-ceo-chat-input]').fill('What does the research team need from me to prepare a draft?');

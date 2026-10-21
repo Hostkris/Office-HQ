@@ -178,7 +178,9 @@ fi
 
 # Browser control is a separate opt-in from the smaller text-only draft engine.
 # No browser profile or website account is authorized by this setup step.
-if [ ! -f "$BASE/browser-access-setup-decided" ]; then
+# Reoffer optional browser runtime setup after a user-approved Mac update even if
+# it was deferred previously. Never install browser or model without consent.
+if [ ! -f "$BASE/browser-access-enabled" ] && { [ "$UPDATED_CODE" -eq 1 ] || [ ! -f "$BASE/browser-access-setup-decided" ]; }; then
   if /usr/bin/osascript -e 'display dialog "Enable agent browser tasks? This installs Chromium and a local vision model (several gigabytes). Account access still requires your permission in Office HQ, and you sign in yourself. Browser screenshots stay with the local model." buttons {"Later", "Enable Browser Tasks"} default button "Enable Browser Tasks" with title "Office HQ · Agent Browser"' >/dev/null 2>&1; then
     export PATH="$(dirname "$NODE"):$PATH"
     NPM_CLI="$(dirname "$NODE")/../lib/node_modules/npm/bin/npm-cli.js"

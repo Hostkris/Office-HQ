@@ -136,26 +136,81 @@ function backdrop(c,name,projectName,department,head,scenery){
  }
  lastHit.push({kind:isCEO?'approvals':'department-head',id:head?.id||null,x:963,y:70,w:263,h:111});
 }
-function sprite(c,e,x,y,t,mode){
- const actor=String(e.id||e.name||e.outfit||'worker');
- const phase=[...actor].reduce((sum,ch)=>sum+ch.charCodeAt(0),0)%17;
- const bob=mode==='work'?Math.sin(t/200+phase)*.8:Math.sin(t/185+phase)*2.3;
- c.save();c.translate(x,y+bob);
- // bigger than previous 16px torso, with an animated step/arm.
- const step=mode==='walk'?Math.sin(t/105)*4:mode==='stretch'?4*Math.sin(t/260):0;
- rounded(c,-16,24,33,6,3,'#142d3970');
- rect(c,-11,5,9,17+step,'#263d49');rect(c,3,5,9,17-step,'#263d49');
- rect(c,-15,-25,30,34,e.outfit||'#78bdb2');
- rect(c,-17,-19,5,18+(mode==='stretch'?8:0),e.skin||'#bd8c69');
- rect(c,12,-19,5,18+(mode==='stretch'?8:0),e.skin||'#bd8c69');
- rounded(c,-14,-51,28,29,4,e.skin||'#bd8c69');
- rect(c,-15,-52,30,9,e.hair||'#28323b');
-  if(activeScenery==='western'){
-   // Every avatar wears a Western hat when the owner selects the desert scene.
-   rect(c,-25,-57,50,5,'#765038');rect(c,-14,-71,28,16,'#a8734c');rect(c,-14,-58,28,3,'#e2b576');
-  }
- rect(c,-10,-45,5,6,e.hair||'#28323b');
- rect(c,-8,-38,3,3,'#18313c');rect(c,5,-38,3,3,'#18313c');
+// Original 2px-grid mini pixel people: retro square silhouettes, not bitmap copies.
+// Shared by Live RPG Office, Command Center, head office, janitor and handoffs.
+// Appearance is derived from employee ID (or existing owner overrides), never task state.
+function pixelHash(value){
+ let h=2166136261;
+ for(const ch of String(value||'worker')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}
+ return h>>>0;
+}
+function darken(color,amount){
+ const hex=/^#([0-9a-f]{6})$/i.exec(String(color||''));
+ if(!hex)return color;
+ return '#'+[0,2,4].map(i=>Math.max(0,Math.min(255,parseInt(hex[1].slice(i,i+2),16)-amount)).toString(16).padStart(2,'0')).join('');
+}
+const PIXEL_HAIR_STYLES=['crop','side-part','curls','long','bun','puff'];
+function sprite(c,employee,x,y,t,mode='idle'){
+ const e=appearance(employee);
+ const seed=pixelHash(e.id||e.name||'worker');
+ const blink=((Math.floor(t/125)+(seed%37))%43)===0;
+ const step=mode==='walk'?(Math.floor(t/150+seed%3)%2===0?1:-1):0;
+ const typing=mode==='work'&&Math.floor(t/185+seed%4)%2===0;
+ const bob=mode==='walk'?Math.round(Math.sin(t/150+seed%9)*2):mode==='stretch'?-2:mode==='work'?0:Math.round(Math.sin(t/440+seed%11));
+ const skin=e.skin||'#c89270',hair=e.hair||'#3f302d',outfit=e.outfit||'#70b5a4';
+ const trim=darken(outfit,40),skinShade=darken(skin,25),hairShade=darken(hair,27);
+ const style=PIXEL_HAIR_STYLES.includes(e.hairStyle)?e.hairStyle:PIXEL_HAIR_STYLES[(seed>>>8)%PIXEL_HAIR_STYLES.length];
+ c.save();
+ c.translate(Math.round(x),Math.round(y)+bob);
+ // Logical pixel coordinates are multiplied by two; never use blurred emoji or
+ // fractional transforms for the actual people. Only their position moves.
+ const p=(px,py,w,h,color)=>rect(c,px*2,py*2,w*2,h*2,color);
+ // Ground shadow, two independent feet and distinct walk frames.
+ p(-11,13,22,2,'#142a3577');
+ p(-9,6+Math.max(0,step),7,6,'#2d3f49');
+ p(2,6+Math.max(0,-step),7,6,'#2d3f49');
+ p(-10,11+Math.max(0,step),8,2,'#172b36');
+ p(2,11+Math.max(0,-step),8,2,'#172b36');
+ // Mini coat, shoulders and sleeves are pixel-notched, with a gold role pin.
+ p(-10,-9,20,16,'#283a43');p(-9,-8,18,14,outfit);
+ p(-9,-7,4,11,trim);p(6,-7,3,11,trim);
+ p(-13,-7+(mode==='stretch'?-4:step),4,11,skinShade);
+ p(10,-7+(mode==='stretch'?-4:-step),4,11,skin);
+ p(-13,2+(mode==='stretch'?-4:step),4,3,skin);
+ p(10,2+(mode==='stretch'?-4:-step),4,3,skin);
+ if(typing){p(-13,-7,4,5,skin);p(10,-7,4,5,skinShade);p(-12,-4,4,3,outfit);}
+ p(-2,-7,4,6,'#efe2c7');
+ p(4,-2,3,3,'#e9bb67');
+ p(-8,3,16,3,trim);
+ // Oversized stepped face with dark single-pixel-outline.
+ p(-10,-26,20,3,'#27353c');
+ p(-12,-23,24,14,'#27353c');
+ p(-10,-24,20,15,skin);
+ p(-9,-13,18,4,skinShade);
+ p(-9,-24,18,2,skin);
+ p(-9,-17,3,2,'#f3b1a0');p(6,-17,3,2,'#f3b1a0');
+ const eyeY=mode==='work'?-16:-18;
+ if(blink){p(-6,eyeY+1,3,1,'#32404a');p(4,eyeY+1,3,1,'#32404a');}
+ else{p(-6,eyeY,2,3,'#26343e');p(4,eyeY,2,3,'#26343e');p(-6,eyeY,1,1,'#ffffff');p(4,eyeY,1,1,'#ffffff');}
+ p(-1,-13,3,1,mode==='work'?'#81564c':'#984d55');
+ // Six deterministic hairstyles, plus owner-set hairStyle when supplied.
+ p(-11,-27,22,5,hair);p(-12,-23,3,5,hair);p(9,-23,3,4,hairShade);
+ if(style==='crop'){p(-9,-28,6,2,hairShade);p(3,-26,7,3,hair);}
+ else if(style==='side-part'){p(-11,-25,14,4,hair);p(3,-25,7,2,hairShade);p(-11,-20,4,5,hair);}
+ else if(style==='curls'){for(const xx of [-11,-5,1,7])p(xx,-29+(xx===1?1:0),6,5,hair);p(-13,-22,4,6,hair);p(10,-22,4,5,hair);}
+ else if(style==='long'){p(-13,-24,4,18,hair);p(10,-24,4,18,hair);p(-9,-27,18,4,hairShade);}
+ else if(style==='bun'){p(6,-32,7,7,hair);p(-10,-26,20,4,hairShade);p(-12,-22,4,10,hair);}
+ else if(style==='puff'){p(-9,-32,18,6,hair);p(-12,-28,24,4,hair);p(10,-22,4,7,hairShade);}
+ // Pixel badge / garnish: one in seven workers receives a tiny sprout.
+ // This is an original accent; their skin tone and hairstyle stay visible.
+ if(activeScenery==='western'){
+  p(-14,-30,28,2,'#765038');p(-9,-35,18,6,'#a8734c');
+  p(-9,-30,18,1,'#e2b576');
+ }else if(seed%7===0){
+  p(0,-32,2,5,'#567a52');p(-6,-34,6,3,'#92b56e');p(2,-35,6,3,'#a3c574');
+ }else if(seed%7===1){
+  p(9,-23,3,4,'#ecc873');
+ }
  c.restore();
 }
 function wrap(s,max=25){
@@ -333,5 +388,5 @@ function draw({c,now,cid,floor,project,handoff,staff,tasks,approvals,thoughts,B}
  lastHit.push({kind:floor.department==='Leadership'||!floor.department?'approvals':'department-head',id:head?.id||null,x:963,y:70,w:263,h:111});
 }
 function hitTest(x,y){return [...lastHit].reverse().find(h=>x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h)||null;}
-window.OfficeHQOfficeLife={draw,hitTest,DESKS,appearance,activityTypes:['desk','stretch','stand','coffee','restroom','lunch','chat','ceo'],activitySnapshot:key=>[...(stateByFloor.get(key)?.activities||new Map())].map(([id,a])=>({id,kind:a.kind,since:a.since}))};
+window.OfficeHQOfficeLife={draw,hitTest,DESKS,appearance,sprite,style:'original-mini-pixel',activityTypes:['desk','stretch','stand','coffee','restroom','lunch','chat','ceo'],activitySnapshot:key=>[...(stateByFloor.get(key)?.activities||new Map())].map(([id,a])=>({id,kind:a.kind,since:a.since}))};
 })();

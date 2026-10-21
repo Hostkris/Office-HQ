@@ -59,7 +59,9 @@ test('Mac update refreshes new CEO chat and browser assets while retaining backu
  assert.match(macSetup,/cp -p "\$WEB\/\$item" "\$BACKUP\/\$item"/);
  assert.match(macSetup,/Update Office HQ/);
  assert.match(macSetup,/UPDATED_CODE=1/);
- assert.match(macSetup,/previous Office HQ server is still running/);
+ assert.match(macSetup,/Restarting the verified local Office HQ server/);
+ assert.match(macSetup,/lsof -a -p/,'Only the verified Office HQ server may be restarted');
+ assert.match(macSetup,/kill -TERM "\\$ACTIVE_PID"/,'Restart must not interrupt other services');
  assert.match(landing,/Install or update Office HQ on your Mac/);
  assert.match(landing,/Existing workspace data is preserved/);
 });

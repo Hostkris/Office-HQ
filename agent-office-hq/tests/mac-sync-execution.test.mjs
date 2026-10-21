@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {createDesktopService} from '../desktop/runner.mjs';
 import {ACCESS_PREFIX} from '../desktop/permissions.mjs';
 import {createMacSyncService} from '../device-sync/mac-worker.mjs';
+import {CODING_PREFIX,CODING_CONTROL_PREFIX} from '../native-engine/coding-worker.mjs';
 function model(){
  const state={connected:true,dispatchEnabled:true,bindings:[],runs:[]},actions=[];
  return {state,actions,status:async()=>state,action:async p=>{
@@ -18,7 +19,7 @@ function model(){
   throw Error('Unexpected native operation '+p.action);
  }};
 }
-async function fixture(fn){
+async function fixture(fn,{coding=null}={}){
  const storage=await mkdtemp(join(tmpdir(),'office-sync-'));const rows=[],writes=[],bridge=model();
  const request=async(path,token,opts={})=>{
   const body=opts.body?JSON.parse(opts.body):null,url=new URL(path,'https://example.invalid');
@@ -32,7 +33,7 @@ async function fixture(fn){
   return rows.filter(r=>url.searchParams.get('status')==='eq.queued'?r.status==='queued':['in_progress','blocked'].includes(r.status));
  };
  const desktop=createDesktopService({root:storage});
- const service=createMacSyncService({bridge,desktop,cloudRequest:request,storage,startPolling:false});
+ const service=createMacSyncService({bridge,desktop,coding,cloudRequest:request,storage,startPolling:false});
  try{await fn({service,desktop,bridge,rows,writes,storage});}finally{await desktop.shutdown();await rm(storage,{recursive:true,force:true});}
 }
 const department={companyId:'co1',companyName:'First company',department:'Marketing',employees:[{employeeId:'e1',employeeName:'Researcher',roleKey:'research'}],ownerConfirmed:true};
@@ -55,6 +56,18 @@ test('authorized iPhone assignment produces one Mac run and returns the actual d
   await service.tick();assert.equal(rows[0].status,'review');assert.equal(rows[0].draft,'Real local model draft');
   await service.tick();assert.equal(bridge.actions.filter(p=>p.action==='send').length,1);
  });
+});
+test('phone coding controls return a scoped catalog without drafting or exposing the local repository path',async()=>{
+ const controls=[];await fixture(async({service,bridge,rows})=>{
+  await prepare(service);bridge.state.connected=false;bridge.state.dispatchEnabled=false;
+  rows.push(task('coding-status',{created_at:new Date().toISOString(),description:CODING_CONTROL_PREFIX+JSON.stringify({kind:'status',ownerConfirmed:true})}));
+  await service.tick();assert.equal(rows[0].status,'review');const receipt=JSON.parse(rows[0].draft);assert.equal(receipt.codingCatalog,true);assert.equal(receipt.grants[0].companyId,'co1');assert.equal(receipt.grants[0].repoPath,undefined);assert.equal(bridge.actions.filter(a=>a.action==='send').length,0);
+  rows.push(task('coding-revoke',{created_at:new Date().toISOString(),description:CODING_CONTROL_PREFIX+JSON.stringify({kind:'revoke',grantId:'grant1',ownerConfirmed:true})}));await service.tick();assert.equal(controls[0].companyId,'co1');assert.equal(controls[0].grantId,'grant1');
+  rows.push(task('coding-forge',{created_at:new Date().toISOString(),description:CODING_CONTROL_PREFIX+JSON.stringify({kind:'grant',ownerConfirmed:true})}));await service.tick();assert.equal(rows[2].status,'blocked');assert.match(rows[2].note,/only be created on the Mac/);
+ },{coding:{status:async companyId=>({ready:true,config:{provider:'ollama',model:'fixture-coder'},grants:[{id:'grant1',companyId,repoPath:'/private/mac/repository',active:true}]}),action:async body=>{controls.push(body);return {revoked:true};}}});
+});
+test('a coding assignment reaches its separately validated worker even when the text draft model is offline',async()=>{
+ await fixture(async({service,bridge,rows})=>{await prepare(service);bridge.state.connected=false;rows.push(task('coding-job',{description:CODING_PREFIX+JSON.stringify({grantId:'repo',instruction:'Fix the approved source file.'})}));await service.tick();assert.equal(rows[0].status,'in_progress');assert.match(rows[0].note,/Local coding task started/);assert.equal(bridge.actions.filter(a=>a.action==='send').length,1);});
 });
 test('unmatched company and role stay queued; a disconnected model never claims work',async()=>{
  await fixture(async({service,bridge,rows})=>{

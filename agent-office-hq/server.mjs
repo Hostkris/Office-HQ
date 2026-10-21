@@ -4,7 +4,8 @@ import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createDesktopService} from './desktop/runner.mjs';
-import {createOpenMausBridge} from './native-engine/bridge.mjs';
+import {createOpenMausBridge,engineState,engineConfig} from './native-engine/bridge.mjs';
+import {createCodingWorker} from './native-engine/coding-worker.mjs';
 import {createOfficeBrain} from './native-engine/office-brain.mjs';
 import {createMacSyncService} from './device-sync/mac-worker.mjs';
 import {createWorkforceEngine} from './openmaus/workforce-engine.mjs';
@@ -19,12 +20,14 @@ const model=process.env.OPENAI_MODEL||'gpt-4.1-mini';
 const desktop=createDesktopService({root,apiKey,model});
 const publicTools=createPublicTools({root});
 const brain=createOfficeBrain();
-const openmaus=createOpenMausBridge({publicTools,conversation:brain});
-const deviceSync=createMacSyncService({bridge:openmaus,desktop});
+const coding=createCodingWorker({authorize:async ctx=>{const [s,cfg]=await Promise.all([engineState(),engineConfig()]);return cfg.allowSending&&s.bindings.some(b=>b.companyId===ctx.companyId&&b.employeeId===ctx.employeeId&&b.roleKey===ctx.roleKey);}});
+const openmaus=createOpenMausBridge({publicTools,conversation:brain,coding});
+const deviceSync=createMacSyncService({bridge:openmaus,desktop,coding});
 const workforceEngine=createWorkforceEngine({root});
 const research=createReachBridge({root});
 const files={'/website-access.js':'website-access.js','/website-access.css':'website-access.css','/':'index.html','/index.html':'index.html','/cloud.html':'cloud.html','/cloud.js':'cloud.js','/app.js':'app.js','/workforce-lean.js':'workforce-lean.js','/assignment-library.js':'assignment-library.js','/office-features.js':'office-features.js','/department-access.js':'department-access.js','/department-projects.js':'department-projects.js','/department-ui.css':'department-ui.css','/agent-health.js':'agent-health.js','/officehq-voice.js':'officehq-voice.js','/officehq-voice.css':'officehq-voice.css','/ceo-secure-chat.js':'ceo-secure-chat.js','/ceo-secure-chat.css':'ceo-secure-chat.css','/officehq-device-sync.js':'officehq-device-sync.js','/officehq-sync.css':'officehq-sync.css','/mac-share.js':'mac-share.js','/mac.html':'mac.html','/project-floor.js':'project-floor.js','/office-life.js':'office-life.js','/department-offices.js':'department-offices.js','/deliverables.js':'deliverables.js','/integration-center.js':'integration-center.js','/research-center.js':'research-center.js','/ios-workstations.js':'ios-workstations.js','/desktop-workstations.js':'desktop-workstations.js','/openmausbot.js':'openmausbot.js','/workforce-runtime.js':'workforce-runtime.js','/refresh.js':'refresh.js','/theme.js':'theme.js','/styles.css':'styles.css','/icon.svg':'icon.svg','/manifest.webmanifest':'manifest.webmanifest','/sw.js':'sw.js'};
 const types={html:'text/html; charset=utf-8',js:'text/javascript; charset=utf-8',css:'text/css; charset=utf-8',svg:'image/svg+xml',webmanifest:'application/manifest+json'};
+files['/coding-tasks.js']='coding-tasks.js';files['/coding-tasks.css']='coding-tasks.css';
 function send(res,status,content,type='application/json'){res.writeHead(status,{'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://wvadoqncgrmfsftefuoy.supabase.co; img-src 'self' data:; worker-src 'self';"});res.end(content)}
 async function parseJson(req){let input='';for await(const c of req){input+=c;if(input.length>24000)throw Error('Payload too large')}return JSON.parse(input)}
 const safe=s=>String(s??'').slice(0,3500);
@@ -47,6 +50,12 @@ const server=http.createServer(async(req,res)=>{try{
     catch{send(res,403,JSON.stringify({error:'Desktop actions must originate from the same local website.'}));return;}
   }
   const url=new URL(req.url,'http://localhost');
+  if(url.pathname==='/api/coding/status'&&req.method==='GET'){
+    try{send(res,200,JSON.stringify(await coding.status(url.searchParams.get('companyId'))));}catch{send(res,503,JSON.stringify({error:'Mac coding worker unavailable.'}));}return;
+  }
+  if(url.pathname==='/api/coding/action'&&req.method==='POST'){
+    try{send(res,200,JSON.stringify(await coding.action(await parseJson(req))));}catch(e){send(res,Number(e.status)||400,JSON.stringify({error:String(e.message).slice(0,300)}));}return;
+  }
   if(url.pathname==='/api/device-sync/status'&&req.method==='GET'){
     try{send(res,200,JSON.stringify(await deviceSync.status()));}
     catch{send(res,503,JSON.stringify({connected:false,reason:'Local Mac sync unavailable.'}));}
@@ -125,6 +134,6 @@ const server=http.createServer(async(req,res)=>{try{
   send(res,404,JSON.stringify({error:'Not found'}));
 }catch(e){send(res,500,JSON.stringify({error:'Unexpected local server error'}));}});
 server.listen(port,host,()=>{console.log(`Agent Office HQ is running at http://${host}:${port}`);console.log(apiKey?'AI draft and desktop browser tasks available when Playwright is installed':'No AI key: manual desktop login works; automatic browser jobs require OPENAI_API_KEY')});
-process.on('SIGTERM',()=>{void desktop.shutdown().finally(()=>server.close(()=>process.exit(0)));});
-process.on('SIGINT',()=>{void desktop.shutdown().finally(()=>server.close(()=>process.exit(0)));});
+process.on('SIGTERM',()=>{coding.shutdown();void desktop.shutdown().finally(()=>server.close(()=>process.exit(0)));});
+process.on('SIGINT',()=>{coding.shutdown();void desktop.shutdown().finally(()=>server.close(()=>process.exit(0)));});
 

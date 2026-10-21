@@ -5,6 +5,7 @@ import {mkdir,readFile,writeFile,rename,chmod} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {roles as essentialRoles} from '../openmaus/team.mjs';
+import {CODING_PREFIX,CODING_CONTROL_PREFIX} from './coding-worker.mjs';
 const dir=()=>resolve(process.env.OFFICE_HQ_NATIVE_DIR||join(process.env.HOME||process.cwd(),'.officehq-agent-engine'));
 const timestamp=()=>new Date().toISOString();
 const valid=x=>typeof x==='string'&&/^[\w.-]{1,100}$/.test(x);
@@ -31,17 +32,17 @@ export async function checkOllama(model){
   return {ready,models:tags,message:ready?'Local model installed':'Run ollama pull '+model};
  }catch{return {ready:false,message:'Start Ollama on this Mac.'};}
 }
-export function createOpenMausBridge({publicTools=null,conversation=null,request=fetch,checkModel=checkOllama}={}){
+export function createOpenMausBridge({publicTools=null,conversation=null,coding=null,request=fetch,checkModel=checkOllama}={}){
  let serial=Promise.resolve(),statePromise=null,processing=false;
  const aborts=new Map(),queue=[];
  const lock=fn=>{const result=serial.then(fn);serial=result.catch(()=>{});return result;};
  async function get(){if(!statePromise)statePromise=engineState();const s=await statePromise;s.bindings??=[];s.runs??=[];return s;}
  async function persist(s){await save('state.json',s);statePromise=Promise.resolve(s);}
- function canResume(r){return r.approvedForDraft===true&&Number(r.retryCount||0)<2&&(r.status==='paused'||r.status==='failed'&&r.recoverable===true);}
+ function canResume(r){return !r.coding&&r.approvedForDraft===true&&Number(r.retryCount||0)<2&&(r.status==='paused'||r.status==='failed'&&r.recoverable===true);}
  const publicRun=r=>({id:r.id,companyId:r.companyId,employeeId:r.employeeId,employeeName:r.employeeName,roleKey:r.roleKey,
   officeTaskId:r.officeTaskId,title:r.title,threadId:r.threadId,botName:r.botName,status:r.status,
   result:r.result||'',reason:r.reason||'',thought:r.thought||'',retryCount:Number(r.retryCount||0),canResume:canResume(r),
-  conversation:!!r.conversation,createdAt:r.createdAt,updatedAt:r.updatedAt});
+  conversation:!!r.conversation,coding:!!r.coding,evidence:r.evidence||null,createdAt:r.createdAt,updatedAt:r.updatedAt});
  async function update(id,modify){return lock(async()=>{const s=await get(),r=s.runs.find(x=>x.id===id);if(!r)return;modify(r);r.updatedAt=timestamp();await persist(s);});}
  async function status(){const cfg=await engineConfig(),s=await get(),ollama=await checkModel(cfg.model);
   return {engine:'Office HQ Native Agent Engine',connected:ollama.ready,model:cfg.model,
@@ -63,11 +64,19 @@ export function createOpenMausBridge({publicTools=null,conversation=null,request
     if(!s.bindings.some(b=>b.companyId===r.companyId&&b.employeeId===r.employeeId&&b.roleKey===r.roleKey)){
      r.status='stopped';r.reason='Worker authorization was revoked or changed';await persist(s);return null;
     }
-    r.status='running';r.thought=r.conversation?'Mac AI is composing a reply':'Local Ollama is drafting the assignment';r.updatedAt=timestamp();await persist(s);return {...r};
+    r.status='running';r.thought=r.coding?'Inspecting the approved repository':r.conversation?'Mac AI is composing a reply':'Local Ollama is drafting the assignment';r.updatedAt=timestamp();await persist(s);return {...r};
    });
    if(!r)return;
-   const cfg=await engineConfig();let result;
-   if(r.conversation){
+   const cfg=await engineConfig();let result,evidence=null;
+   if(r.coding){
+    if(!coding)throw Error('Update the Mac coding worker.');
+    const guard=async()=>{const s=await get(),current=s.runs.find(x=>x.id===id),c=await engineConfig();
+     if(current?.status!=='running'||!c.allowSending||!s.bindings.some(b=>b.companyId===r.companyId&&b.employeeId===r.employeeId&&b.roleKey===r.roleKey))throw err('Coding task stopped or worker authorization revoked.',403);
+    };
+    const out=await coding.run({...r,payload:r.coding,signal:ctrl.signal,guard,
+     progress:async p=>update(id,current=>{if(current.status==='running'){current.thought=p.detail;current.evidence=p;}})});
+    result=out.result;evidence=out.evidence;
+   }else if(r.conversation){
     if(!conversation)throw Error('Mac conversation engine is unavailable. Update Office HQ.');
     result=(await conversation.reply({...r.conversation,companyId:r.companyId,roleKey:r.roleKey,department:r.department,research:false,signal:ctrl.signal})).reply;
    }else{
@@ -86,9 +95,9 @@ export function createOpenMausBridge({publicTools=null,conversation=null,request
     result=(await res.json())?.message?.content;
    }
    result=output(result);if(!result)throw Error('Ollama returned no draft.');
-   await update(id,r=>{if(r.status==='running'){r.status='review';r.result=result;r.reason='';r.recoverable=false;r.thought='Ready for CEO review';}});
+   await update(id,r=>{if(r.status==='running'){r.status='review';r.result=result;r.reason='';r.recoverable=false;r.evidence=evidence;r.thought='Ready for CEO review';}});
   }catch(e){await update(id,r=>{if(['running','submitted'].includes(r.status)){
-   r.status=ctrl.signal.aborted?'stopped':'failed';r.reason=short(e.message,300);r.recoverable=!ctrl.signal.aborted&&retryable(e);r.thought='Task needs attention';
+   r.status=ctrl.signal.aborted||e.status===403?'stopped':'failed';r.reason=short(e.message,300);r.recoverable=!r.coding&&!ctrl.signal.aborted&&retryable(e);r.thought='Task needs attention';
   }});}finally{aborts.delete(id);}
  }
  function member(companyId,person,dept){
@@ -143,7 +152,6 @@ export function createOpenMausBridge({publicTools=null,conversation=null,request
    if(body.ownerConfirmed!==true)throw err('CEO must approve each assignment.',403);
    if(!valid(body.companyId)||!valid(body.employeeId)||!valid(body.officeTaskId))throw err('Existing assignment and employee required.');
    const cfg=await engineConfig();if(!cfg.allowSending)throw err('Local AI dispatch is disabled.',403);
-   const health=await checkModel(cfg.model);if(!health.ready)throw err(health.message,503);
    const s=await get(),binding=s.bindings.find(x=>x.companyId===body.companyId&&x.employeeId===body.employeeId);
    if(!binding?.roleKey)throw err('Employee must be authorized with an explicit specialist role.',403);
    if(body.roleKey&&binding.roleKey!==body.roleKey)throw err('Bound specialist role does not match requested job.',403);
@@ -152,9 +160,18 @@ export function createOpenMausBridge({publicTools=null,conversation=null,request
    const title=short(body.title,140).trim();let description=String(body.description??'').slice(0,4000).trim();
    // Team metadata only reconstructs the owner's report on the other device. It never supplies permissions.
    if(description.startsWith('OFFICE_HQ_WEBSITE_ACCESS_V1:'))throw err('Website permissions must use the owner browser controls, not the draft model.',403);
+   if(description.startsWith(CODING_CONTROL_PREFIX))throw err('Coding controls must use the owner control relay, not the draft model.',403);
    if(description.startsWith('OFFICE_HQ_TEAM_V1:')){const end=description.indexOf('\n');if(end<0)throw err('Invalid team assignment.');description=description.slice(end+1);}
+   if(description.startsWith(CODING_CONTROL_PREFIX)||description.startsWith('OFFICE_HQ_WEBSITE_ACCESS_V1:'))throw err('Owner control records cannot be drafted as assignments.',403);
    if(title.length<3||description.length<8)throw err('Provide clear task instructions.');
-   let chat=null;
+   let chat=null,codingTask=null;
+   if(description.startsWith(CODING_PREFIX)){
+    if(!coding)throw err('Update the Mac app to enable coding tasks.',503);
+    try{codingTask=JSON.parse(description.slice(CODING_PREFIX.length));}catch{throw err('Invalid coding assignment.');}
+    if(!codingTask||typeof codingTask!=='object')throw err('Invalid coding assignment.');
+    await coding.validate(codingTask,{companyId:body.companyId,employeeId:body.employeeId,roleKey});
+    codingTask={grantId:codingTask.grantId,instruction:codingTask.instruction,criteria:codingTask.criteria,provider:codingTask.provider||'ollama',publicDataConfirmed:codingTask.publicDataConfirmed===true};
+   }else{const health=await checkModel(cfg.model);if(!health.ready)throw err(health.message,503);}
    if(description.startsWith(CONVERSATION_PREFIX)){
     if(!conversation)throw err('Update the Mac conversation engine.',503);
     try{chat=JSON.parse(description.slice(CONVERSATION_PREFIX.length));}catch{throw err('Invalid conversation message.');}
@@ -167,7 +184,7 @@ export function createOpenMausBridge({publicTools=null,conversation=null,request
    if(s.runs.length>=400)throw err('Agent history is full; archive completed work before starting more runs.',409);
    s.runs.push({id,threadId:randomUUID(),companyId:body.companyId,employeeId:body.employeeId,officeTaskId:body.officeTaskId,
     employeeName:binding.employeeName,roleKey,department:binding.department,botName:binding.botName,title,description,
-    conversation:chat,approvedForDraft:true,retryCount:0,status:'submitted',result:'',reason:'',thought:'Queued for local AI',createdAt:date,updatedAt:date});
+    conversation:chat,coding:codingTask,approvedForDraft:true,retryCount:0,status:'submitted',result:'',reason:'',thought:'Queued for local AI',createdAt:date,updatedAt:date});
    await persist(s);enqueue(id);return {submitted:true,runId:id,note:'Local AI accepted the draft assignment. Result pending.'};
   });
   if(body.action==='resume')return lock(()=>resume(body));
@@ -183,7 +200,7 @@ export function createOpenMausBridge({publicTools=null,conversation=null,request
  }
  // Retain the exact original approval across a Mac restart, but never restart a stopped job.
  void lock(async()=>{const s=await get();let dirty=false;for(const r of s.runs)if(['submitted','running'].includes(r.status)){
-  r.status='paused';r.reason='Mac restarted';r.thought='Interrupted draft; check Agent Health';r.updatedAt=timestamp();dirty=true;
+  r.status='paused';r.reason='Mac restarted';r.thought=r.coding?'Review the separate coding checkout before starting a fresh task; checks are never replayed automatically.':'Interrupted draft; check Agent Health';r.updatedAt=timestamp();dirty=true;
  }if(dirty)await persist(s);});
  return {status,action};
 }

@@ -32,8 +32,8 @@ def main():
         "CFBundleInfoDictionaryVersion": "6.0",
         "CFBundleName": "Office HQ",
         "CFBundlePackageType": "APPL",
-        "CFBundleShortVersionString": "1.0.3",
-        "CFBundleVersion": "4",
+        "CFBundleShortVersionString": "1.0.4",
+        "CFBundleVersion": "5",
         "LSMinimumSystemVersion": "14.0",
         "NSHighResolutionCapable": True,
         "LSUIElement": False,
@@ -70,6 +70,12 @@ Use Agent website access to select sites, named accounts, and individual or all
 agents. Sign in directly on each website on the Mac. Permission cards gate
 access, and account changes stop for separate one-click approval. Money and
 account-security actions are not delegated.
+
+Coding tasks supports a separately approved repository snapshot, selected source
+files and exact Node/npm checks. The local tool-capable Ollama model must be
+configured on the Mac. Optional OpenRouter Inkling is cloud-hosted, requires your
+API key, and is limited to public tasks containing no confidential or personal
+data. Its provider logs prompts and outputs. No publishing happens automatically.
 
 Your company records are stored separately on each device unless
 you configure authenticated sync.

@@ -12,6 +12,7 @@ const SKEY='office_hq_device_sync_session_v1';
 const DKEY='office_hq_device_sync_id_v1';
 const STALE=90000;
 const ACCESS_PREFIX='OFFICE_HQ_WEBSITE_ACCESS_V1:';
+const CODING_CONTROL_PREFIX='OFFICE_HQ_CODING_CONTROL_V1:';
 const TEAM_PREFIX='OFFICE_HQ_TEAM_V1:';
 function teamEnvelope(raw){
  if(typeof raw!=='string'||!raw.startsWith(TEAM_PREFIX))return null;
@@ -201,9 +202,9 @@ async function downloadTasks(){
     cloudSynced:true,cloudSyncId:r.id};
    s.tasks.unshift(t);window.OfficeHQFloor?.onTaskAssigned(t);touched=true;
   }
-  if(r.description?.startsWith(ACCESS_PREFIX)){
-   t.websiteAccessCommand=true;
-   if(r.status==='review'&&r.draft){t.output=r.draft;t.status='done';t.updatedAt=r.updated_at;t.cloudReceiptAt=r.updated_at;touched=true;await rest('hq_device_synced_assignments','PATCH',{status:'done',note:'Owner received website access receipt',updated_at:new Date().toISOString()},'?id=eq.'+encodeURIComponent(r.id)+'&status=eq.review','return=minimal');}
+  if(r.description?.startsWith(ACCESS_PREFIX)||r.description?.startsWith(CODING_CONTROL_PREFIX)){
+   if(r.description.startsWith(ACCESS_PREFIX))t.websiteAccessCommand=true;else t.codingControlCommand=true;
+   if(r.status==='review'&&r.draft){t.output=r.draft;t.status='done';t.updatedAt=r.updated_at;t.cloudReceiptAt=r.updated_at;touched=true;await rest('hq_device_synced_assignments','PATCH',{status:'done',note:r.description.startsWith(ACCESS_PREFIX)?'Owner received website access receipt':'Owner received coding worker receipt',updated_at:new Date().toISOString()},'?id=eq.'+encodeURIComponent(r.id)+'&status=eq.review','return=minimal');}
    else if(r.status==='done'&&r.draft){t.output=r.draft;t.status='done';t.cloudReceiptAt=r.updated_at;touched=true;}
    else if(r.status==='blocked'){t.status='blocked';t.runError=r.note;touched=true;}
    continue;

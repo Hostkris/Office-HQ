@@ -10,18 +10,18 @@
     ['exec_assistant',/\b(assistant|secretary|inbox|email|calendar|remind|schedule|appointment|errand|dry clean(?:ing|ers)?|coffee)\b/i],
     ['project_mgr',/\b(project|coordinate|milestone|rollout|timeline|launch plan)\b/i],
     ['cfo',/\b(financial strategy|cash flow|investment|finance plan)\b/i],
-    ['budget_officer',/\b(budget|cost forecast|spending plan)\b/i],
+    ['budget_officer',/\b(budget|cost forecast|spending plan|currency|exchange rate|forex)\b/i],
     ['bookkeeper',/\b(bookkeep|reconcil|transaction|ledger)\b/i],
     ['ap',/\b(invoice payment|payable|vendor bill)\b/i],
     ['ar',/\b(receivable|collect payment|customer invoice)\b/i],
-    ['inventory_mgr',/\b(inventory|stock count|stock level)\b/i],
+    ['inventory_mgr',/\b(inventory|stock count|stock level|barcode|open food facts)\b/i],
     ['purchaser',/\b(purchas|supplier|source product|wholesale)\b/i],
     ['fulfillment',/\b(fulfill|shipping|ship order|dispatch parcel)\b/i],
     ['qa_manager',/\b(quality|inspection|defect|test product)\b/i],
     ['content',/\b(content|caption|script|blog|newsletter|copywriting)\b/i],
     ['social',/\b(social media|instagram|tiktok|facebook|youtube|linkedin|tweet|post)\b/i],
     ['ads',/\b(advertis|paid ads|ad campaign|promotion budget)\b/i],
-    ['research',/\b(research|competitor|market trend|survey|audience)\b/i],
+    ['research',/\b(research|competitor|market trend|survey|audience|github|public repository)\b/i],
     ['graphic_designer',/\b(design|graphic|logo|poster|banner|thumbnail|illustrat)\b/i],
     ['sales_rep',/\b(sales leads|prospect|outreach|sell to)\b/i],
     ['account_mgr',/\b(client account|customer relationship|renewal)\b/i],
@@ -104,7 +104,7 @@
       if(!bound){log(job.companyId,'Office HQ Assistant',(B.getEmployee(task.ownerId)?.name||'This employee')+' is not authorized for live execution. The task stays queued.', 'notice',job.id);continue;}
       try{
         const response=await fetch('/api/openmaus/action',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({action:'send',companyId:job.companyId,employeeId:task.ownerId,officeTaskId:task.id,title:task.title,description:task.description,ownerConfirmed:true})});
+          body:JSON.stringify({action:'send',companyId:job.companyId,employeeId:task.ownerId,roleKey:B.getEmployee(task.ownerId)?.roleKey,officeTaskId:task.id,title:task.title,description:task.description,ownerConfirmed:true})});
         const data=await response.json();
         if(!response.ok)throw Error(data.error||'Agent run could not start');
         task.openMausRunId=data.runId;task.status='in_progress';task.ceoLastNotifiedStatus='in_progress';

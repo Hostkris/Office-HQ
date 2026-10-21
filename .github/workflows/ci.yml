@@ -35,4 +35,5 @@ jobs:
         run: npx playwright install --with-deps webkit
       - name: Exercise iPhone and iPad browser UI (WebKit emulation)
         working-directory: agent-office-hq
-        run: node --test tests/ios-browser.e2e.mjs tests/ios-extension-webkit.e2e.mjs tests/ios-live-production.e2e.mjs tests/project-floor-webkit.e2e.mjs
+        # Pull requests cannot deploy their own GitHub Pages build. Test the actual PR locally; verify the live site after deploy below.
+        run: node --test tests/ios-browser.e2e.mjs tests/ios-extension-webkit.e2e.mjs tests/project-floor-webkit.e2e.mjs

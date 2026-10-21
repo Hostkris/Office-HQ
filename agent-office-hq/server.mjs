@@ -8,6 +8,7 @@ import {createOpenMausBridge} from './native-engine/bridge.mjs';
 import {createMacSyncService} from './device-sync/mac-worker.mjs';
 import {createWorkforceEngine} from './openmaus/workforce-engine.mjs';
 import {createReachBridge} from './research/reach-bridge.mjs';
+import {createPublicTools} from './research/public-tools.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const host=process.env.HOST||'127.0.0.1';
 if(!['127.0.0.1','localhost','::1'].includes(host))throw Error('The desktop workforce must only listen on this computer (127.0.0.1).');
@@ -15,7 +16,8 @@ const port=Number(process.env.PORT||3000);
 const apiKey=process.env.OPENAI_API_KEY;
 const model=process.env.OPENAI_MODEL||'gpt-4.1-mini';
 const desktop=createDesktopService({root,apiKey,model});
-const openmaus=createOpenMausBridge({root});
+const publicTools=createPublicTools({root});
+const openmaus=createOpenMausBridge({publicTools});
 const deviceSync=createMacSyncService({bridge:openmaus});
 const workforceEngine=createWorkforceEngine({root});
 const research=createReachBridge({root});
@@ -58,6 +60,16 @@ const server=http.createServer(async(req,res)=>{try{
       else throw Object.assign(Error('Unsupported device sync action.'),{status:400});
       send(res,200,JSON.stringify(result));
     }catch(e){send(res,Number(e.status)||400,JSON.stringify({error:String(e.message||'Device sync failed.').slice(0,220)}));}
+    return;
+  }
+  if(url.pathname==='/api/public-tools/status'&&req.method==='GET'){
+    try{send(res,200,JSON.stringify(await publicTools.status()));}
+    catch{send(res,503,JSON.stringify({error:'Public API grants could not be read.'}));}
+    return;
+  }
+  if(url.pathname==='/api/public-tools/action'&&req.method==='POST'){
+    try{const payload=await parseJson(req);send(res,200,JSON.stringify(await publicTools.action(payload)));}
+    catch(err){send(res,Number(err.status)||400,JSON.stringify({error:String(err.message||'Public API operation failed.').slice(0,260)}));}
     return;
   }
   if(url.pathname==='/api/research/status'&&req.method==='GET'){

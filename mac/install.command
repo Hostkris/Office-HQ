@@ -101,6 +101,7 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/b
       officehq-device-sync.js officehq-sync.css project-floor.js office-life.js \
       department-offices.js deliverables.js integration-center.js \
       department-access.js department-projects.js department-ui.css agent-health.js \
+      website-access.js website-access.css desktop/runner.mjs desktop/permissions.mjs \
       desktop-workstations.js openmausbot.js workforce-runtime.js research-center.js \
       ios-workstations.js refresh.js theme.js styles.css sw.js icon.svg \
       manifest.webmanifest \
@@ -165,6 +166,33 @@ else
 fi
 
 
+# Browser control is a separate opt-in from the smaller text-only draft engine.
+# No browser profile or website account is authorized by this setup step.
+if [ ! -f "$BASE/browser-access-setup-decided" ]; then
+  if /usr/bin/osascript -e 'display dialog "Enable agent browser tasks? This installs Chromium and a local vision model (several gigabytes). Account access still requires your permission in Office HQ, and you sign in yourself. Browser screenshots stay with the local model." buttons {"Later", "Enable Browser Tasks"} default button "Enable Browser Tasks" with title "Office HQ · Agent Browser"' >/dev/null 2>&1; then
+    export PATH="$(dirname "$NODE"):$PATH"
+    NPM_CLI="$(dirname "$NODE")/../lib/node_modules/npm/bin/npm-cli.js"
+    BROWSER_SETUP_OK=0
+    if [ -f "$NPM_CLI" ]; then
+      if "$NODE" "$NPM_CLI" install --prefix "$WEB" --no-audit --no-fund; then BROWSER_SETUP_OK=1; fi
+    elif command -v npm >/dev/null 2>&1; then
+      if npm install --prefix "$WEB" --no-audit --no-fund; then BROWSER_SETUP_OK=1; fi
+    fi
+    if [ "$BROWSER_SETUP_OK" -eq 1 ] && [ -f "$WEB/node_modules/playwright/cli.js" ] &&
+      "$NODE" "$WEB/node_modules/playwright/cli.js" install chromium && "$OLLAMA" pull 'qwen2.5vl:7b'; then
+      /bin/date > "$BASE/browser-access-enabled"
+      /bin/date > "$BASE/browser-access-setup-decided"
+      say 'Agent browser runtime installed. Approve accounts inside Agent website access.'
+    else
+      say 'Browser setup did not finish. Office HQ drafts remain available; relaunch to retry browser setup.'
+    fi
+  else
+    /bin/date > "$BASE/browser-access-setup-decided"
+    say 'Browser tasks deferred. Website permissions remain reviewable; browser runtime setup is still required.'
+  fi
+fi
+
+
 if curl -fsS --connect-timeout 2 --max-time 3 "$URL" 2>/dev/null | grep -q 'Agent Office HQ'; then
   if ! curl -fsS --max-time 4 'http://127.0.0.1:3000/api/device-sync/status' 2>/dev/null | grep -q '"paired"'; then
     failed 'An older Office HQ server is still running on port 3000. Quit that Mac server and reopen Office HQ.app to activate the updated Ollama and sync engine.'
@@ -181,6 +209,9 @@ else
   (
     cd "$WEB"
     export HOST=127.0.0.1 PORT=3000
+    if [ -f "$BASE/browser-access-enabled" ]; then
+      export OFFICE_HQ_AI_BACKEND=ollama OLLAMA_MODEL='qwen2.5vl:7b'
+    fi
     if [ -f "$WEB/tools/officehq.mjs" ]; then
       nohup "$NODE" "$WEB/tools/officehq.mjs" start >> "$LOG/officehq.log" 2>&1 </dev/null &
     else

@@ -4,8 +4,10 @@
 import {mkdir,readFile,writeFile,rename,rm,chmod} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
+import {createWebsitePermissions,publicWebsite} from './permissions.mjs';
 
 export const SITES=Object.freeze({
+  github:{name:'GitHub',url:'https://github.com/',hosts:['github.com'],departments:['Technology','Leadership','PMO','Product'],mode:'draft'},
   google:{name:'Google Search',url:'https://www.google.com/',hosts:['google.com'],departments:['Technology','Marketing','Leadership','PMO','Sales','Customer'],mode:'draft'},
   gmail:{name:'Gmail',url:'https://mail.google.com/',hosts:['mail.google.com'],departments:['Customer','Leadership','Marketing','Sales','PMO'],mode:'draft'},
   calendar:{name:'Google Calendar',url:'https://calendar.google.com/',hosts:['calendar.google.com'],departments:['Leadership','PMO','People'],mode:'draft'},
@@ -27,7 +29,7 @@ export const SITES=Object.freeze({
 
 export function validScope(value){return typeof value==='string'&&/^[\w.-]{1,90}$/.test(value);}
 export function hostAllowed(site,url){
-  try{const u=new URL(url);return u.protocol==='https:'&&SITES[site]?.hosts.some(h=>u.hostname===h||u.hostname.endsWith('.'+h))===true;}
+  try{const u=new URL(url);return u.protocol==='https:'&&((typeof site==='object'&&site.origin)?u.origin===site.origin:(typeof site==='object'?site:SITES[site])?.hosts?.some(h=>u.hostname===h||u.hostname.endsWith('.'+h))===true);}
   catch{return false;}
 }
 export function decideClick(target,site){
@@ -52,22 +54,27 @@ const delay=ms=>new Promise(done=>setTimeout(done,ms));
 const required=obj=>obj&&typeof obj==='object'&&!Array.isArray(obj);
 function payloadError(message,status=400){const err=new Error(message);err.status=status;return err;}
 
-export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
+export function createDesktopService({root,apiKey='',model='gpt-4.1-mini',browserFactory=null,decisionProvider=null}={}){
   const useOllama=process.env.OFFICE_HQ_AI_BACKEND==='ollama';
   const ollamaModel=process.env.OLLAMA_MODEL||'qwen2.5vl:7b';
-  const aiConfigured=!!apiKey||useOllama;
+  const aiConfigured=!!apiKey||useOllama||!!decisionProvider;
   const folder=resolve(process.env.OFFICE_HQ_DATA_DIR||join(root,'.office-hq-private'));
   const stateFile=join(folder,'workstation.json'),profiles=join(folder,'profiles');
   const contexts=new Map();
   const activeSessions=new Set();
   let grants=[],jobs=[],boot=null,writing=Promise.resolve(),runnerLoaded=false;
+  let permissions=createWebsitePermissions();
+  const siteFor=id=>SITES[id]||permissions.view().accounts.find(a=>a.id===id)&&customSite(id);
+  function customSite(id){const a=permissions.view().accounts.find(a=>a.id===id);return a?{...a,name:a.host+' · '+a.accountLabel,hosts:[a.host],departments:[],mode:/\b(chime|lemonade)\b/.test(a.host)?'observe':'draft'}:null;}
+  const siteAllowed=(site,url)=>hostAllowed(siteFor(site),url);
   async function init(){
     if(boot)return boot;
     boot=(async()=>{
       await mkdir(profiles,{recursive:true,mode:0o700});await chmod(folder,0o700).catch(()=>{});
       try{const data=JSON.parse(await readFile(stateFile,'utf8'));
-        grants=Array.isArray(data.grants)?data.grants.filter(g=>validScope(g.companyId)&&validScope(g.employeeId)&&SITES[g.site]).slice(0,300):[];
-        jobs=Array.isArray(data.jobs)?data.jobs.filter(j=>validScope(j.companyId)&&validScope(j.employeeId)&&SITES[j.site]).slice(-150):[];
+        permissions=createWebsitePermissions({initial:data.websiteAccess||{}});
+        grants=Array.isArray(data.grants)?data.grants.filter(g=>validScope(g.companyId)&&validScope(g.employeeId)&&siteFor(g.site)).slice(0,300):[];
+        jobs=Array.isArray(data.jobs)?data.jobs.filter(j=>validScope(j.companyId)&&validScope(j.employeeId)&&siteFor(j.site)).slice(-150):[];
         for(const j of jobs){j.executing=false;j.abort=false;if(['running','queued','awaiting_approval'].includes(j.status)){j.status='paused';j.thought='Computer stopped; resume when you are ready.';j.approval=null;}}
       }catch(e){if(e.code!=='ENOENT')console.error('Workstation state could not be read; starting with empty state.');}
       await persist();
@@ -76,16 +83,18 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
   async function persist(){
     const operation=async()=>{
       const temp=stateFile+'.tmp-'+randomUUID();
-      await writeFile(temp,JSON.stringify({grants,jobs},null,2),{mode:0o600});
+      await writeFile(temp,JSON.stringify({grants,jobs,websiteAccess:permissions.serialize()},null,2),{mode:0o600});
       await rename(temp,stateFile);await chmod(stateFile,0o600).catch(()=>{});
     };
     writing=writing.then(operation,operation);return writing;
   }
   function snapshot(companyId){
-    const visible=companyId?grants.filter(g=>g.companyId===companyId):grants;
+    const access=permissions.view(companyId);
+    const visible=[...(companyId?grants.filter(g=>g.companyId===companyId):grants),...access.grants];
     const recent=companyId?jobs.filter(j=>j.companyId===companyId):jobs;
     return {local:true,browserReady:runnerLoaded,aiReady:aiConfigured,aiBackend:useOllama?'local-ollama':apiKey?'openai':'none',mode:'desktop-only',connectedBrowsers:[...contexts.keys()].length,
-      sites:Object.entries(SITES).map(([id,s])=>({id,name:s.name,departments:s.departments,mode:s.mode})),
+      websiteAccess:access,
+      sites:[...Object.entries(SITES).map(([id,s])=>({id,name:s.name,url:s.url,departments:s.departments,mode:s.mode})),...access.accounts.map(a=>({id:a.id,...customSite(a.id)}))],
       grants:visible.map(g=>({...g,sessionOpen:contexts.has(keyFor(g.companyId,g.site))})),
       jobs:recent.slice(-45).reverse().map(j=>({...j,abort:undefined}))};
   }
@@ -93,6 +102,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
     const key=keyFor(companyId,site);
     const existing=contexts.get(key);
     if(existing&&!existing.page.isClosed())return existing;
+    if(browserFactory){const item=await browserFactory({companyId,site:siteFor(site),profile:join(profiles,key)});contexts.set(key,item);runnerLoaded=true;return item;}
     let chromium;
     try{({chromium}=await import('playwright'));}
     catch{throw payloadError('Desktop browser is not installed. On your computer run: npm install && npx playwright install chromium',503);}
@@ -109,7 +119,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
     const item={context,page};
     contexts.set(key,item);
     context.on('close',()=>{contexts.delete(key);});
-    try{if(page.url()==='about:blank')await page.goto(SITES[site].url,{waitUntil:'domcontentloaded',timeout:30000});}
+    try{if(page.url()==='about:blank')await page.goto(siteFor(site).url,{waitUntil:'domcontentloaded',timeout:30000});}
     catch{ /* Browser remains open for manual login/retry. */ }
     return item;
   }
@@ -135,7 +145,20 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
     return false;
   }
   function getJob(id){return jobs.find(j=>j.id===id);}
-  function getGrant(id){return grants.find(g=>g.id===id&&g.active);}
+  function getGrant(id){return permissions.grant(id)||grants.find(g=>g.id===id&&g.active);}
+  function checkJob(job,page){
+    const g=getGrant(job.grantId);
+    if(!g||g.companyId!==job.companyId||g.employeeId!==job.employeeId||g.site!==job.site||g.roleKey&&g.roleKey!==job.roleKey)throw payloadError('Agent permission has ended or was revoked.',403);
+    if(page&&!siteAllowed(job.site,page.url()))throw payloadError('This website needs its own access permission.',403);
+    return g;
+  }
+  async function cancelRevoked(){for(const job of jobs)if(!getGrant(job.grantId)&&!['completed','cancelled'].includes(job.status)){job.abort=true;job.approval=null;await note(job,'Agent website access ended.','cancelled');}}
+  async function requestNewSite(job,url){
+    const grant=checkJob(job);if(!grant.roleKey)return;
+    let web;try{web=publicWebsite(url);}catch{return;}
+    const pending=permissions.view(job.companyId).requests.find(r=>r.status==='pending'&&r.workers.some(w=>w.employeeId===job.employeeId)&&r.accounts[0].origin===web.origin);
+    if(!pending){permissions.request({companyId:job.companyId,conversationId:grant.conversationId,url,accountLabel:grant.accountLabel,prompt:job.prompt,mode:job.mode,workers:[grant]});await persist();}
+  }
   async function note(job,message,status){
     job.thought=short(message,130);job.updatedAt=new Date().toISOString();
     if(status)job.status=status;
@@ -143,6 +166,8 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
     await persist();
   }
   async function decideNext(job,page){
+    checkJob(job,page);
+    if(decisionProvider)return decisionProvider(job,page);
     const screenshot=await page.screenshot({type:'jpeg',quality:62,timeout:20000});
     const instructions=[
       'You are an AI employee using an authorized desktop browser for a narrowly assigned job.',
@@ -156,7 +181,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
       'Scroll: direction down/up. Finish: note summary based on verified page evidence. Ask_owner for sign-in or unclear privileges.',
       'Use no more than one UI action each turn. Avoid repetitions.'
     ].join(' ');
-    const desc='Assigned site: '+SITES[job.site].name+'. Worker: '+job.employeeName+'. Task: '+job.prompt+
+    const desc='Assigned site: '+siteFor(job.site).name+'. Worker: '+job.employeeName+'. Exclusive role: '+(job.roleKey||'assigned specialist')+'. Mandate: '+(job.scope||'the owner-approved assignment')+'. Task: '+job.prompt+
       '. Mode: '+job.mode+'. Page: '+new URL(page.url()).origin+'. Step: '+(job.steps+1)+
       '. Recent verified actions: '+JSON.stringify((job.log||[]).slice(-4).map(x=>x.note));
     if(useOllama){
@@ -189,21 +214,24 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
     return action;
   }
   async function execute(job,action,page){
+    checkJob(job,page);
     const kind=action.action;
     if(kind==='finish'){job.summary=short(action.note||'Task completed',900);await note(job,'Finished: '+job.summary,'completed');return false;}
     if(kind==='ask_owner'){await note(job,'Your help needed: '+short(action.note||'Please review the browser.'),'paused');return false;}
     if(kind==='wait'){await delay(700);await note(job,'Waiting for website to update.');return true;}
     if(kind==='scroll'){
-      await page.mouse.wheel(0,action.direction==='up'?-480:480);await note(job,'Scrolling through '+SITES[job.site].name+'.');return true;
+      await page.mouse.wheel(0,action.direction==='up'?-480:480);await note(job,'Scrolling through '+siteFor(job.site).name+'.');return true;
     }
     if(kind==='click'){
       const x=Math.round(Number(action.x)),y=Math.round(Number(action.y));
       if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>1100||y>780)throw new Error('AI click is outside the visible browser.');
       const target=await targetAt(page,x,y);
-      const decision=decideClick(target,job.site);
+      const decision=decideClick(target,siteFor(job.site));
+      if(target.href&&!siteAllowed(job.site,target.href)){await requestNewSite(job,target.href);await note(job,'A new website needs owner permission in Website access.','paused');return false;}
+      if(job.mode==='observe'&&decision.type==='approval'){await note(job,'Read-only access blocks this account control. Request draft access for this task.','paused');return false;}
       if(decision.type==='blocked'){await note(job,'Blocked unsafe click: '+decision.reason,'paused');return false;}
       if(decision.type==='approval'){
-        job.approval={kind:'click',x,y,description:short(target.label||action.note||'Unlabeled control',100),site:job.site,url:page.url()};
+        job.approval={id:randomUUID(),kind:'click',x,y,description:short(target.label||action.note||'Unlabeled control',100),site:job.site,url:page.url()};
         await note(job,'Needs CEO click approval: '+job.approval.description,'awaiting_approval');return false;
       }
       await page.mouse.click(x,y);await note(job,'Navigating: '+short(target.label||action.note||'Selected item',90));return true;
@@ -235,12 +263,14 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
       const grant=getGrant(job.grantId);
       if(!grant||grant.employeeId!==job.employeeId||grant.companyId!==job.companyId||grant.site!==job.site)throw new Error('Worker authorization was revoked.');
       const {page}=await browserFor(job.companyId,job.site);
-      await note(job,'AI employee started '+SITES[job.site].name+'.','running');
+      await note(job,'AI employee started '+siteFor(job.site).name+'.','running');
       while(!job.abort&&job.steps<16){
         if(await hasLoginGate(page)){await note(job,'Manual sign-in or verification required in the open browser.','paused');break;}
-        if(!hostAllowed(job.site,page.url())){await note(job,'Website changed to another domain. Navigate back manually.','paused');break;}
+        if(!siteAllowed(job.site,page.url())){await requestNewSite(job,page.url());await note(job,'New website permission required. Open Website access to review.','paused');break;}
+        checkJob(job,page);
         const action=await decideNext(job,page);
         if(job.abort)break;
+        checkJob(job,page);
         job.steps+=1;
         const again=await execute(job,action,page);
         if(!again)break;
@@ -251,18 +281,22 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
     }catch(e){if(job.status!=='cancelled')await note(job,'Paused: '+short(e.message||'Browser error',150),'paused');}
     finally{activeSessions.delete(key);job.executing=false;await persist();}
   }
-  async function performAction(job){
+  async function performAction(job,approvalId){
     const p=job.approval;
     if(!p||p.kind!=='click'||job.status!=='awaiting_approval')throw payloadError('No pending browser action to approve.',409);
+    if(!approvalId||approvalId!==p.id)throw payloadError('This browser approval changed. Refresh and review the current action.',409);
     const grant=getGrant(job.grantId);
     if(!grant)throw payloadError('Employee permission was revoked.',403);
     const entry=contexts.get(keyFor(job.companyId,job.site));
     if(!entry||entry.page.isClosed())throw payloadError('Open the signed-in browser again.',409);
     const page=entry.page;
-    if(page.url()!==p.url||!hostAllowed(job.site,page.url()))throw payloadError('The website changed; this approval is no longer valid.',409);
+    if(page.url()!==p.url||!siteAllowed(job.site,page.url()))throw payloadError('The website changed; this approval is no longer valid.',409);
     const target=await targetAt(page,p.x,p.y);
     if(short(target.label,100)!==p.description&&target.label)throw payloadError('The target changed; recheck before granting approval.',409);
-    if(decideClick(target,job.site).type==='blocked')throw payloadError('This action is never authorized for an AI employee.',403);
+    checkJob(job,page);
+    if(job.mode==='observe')throw payloadError('Read-only access does not authorize this account action.',403);
+    if(target.href&&!siteAllowed(job.site,target.href))throw payloadError('Approve website access separately before leaving this site.',403);
+    if(decideClick(target,siteFor(job.site)).type==='blocked')throw payloadError('This action is never authorized for an AI employee.',403);
     job.approval=null;
     await page.mouse.click(p.x,p.y);
     await note(job,'CEO approved and executed one browser click.','paused');
@@ -275,17 +309,22 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
   }
   async function action(body){
     if(!required(body))throw payloadError('JSON request required.');
+    await init();
     const cmd=body.action;
+    if(cmd==='request-access'){const request=permissions.request(body);await persist();return {request};}
+    if(cmd==='decide-access'){const request=permissions.decide(body);await persist();return {request,websiteAccess:permissions.view(body.companyId)};}
+    if(cmd==='revoke-access'){const result=permissions.revoke(body);await cancelRevoked();await persist();return {...result,websiteAccess:permissions.view(body.companyId)};}
+    if(cmd==='end-chat'){const result=permissions.endChat(body);await cancelRevoked();await persist();return {...result,websiteAccess:permissions.view(body.companyId)};}
     if(cmd==='status')return snapshot(validScope(body.companyId)?body.companyId:undefined);
     if(cmd==='open'){
       const {companyId,site}=body;
-      if(!validScope(companyId)||!SITES[site])throw payloadError('Choose a valid company and website.');
+      if(!validScope(companyId)||!siteFor(site))throw payloadError('Choose a valid company and website.');
       await browserFor(companyId,site);
       return {opened:true,site,note:'Sign in yourself in the desktop browser. Do not enter passwords into Office HQ.'};
     }
     if(cmd==='authorize'){
       const {companyId,employeeId,site,department}=body;
-      if(!validScope(companyId)||!validScope(employeeId)||!SITES[site]||!SITES[site].departments.includes(department))
+      if(!validScope(companyId)||!validScope(employeeId)||!siteFor(site)||!siteFor(site).departments.includes(department))
         throw payloadError('This job department cannot be authorized for that website.',403);
       const employeeName=short(body.employeeName,70);
       if(!employeeName||body.ownerConfirmed!==true)throw payloadError('Confirm that you signed in yourself and approved this specific employee.');
@@ -296,6 +335,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
       await persist();return {authorized:true,grantId:g.id,notice:'Permission stored for this desktop only. The website login itself has not been verified.'};
     }
     if(cmd==='revoke'){
+      if(permissions.grant(body.grantId)){const result=permissions.revoke({...body,companyId:permissions.grant(body.grantId).companyId,ownerConfirmed:true});await cancelRevoked();await persist();return result;}
       const grant=grants.find(g=>g.id===body.grantId&&g.active);
       if(!grant)throw payloadError('Grant not found.',404);
       grant.active=false;
@@ -304,14 +344,16 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
     }
     if(cmd==='forget'){
       const {companyId,site}=body;
-      if(!validScope(companyId)||!SITES[site]||body.confirm!=='FORGET')throw payloadError('Explicitly confirm that this desktop browser session should be erased.');
+      if(!validScope(companyId)||!siteFor(site)||body.confirm!=='FORGET')throw payloadError('Explicitly confirm that this desktop browser session should be erased.');
       const key=keyFor(companyId,site);
       const entry=contexts.get(key);if(entry)await entry.context.close().catch(()=>{});
       for(const g of grants)if(g.companyId===companyId&&g.site===site)g.active=false;
+      for(const g of permissions.view(companyId).grants)if(g.site===site&&g.active)permissions.revoke({companyId,grantId:g.id,ownerConfirmed:true});
       for(const j of jobs)if(j.companyId===companyId&&j.site===site&&['running','paused','awaiting_approval'].includes(j.status)){j.abort=true;j.approval=null;await note(j,'Account session erased.','cancelled');}
       await rm(join(profiles,key),{recursive:true,force:true});await persist();return {forgotten:true};
     }
     if(cmd==='run'||cmd==='handoff'){
+      const prior=body.commandId&&jobs.find(j=>j.remoteCommandId===body.commandId&&j.companyId===body.companyId);if(prior)return {started:true,jobId:prior.id,status:prior.status};
       if(!aiConfigured)throw payloadError('AI jobs need an AI model. Configure OpenAI privately or a local Ollama vision model, or continue manual browser login.',503);
       const grant=getGrant(body.grantId);
       if(!grant)throw payloadError('Authorize this AI employee for the website first.',403);
@@ -322,9 +364,9 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
       const parent=cmd==='handoff'?getJob(body.parentJobId):null;
       if(cmd==='handoff'&&(!parent||parent.companyId!==grant.companyId||parent.status!=='completed'))
         throw payloadError('A verified completed job from the same company is required before a handoff.',409);
-      const job={id:randomUUID(),grantId:grant.id,companyId:grant.companyId,employeeId:grant.employeeId,
-        employeeName:grant.employeeName,site:grant.site,prompt:parent?('Prior employee result: '+short(parent.summary||'',450)+'\nNew instructions: '+prompt).slice(0,1600):prompt,
-        mode:SITES[grant.site].mode==='observe'?'observe':(body.mode==='draft'?'draft':'observe'),
+      const job={id:randomUUID(),remoteCommandId:validScope(body.commandId)?body.commandId:null,grantId:grant.id,companyId:grant.companyId,employeeId:grant.employeeId,
+        employeeName:grant.employeeName,roleKey:grant.roleKey,scope:grant.scope,site:grant.site,prompt:parent?('Prior employee result: '+short(parent.summary||'',450)+'\nNew instructions: '+prompt).slice(0,1600):prompt,
+        mode:siteFor(grant.site).mode==='observe'||grant.mode==='observe'?'observe':(body.mode==='draft'?'draft':'observe'),
         parentJobId:parent?.id||null,status:'queued',steps:0,thought:'Job waiting to start.',summary:'',log:[],approval:null,
         createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
       jobs.push(job);jobs=jobs.slice(-150);await persist();void runLoop(job);
@@ -336,7 +378,7 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
       if(cmd==='pause'){job.abort=true;await note(job,'Owner requested a pause.','paused');return {paused:true};}
       if(cmd==='reject'){if(job.status!=='awaiting_approval')throw payloadError('No action pending approval.',409);
         job.approval=null;await note(job,'CEO rejected the proposed browser action.','paused');return {rejected:true};}
-      if(cmd==='approve'){await performAction(job);return {approved:true,note:'One approved click executed. Resume to keep working.'};}
+      if(cmd==='approve'){await performAction(job,body.approvalId);return {approved:true,note:'One approved click executed. Resume to keep working.'};}
       if(job.status!=='paused'||job.executing)throw payloadError('This job is not paused or has not stopped yet.',409);
       if(!getGrant(job.grantId))throw payloadError('Employee access revoked.',403);
       if(job.steps>=16)job.steps=0;
@@ -349,10 +391,11 @@ export function createDesktopService({root,apiKey='',model='gpt-4.1-mini'}={}){
       await init();
       if(req.method==='GET'&&url.pathname==='/api/desktop/status')return {code:200,data:snapshot(url.searchParams.get('companyId'))};
       if(req.method!=='POST'||url.pathname!=='/api/desktop/action')return {code:404,data:{error:'Not found'}};
-      const raw=await new Promise((ok,fail)=>{let data='';req.on('data',c=>{data+=c;if(data.length>12000){fail(payloadError('Request too large.',413));req.destroy();}});req.on('end',()=>ok(data));req.on('error',fail);});
+      const raw=await new Promise((ok,fail)=>{let data='';req.on('data',c=>{data+=c;if(data.length>24000){fail(payloadError('Request too large.',413));req.destroy();}});req.on('end',()=>ok(data));req.on('error',fail);});
       let data;try{data=JSON.parse(raw);}catch{throw payloadError('Invalid JSON.');}
       return {code:200,data:await action(data)};
     },
-    init,shutdown
+    init,shutdown,action,status:async companyId=>{await init();return snapshot(companyId);}
   };
 }
+

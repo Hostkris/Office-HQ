@@ -7,7 +7,7 @@ if(!B||!window.OfficeHQExtraViews)return;
 const E=B.E, $=s=>document.querySelector(s);
 const isDesktop=['localhost','127.0.0.1'].includes(location.hostname);
 const fallback=[
-  ['google','Google Search'],['gmail','Gmail'],['instagram','Instagram'],['facebook','Facebook'],
+  ['github','GitHub'],['google','Google Search'],['gmail','Gmail'],['instagram','Instagram'],['facebook','Facebook'],
   ['tiktok','TikTok'],['suno','Suno music production'],['lemon8','Lemon8'],['chatgpt','ChatGPT website'],['x','X (Twitter)'],['shopify','Shopify'],['etsy','Etsy'],
   ['youtube','YouTube'],['calendar','Google Calendar'],['drive','Google Drive'],
   ['icloud','iCloud'],['chime','Chime (view only)'],['lemonade','Lemonade (view only)']
@@ -44,7 +44,7 @@ function render(){
     '<p class="tiny muted">No employee is authorized merely by signing in. You can prepare several browser sessions before assigning any employee.</p></section>'+
     '<section class="card"><h2>② Choose an eligible employee and assign work</h2>'+
      controlLabel('<select id="deskWorker"></select>','Which employee may use this website?')+
-    '<label class="desktop-check"><input id="deskOwnerConfirm" type="checkbox"> I personally signed in, reviewed this assignment, and approve access for the selected employee. You can revoke access below.</label>'+
+    '<p class="tiny muted">Review the account access card for this employee. You can also select the whole team in <button class="btn btn-sm" data-view="access">Agent website access</button>.</p>'+
     '<button class="btn" type="button" data-desk="authorize">✓ Authorize this employee</button>'+
     
     controlLabel('<select id="deskGrant"></select>','Authorized employee and website')+
@@ -177,9 +177,10 @@ async function click(action,el){
   if(action==='authorize'){
     const employee=staff().find(e=>e.id===$('#deskWorker')?.value);
     if(!employee)throw Error('Choose an active employee from the appropriate department.');
-    const result=await api({action:'authorize',companyId:cid(),employeeId:employee.id,employeeName:employee.name,
-      department:role(employee).dept,site:selectedSite(),ownerConfirmed:$('#deskOwnerConfirm')?.checked===true});
-    notice(result.notice);$('#deskOwnerConfirm').checked=false;return refresh();
+    if(!window.OfficeHQWebsiteAccess)throw Error('Reload Office HQ to load website permissions.');
+    const site=siteData(selectedSite());
+    await window.OfficeHQWebsiteAccess.request({url:site.url,accountLabel:'My account',workers:[{employeeId:employee.id,employeeName:employee.name,roleKey:employee.roleKey}],prompt:$('#deskPrompt')?.value?.trim()||'Review this account and summarize the information relevant to my role.',mode:$('#deskMode')?.value||'observe',relevantUrls:[]});
+    return;
   }
   if(action==='run'){
     const grant=grantFor($('#deskGrant')?.value),prompt=$('#deskPrompt')?.value?.trim();
@@ -200,7 +201,7 @@ async function click(action,el){
     notice('Local browser profile erased and employee permissions revoked.');return refresh();
   }
   if(['pause','resume','approve','reject'].includes(action)){
-    await api({action,jobId:el.dataset.job});notice('Job instruction received: '+action+'.');return refresh();
+    await api({action,jobId:el.dataset.job,approvalId:latest.jobs.find(j=>j.id===el.dataset.job)?.approval?.id});notice('Job instruction received: '+action+'.');return refresh();
   }
   if(action==='handoff'){
     const id=el.dataset.job,grant=$('[data-handoff-grant="'+CSS.escape(id)+'"]')?.value,prompt=$('[data-handoff-prompt="'+CSS.escape(id)+'"]')?.value?.trim();
@@ -223,3 +224,4 @@ setInterval(()=>{if(isDesktop)void refresh();},2300);
 setTimeout(()=>{if(isDesktop)void refresh();},300);
 if(location.hash.replace('#/','')==='workstations')B.setView('workstations');
 })();
+

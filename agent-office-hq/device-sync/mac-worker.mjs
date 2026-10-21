@@ -1,3 +1,4 @@
+import {ACCESS_PREFIX} from '../desktop/permissions.mjs';
 /* Office HQ owner-authenticated Mac sync worker.
  * Polls owner-scoped Supabase rows using ONLY publishable key + owner's token.
  * Never publishes outside actions; only bound Ollama specialists draft work.
@@ -25,7 +26,7 @@ async function request(path,token,opts={}){
   return data;
  }finally{clearTimeout(timer);}
 }
-export function createMacSyncService({bridge,cloudRequest=request,storage=DATA,startPolling=true}={}){
+export function createMacSyncService({bridge,desktop=null,cloudRequest=request,storage=DATA,startPolling=true}={}){
  const authPath=join(storage,'mac-sync-auth.json');
  async function saveSession(data){await mkdir(storage,{recursive:true,mode:0o700});const temp=authPath+'.'+randomUUID();await writeFile(temp,JSON.stringify(data),{mode:0o600});await rename(temp,authPath);await chmod(authPath,0o600).catch(()=>{});}
  let creds=null,loading=false,busy=false,lastError='',pollTimer=null,grantSerial=Promise.resolve();
@@ -131,19 +132,76 @@ export function createMacSyncService({bridge,cloudRequest=request,storage=DATA,s
  async function lookup(){
   try{return JSON.parse(await readFile(join(storage,'sync-employees.json'),'utf8'));}catch{return [];}
  }
+ async function websiteCommand(task,matched,mappings,ai,recovering=false){
+  const claimed=recovering?[task]:await rest('hq_device_synced_assignments','PATCH',{status:'in_progress',worker_device_id:creds.device_id,updated_at:done()},'?id=eq.'+encodeURIComponent(task.id)+'&status=eq.queued','return=representation');
+  if(!claimed?.length)return;
+  try{
+   if(!desktop)throw error('Update the Mac app to enable website permissions.');
+   const command=JSON.parse(task.description.slice(ACCESS_PREFIX.length));
+   if(!command||command.ownerConfirmed!==true)throw error('Owner approval is required.',403);
+   if(!Number.isFinite(Date.parse(task.created_at))||Date.now()-Date.parse(task.created_at)>86400000)throw error('This website request expired. Create it again.');
+   const companyId=matched.companyId;
+   let result={};
+   if(command.kind==='decide'){
+    if(!Array.isArray(command.roles)||command.roles.length<1||command.roles.length>39)throw error('Choose the agents for this request.');
+    const workers=command.roles.map(roleKey=>{
+     const m=mappings.find(m=>m.companyId===companyId&&m.roleKey===roleKey);
+     const b=m&&ai.bindings.find(b=>b.companyId===companyId&&b.employeeId===m.employeeId&&b.roleKey===roleKey);
+     if(!b)throw error('Authorize every selected specialist on the Mac before granting website access.');
+     return {employeeId:b.employeeId,employeeName:b.employeeName,roleKey};
+    });
+    const response=await desktop.action({action:'request-access',companyId,workers,clientRequestId:command.requestKey,
+     conversationId:command.conversationId,url:command.url,relevantUrls:command.relevantUrls,accountLabel:command.accountLabel,prompt:command.prompt,mode:command.mode});
+    let r=response.request;
+    if(r.status==='pending')r=(await desktop.action({action:'decide-access',companyId,requestId:r.id,decision:command.decision,ownerConfirmed:true})).request;
+    result={requestId:r.id,requestKey:command.requestKey,status:r.status,decision:r.decision};
+   }else if(command.kind==='revoke'){
+    const current=await desktop.status(companyId),matches=current.websiteAccess.grants.filter(g=>command.grantId?g.id===command.grantId:g.requestId===command.requestId);
+    if(!matches.length)throw error('Permission not found for this company.',404);
+    result=matches.some(g=>g.active)?await desktop.action({action:'revoke-access',companyId,requestId:command.requestId,grantId:command.grantId,ownerConfirmed:true}):{revoked:0};
+   }
+   else if(command.kind==='end-chat')result=await desktop.action({action:'end-chat',companyId,conversationId:command.conversationId,ownerConfirmed:true});
+   else if(command.kind==='open'){
+    const state=await desktop.status(companyId);
+    if(!state.websiteAccess.accounts.some(a=>a.id===command.site))throw error('Account does not belong to this company.',403);
+    result=await desktop.action({action:'open',companyId,site:command.site});
+   }else if(command.kind==='run')result=await desktop.action({action:'run',companyId,grantId:command.grantId,prompt:command.prompt,mode:command.mode,commandId:task.client_task_key});
+   else if(['pause','resume','approve','reject'].includes(command.kind)){
+    const state=await desktop.status(companyId);
+    if(!state.jobs.some(j=>j.id===command.jobId))throw error('Browser job not found for this company.',403);
+    if(command.kind==='approve'&&(!command.approvalId||!state.jobs.some(j=>j.id===command.jobId&&j.approval?.id===command.approvalId)))throw error('This action approval changed. Check the current Mac request.',409);
+    result=await desktop.action({action:command.kind,jobId:command.jobId,approvalId:command.approvalId});
+   }else if(command.kind!=='status')throw error('Unsupported website permission command.');
+   const state=await desktop.status(companyId),access=state.websiteAccess;
+   const requestId=result.requestId||command.requestId;
+   const request=access.requests.find(r=>r.id===requestId);
+   // Compact matrix fits the owner-only relay's 16 KB receipt for all 39 agents.
+   const workers=request?.workers||[],accounts=request?.accounts||[];
+   const matrix=accounts.map(a=>workers.map(w=>access.grants.find(g=>g.requestId===requestId&&g.site===a.id&&g.roleKey===w.roleKey&&g.active)?.id?.replace(/-/g,'')||null));
+   const receipt={compactIds:true,kind:command.kind,requestKey:command.requestKey||request?.clientRequestId,...result,websiteAccess:undefined,
+     request:request?{id:request.id,status:request.status,decision:request.decision,mode:request.mode,conversationId:request.conversationId,expiresAt:request.expiresAt}:null,
+     accounts:accounts.map(a=>({id:a.id,origin:a.origin})),roles:workers.map(w=>w.roleKey),matrix,
+     jobs:state.jobs.filter(j=>!command.jobId||j.id===command.jobId).slice(0,5).map(j=>({id:j.id,employeeName:j.employeeName,site:j.site,status:j.status,thought:j.thought,summary:j.summary,approval:j.approval}))};
+   while(JSON.stringify(receipt).length>16000&&receipt.jobs.length)receipt.jobs.pop();
+   const draft=JSON.stringify(receipt);
+   if(draft.length>16000)throw error('Receipt too large. Refresh one request at a time.');
+   await rest('hq_device_synced_assignments','PATCH',{status:'review',draft,note:'Website access receipt from Mac',updated_at:done()},'?id=eq.'+encodeURIComponent(task.id));
+  }catch(e){await rest('hq_device_synced_assignments','PATCH',{status:'blocked',note:clip(e.message,250),updated_at:done()},'?id=eq.'+encodeURIComponent(task.id));}
+ }
  async function processQueue(){
   if(!creds)return;
   const pending=await rest('hq_device_synced_assignments','GET',null,
    '?select=*&status=eq.queued&owner_confirmed=eq.true&order=created_at.asc&limit=12');
   const mappings=await lookup();
   const ai=await bridge.status();
-  if(!ai.connected||!ai.dispatchEnabled)return;
   for(const task of pending){
    const matched=mappings.find(x=>x.roleKey===task.employee_role&&
      x.companyName.toLowerCase()===task.company_label.toLowerCase()&&
      ai.bindings.some(b=>b.companyId===x.companyId&&b.employeeId===x.employeeId&&b.roleKey===x.roleKey));
    // An unmatched company or unapproved specialist must not run.
    if(!matched)continue;
+   if(task.description?.startsWith(ACCESS_PREFIX)){await websiteCommand(task,matched,mappings,ai);continue;}
+   if(!ai.connected||!ai.dispatchEnabled)continue;
    const existing=ai.runs.find(r=>r.officeTaskId===task.client_task_key&&r.companyId===matched.companyId&&r.employeeId===matched.employeeId);
    // A local browser starts its own assignment. Adopt its receipt for phone sync; never dispatch it twice.
    if(task.source_device_id.startsWith('mac-')&&!existing)continue;
@@ -164,10 +222,19 @@ export function createMacSyncService({bridge,cloudRequest=request,storage=DATA,s
  }
  async function reportJobs(){
   const rows=await rest('hq_device_synced_assignments','GET',null,
-   '?select=id,client_task_key,owner_confirmed,status,worker_device_id&status=in.(in_progress,blocked)&worker_device_id=eq.'+
+   '?select=*&status=in.(in_progress,blocked)&worker_device_id=eq.'+
     encodeURIComponent(creds.device_id)+'&limit=40');
   const snapshot=await bridge.status(),mappings=await lookup();
   for(const task of rows){
+   if(task.description?.startsWith(ACCESS_PREFIX)){
+    if(task.status==='in_progress'){
+     const matched=mappings.find(m=>m.roleKey===task.employee_role&&m.companyName.toLowerCase()===task.company_label.toLowerCase()&&snapshot.bindings.some(b=>b.companyId===m.companyId&&b.employeeId===m.employeeId&&b.roleKey===m.roleKey));
+     let command;try{command=JSON.parse(task.description.slice(ACCESS_PREFIX.length));}catch{}
+     if(command?.kind==='approve')await rest('hq_device_synced_assignments','PATCH',{status:'blocked',note:'Previous action outcome is uncertain. Review the Mac browser before any new approval.',updated_at:done()},'?id=eq.'+encodeURIComponent(task.id));
+     else if(matched)await websiteCommand(task,matched,mappings,snapshot,true);
+    }
+    continue;
+   }
    const job=snapshot.runs.find(r=>r.officeTaskId===task.client_task_key&&mappings.some(m=>m.companyId===r.companyId&&m.employeeId===r.employeeId));
    if(!job)continue;
    if(job.status==='review'){

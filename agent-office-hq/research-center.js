@@ -42,12 +42,22 @@ function publicPanel(){
  '<p class="notice"><strong>Open this same Research section inside Office HQ on your Mac</strong> and select “Enable free read-only APIs.” Your iPhone cannot enable a local-only service while the Mac is offline. You can continue assigning tasks from Company Messages once your devices are paired.</p>')+
  '<p id="publicToolsNotice" class="tiny muted" aria-live="polite"></p></section>';
 }
+// Background connection checks must preserve an owner's unfinished review request.
+function redrawResearch(){
+ const fields=[...document.querySelectorAll('#researchApiForm [name],#reachResearchForm [name]')].map(el=>({form:el.form.id,name:el.name,value:el.value,focused:el===document.activeElement,start:el.selectionStart,end:el.selectionEnd}));
+ B.setView('research');
+ for(const saved of fields){
+  const form=document.getElementById(saved.form),field=form?.elements.namedItem(saved.name);if(!field)continue;
+  if(field.tagName!=='SELECT'||[...field.options].some(o=>o.value===saved.value))field.value=saved.value;
+  if(saved.focused){field.focus({preventScroll:true});if(Number.isInteger(saved.start)&&typeof field.setSelectionRange==='function')field.setSelectionRange(saved.start,saved.end);}
+ }
+}
 async function refreshPublic(){
  if(!isLocal||publicBusy)return;
  publicBusy=true;
  try{const r=await fetch('/api/public-tools/status',{cache:'no-store'});if(!r.ok)throw Error('Mac public tools backend unavailable.');
  publicStatus=await r.json();
- if(location.hash.replace('#/','')==='research')B.setView('research');
+ if(location.hash.replace('#/','')==='research')redrawResearch();
  }catch(e){const n=$('#publicToolsNotice');if(n)n.textContent=String(e.message);}
  finally{publicBusy=false;}
 }
@@ -135,7 +145,7 @@ async function refresh(){
  if(!isLocal||busy)return;
  busy=true;
  try{const r=await fetch('/api/research/status',{cache:'no-store'});if(!r.ok)throw Error('Research backend unavailable.');
- status=await r.json();await refreshPublic();if(location.hash.replace('#/','')==='research')B.setView('research');}
+ status=await r.json();await refreshPublic();if(location.hash.replace('#/','')==='research')redrawResearch();}
  catch(e){alertUser(e.message,true)}finally{busy=false}
 }
 async function action(type,id){
@@ -184,3 +194,4 @@ document.addEventListener('submit',e=>{
 setTimeout(()=>{if(isLocal)void refresh();},500);
 if(location.hash.replace('#/','')==='research')B.setView('research');
 })();
+

@@ -219,7 +219,12 @@ export function createMacSyncService({bridge,desktop=null,coding=null,cloudReque
      '?id=eq.'+encodeURIComponent(task.id)+'&status=eq.queued','return=minimal');
    if(task.description?.startsWith(ACCESS_PREFIX)){await websiteCommand(task,matched,mappings,ai);continue;}
    if(task.description?.startsWith(CODING_CONTROL_PREFIX)){await codingCommand(task,matched,ai);continue;}
-   if((!ai.connected&&!task.description?.startsWith(CODING_PREFIX))||!ai.dispatchEnabled)continue;
+   if((!ai.connected&&!task.description?.startsWith(CODING_PREFIX))||!ai.dispatchEnabled){
+    const note=!ai.dispatchEnabled?'Waiting for CEO: enable local Ollama drafts in Mac Company Messages.':'Waiting for Ollama: Mac agent engine is offline.';
+    if(task.note!==note)await rest('hq_device_synced_assignments','PATCH',{note,updated_at:done()},
+      '?id=eq.'+encodeURIComponent(task.id)+'&status=eq.queued','return=minimal');
+    continue;
+   }
    const existing=ai.runs.find(r=>r.officeTaskId===task.client_task_key&&r.companyId===matched.companyId&&r.employeeId===matched.employeeId);
    // A local browser starts its own assignment. Adopt its receipt for phone sync; never dispatch it twice.
    if(task.source_device_id.startsWith('mac-')&&!existing)continue;

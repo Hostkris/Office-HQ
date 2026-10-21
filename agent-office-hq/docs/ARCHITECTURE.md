@@ -117,3 +117,64 @@ The desktop service trusts the signed-in OS owner and same-origin localhost UI;
 it is not a hostile multi-user agent sandbox. Role prompts and action gates do
 not guarantee that arbitrary third-party sites support automation. Frontend grants
 alone are never proof of a signed-in account or completed browser job.
+
+
+## Bounded coding worker and optional cloud adapter
+
+`native-engine/coding-worker.mjs` is a separate capability behind the existing
+native company/employee/role bindings and dispatch gate. Its mode-0600 local
+registry holds immutable grants for a repository root, base commit, exact read
+and edit files, and approved check argv. The owner must confirm both the repository
+permission and each typed `OFFICE_HQ_CODING_V1:` task. Only backend/frontend
+engineering and systems integration roles can execute this capability. Existing
+written-draft assignments still expose no coding tools.
+
+The native queue serializes coding and drafting. A coding run makes a fresh local
+clone with hooks/fsmonitor/global Git configuration disabled, checks out the pinned
+commit and removes its remote. It excludes uncommitted source changes. File tools
+reject traversal, symlinks, hidden files, known credentials and out-of-scope edits.
+Edits require a plan and a current read. The loop offers file listing, literal
+search with path/line evidence, reading, exact edits, explicitly approved file
+creation, check execution and a gated finish operation. It does not offer a shell,
+network fetch, dependency install, commit or push tool.
+
+Approved Node/npm checks run in the separate checkout with a minimal environment,
+private HOME/temp directory, no inherited provider keys or SSH agent, bounded
+output and process-group cancellation. They run repository code as the OS owner;
+this is not a security sandbox. Checks can have effects beyond their working
+directory and must be explicitly trusted by the owner. Tracked or untracked edits
+outside the approved scope fail verification; ignored build outputs are allowed.
+Existing tests, scripts, package metadata and instructions cannot be edited by the
+model to weaken the gate. Dependencies are not installed/copied automatically.
+
+The loop appends actual tool results and can repair failed checks twice after its
+first post-edit check. Limits are 18 model turns, 65 tool calls, three post-edit
+check cycles, 20 minutes total and two minutes per check. Truncated generations
+never execute their proposed calls. Finish requires a nonempty actual diff,
+passing current-version checks and evidence addressing each owner criterion.
+Semantic acceptance still needs CEO review. Full patches and command output stay
+in the private Mac result store, with a compact report in the existing sync relay.
+Interrupted coding jobs cannot use draft auto-recovery: uncertain commands are
+never replayed automatically. Worker, dispatch and grant checks run before/after
+model calls, before tools and around commands; revocation aborts active work.
+
+Ollama requests use a separate selected local model, model-advertised tool and
+thinking support, explicit context, `keep_alive: 10m`, bounded generation and
+reported timing/token counters. Model installation is not performance evidence.
+`openrouter-provider.mjs` offers only the explicitly enabled Inkling free route
+and its fixed provider, with no fallback and zero price caps. Its credential lives
+in a separate private Mac file. It translates native tool transcripts to provider
+IDs and parses fragmented SSE, comments, tool arguments, final usage and errors.
+No streamed partial action executes until a complete response has been validated.
+Raw thinking is kept only in the active model transcript and never in UI/history.
+The free endpoint's data policy is exposed at setup and per-task consent; private
+or unverifiable GitHub commits cannot use this endpoint.
+
+`coding-tasks.js` provides the Office HQ permission cards, task criteria, actual
+run/check evidence, independent review and Mac-only patch inspection. Phone
+catalog/status/stop/revoke operations use owner-authenticated
+`OFFICE_HQ_CODING_CONTROL_V1:` rows. The Mac maps company names and role bindings,
+rejects remote grant creation and expired/unconfirmed controls, strips local paths
+from catalogs and returns bounded receipts. The phone adopts only newer catalogs;
+old receipts cannot restore a revoked grant. No schema, service key or new hosted
+backend was introduced. Static build output includes only the new JS/CSS controls.

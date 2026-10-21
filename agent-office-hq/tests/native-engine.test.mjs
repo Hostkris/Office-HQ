@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {setTimeout as sleep} from 'node:timers/promises';
 import {createOpenMausBridge,CONVERSATION_PREFIX} from '../native-engine/bridge.mjs';
 import {createOfficeBrain} from '../native-engine/office-brain.mjs';
+import {CODING_PREFIX,CODING_CONTROL_PREFIX} from '../native-engine/coding-worker.mjs';
 const employee={employeeId:'research1',employeeName:'Research Employee',roleKey:'research'};
 const bind={action:'bind-department',companyId:'company1',department:'Marketing',employees:[employee],ownerConfirmed:true};
 const job=(id='task1')=>({action:'send',companyId:'company1',...employee,officeTaskId:id,title:'Research a product launch',description:'Prepare a scoped draft with clearly labeled assumptions.',ownerConfirmed:true});
@@ -123,4 +124,15 @@ test('conversation model rejects invented departments and empty model output; on
  assert.equal(r.liveInference,true);assert.equal(r.externalActions,false);assert.match(r.reply,/\n\n/);
  assert.equal(calls[0].url,'http://127.0.0.1:11434/api/chat');
  assert.equal(JSON.parse(calls[0].opts.body).messages.length,2,'client system history is discarded');
+});
+test('coding runs share the native queue, keep evidence, reject draft fallback and never replay checks after restart',async()=>{
+ let count=0,maximum=0,active=0;
+ await fixture(async({bridge,calls})=>{
+  await enable(bridge);
+  for(const taskId of ['code-one','code-two'])await bridge.action({...job(taskId),description:CODING_PREFIX+JSON.stringify({grantId:'repo-grant',instruction:'Fix a bounded fixture task.',criteria:['Existing check passes.'],provider:'ollama'})});
+  const state=await waitFor(bridge,s=>s.runs.length===2&&s.runs.every(r=>r.status==='review'));
+  assert.equal(count,2);assert.equal(maximum,1);assert.equal(calls.length,0,'typed coding task never reaches the one-shot draft model');assert.equal(state.runs[0].coding,true);assert.deepEqual(state.runs[0].evidence.paths,['source.mjs']);assert.equal(state.runs[0].canResume,false);
+  await assert.rejects(bridge.action({...job('badcontrol'),description:CODING_CONTROL_PREFIX+'{"kind":"status"}'}),/control relay/);
+ },{coding:{validate:async()=>({}),run:async()=>{count++;active++;maximum=Math.max(maximum,active);await sleep(10);active--;return {result:'Verified fixture diff and check result for owner review.',evidence:{paths:['source.mjs']}};}}});
+ await fixture(async({bridge})=>{await enable(bridge);await assert.rejects(bridge.action({...job(),description:CODING_PREFIX+'{}'}),/Update the Mac app/);});
 });

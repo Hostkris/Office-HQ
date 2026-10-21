@@ -101,11 +101,11 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/b
       officehq-device-sync.js officehq-sync.css project-floor.js office-life.js \
       department-offices.js deliverables.js integration-center.js \
       department-access.js department-projects.js department-ui.css agent-health.js \
-      website-access.js website-access.css desktop/runner.mjs desktop/permissions.mjs \
+      website-access.js website-access.css coding-tasks.js coding-tasks.css desktop/runner.mjs desktop/permissions.mjs \
       desktop-workstations.js openmausbot.js workforce-runtime.js research-center.js \
       ios-workstations.js refresh.js theme.js styles.css sw.js icon.svg \
       manifest.webmanifest \
-      native-engine/bridge.mjs device-sync/mac-worker.mjs \
+      native-engine/bridge.mjs native-engine/coding-worker.mjs native-engine/openrouter-provider.mjs device-sync/mac-worker.mjs \
       native-engine/office-brain.mjs native-engine/web-research.mjs \
       openmaus/bridge.mjs openmaus/workforce-engine.mjs openmaus/team.mjs \
       research/reach-bridge.mjs research/public-tools.mjs openmaus/essential-workforce.json; do

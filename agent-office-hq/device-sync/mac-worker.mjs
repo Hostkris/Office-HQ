@@ -1,4 +1,5 @@
 import {ACCESS_PREFIX} from '../desktop/permissions.mjs';
+import {CODING_PREFIX,CODING_CONTROL_PREFIX,CODING_ROLES} from '../native-engine/coding-worker.mjs';
 /* Office HQ owner-authenticated Mac sync worker.
  * Polls owner-scoped Supabase rows using ONLY publishable key + owner's token.
  * Never publishes outside actions; only bound Ollama specialists draft work.
@@ -26,7 +27,7 @@ async function request(path,token,opts={}){
   return data;
  }finally{clearTimeout(timer);}
 }
-export function createMacSyncService({bridge,desktop=null,cloudRequest=request,storage=DATA,startPolling=true}={}){
+export function createMacSyncService({bridge,desktop=null,coding=null,cloudRequest=request,storage=DATA,startPolling=true}={}){
  const authPath=join(storage,'mac-sync-auth.json');
  async function saveSession(data){await mkdir(storage,{recursive:true,mode:0o700});const temp=authPath+'.'+randomUUID();await writeFile(temp,JSON.stringify(data),{mode:0o600});await rename(temp,authPath);await chmod(authPath,0o600).catch(()=>{});}
  let creds=null,loading=false,busy=false,lastError='',pollTimer=null,grantSerial=Promise.resolve();
@@ -203,11 +204,12 @@ export function createMacSyncService({bridge,desktop=null,cloudRequest=request,s
   for(const task of pending){
    const matched=mappings.find(x=>x.roleKey===task.employee_role&&
      x.companyName.toLowerCase()===task.company_label.toLowerCase()&&
-     (task.description?.startsWith(ACCESS_PREFIX)||ai.bindings.some(b=>b.companyId===x.companyId&&b.employeeId===x.employeeId&&b.roleKey===x.roleKey)));
+     (task.description?.startsWith(ACCESS_PREFIX)||ai.bindings.some(b=>b.companyId===x.companyId&&b.employeeId===x.employeeId&&b.roleKey===x.roleKey)))||codingStatusMapping(task,mappings,ai);
    // An unmatched company or unapproved specialist must not run.
    if(!matched)continue;
    if(task.description?.startsWith(ACCESS_PREFIX)){await websiteCommand(task,matched,mappings,ai);continue;}
-   if(!ai.connected||!ai.dispatchEnabled)continue;
+   if(task.description?.startsWith(CODING_CONTROL_PREFIX)){await codingCommand(task,matched,ai);continue;}
+   if((!ai.connected&&!task.description?.startsWith(CODING_PREFIX))||!ai.dispatchEnabled)continue;
    const existing=ai.runs.find(r=>r.officeTaskId===task.client_task_key&&r.companyId===matched.companyId&&r.employeeId===matched.employeeId);
    // A local browser starts its own assignment. Adopt its receipt for phone sync; never dispatch it twice.
    if(task.source_device_id.startsWith('mac-')&&!existing)continue;
@@ -218,7 +220,7 @@ export function createMacSyncService({bridge,desktop=null,cloudRequest=request,s
    try{
     if(!existing)await bridge.action({action:'send',companyId:matched.companyId,employeeId:matched.employeeId,
       officeTaskId:task.client_task_key,roleKey:matched.roleKey,title:task.title,description:task.description,ownerConfirmed:true});
-    const updates={note:'Ollama drafting started',updated_at:done()};
+    const updates={note:task.description?.startsWith(CODING_PREFIX)?'Local coding task started; awaiting checks and review':'Ollama drafting started',updated_at:done()};
     await rest('hq_device_synced_assignments','PATCH',updates,'?id=eq.'+encodeURIComponent(task.id));
    }catch(e){
     await rest('hq_device_synced_assignments','PATCH',{status:'blocked',note:clip(e.message,250),updated_at:done()},
@@ -226,12 +228,43 @@ export function createMacSyncService({bridge,desktop=null,cloudRequest=request,s
    }
   }
  }
+ function codingStatusMapping(task,mappings,ai){
+  // Read-only catalog discovery may use any already-bound coding specialist in
+  // this company; the phone cannot yet know which of its three roles was enabled.
+  if(!task.description?.startsWith(CODING_CONTROL_PREFIX))return null;
+  let c;try{c=JSON.parse(task.description.slice(CODING_CONTROL_PREFIX.length));}catch{return null;}
+  if(c.kind!=='status'||c.ownerConfirmed!==true)return null;
+  return mappings.find(m=>m.companyName.toLowerCase()===task.company_label.toLowerCase()&&CODING_ROLES.includes(m.roleKey)&&ai.bindings.some(b=>b.companyId===m.companyId&&b.employeeId===m.employeeId&&b.roleKey===m.roleKey));
+ }
+ async function codingCommand(task,matched,ai){
+  const claimed=await rest('hq_device_synced_assignments','PATCH',{status:'in_progress',worker_device_id:creds.device_id,updated_at:done()},'?id=eq.'+encodeURIComponent(task.id)+'&status=in.(queued,in_progress)','return=representation');if(!claimed?.length)return;
+  try{
+   if(!coding)throw error('Update the Mac app to enable coding tasks.');
+   const c=JSON.parse(task.description.slice(CODING_CONTROL_PREFIX.length));
+   if(c.ownerConfirmed!==true||!Number.isFinite(Date.parse(task.created_at))||Date.now()-Date.parse(task.created_at)>86400000)throw error('Coding control expired or lacks owner confirmation.');
+   if(c.kind==='revoke')await coding.action({action:'revoke',companyId:matched.companyId,grantId:c.grantId,ownerConfirmed:true});
+   else if(c.kind==='stop'){
+    const run=ai.runs.find(r=>r.id===c.runId&&r.companyId===matched.companyId&&r.employeeId===matched.employeeId&&r.coding);if(!run)throw error('Coding task does not belong to this specialist.',403);
+    await bridge.action({action:'interrupt',companyId:matched.companyId,runId:run.id,ownerConfirmed:true});
+   }else if(c.kind!=='status')throw error('Coding permissions can only be created on the Mac.',403);
+   const state=await coding.status(matched.companyId);
+   const catalog={codingCatalog:true,at:done(),ready:state.ready,message:state.message,config:state.config,
+    grants:state.grants.slice(-20).map(({repoPath,...g})=>g),runs:(await bridge.status()).runs.filter(r=>r.companyId===matched.companyId&&r.coding).sort((a,b)=>Number(['submitted','running'].includes(b.status))-Number(['submitted','running'].includes(a.status))).slice(0,15).map(r=>({id:r.id,officeTaskId:r.officeTaskId,roleKey:r.roleKey,status:r.status,thought:r.thought,reason:r.reason}))};
+   while(JSON.stringify(catalog).length>15500&&catalog.grants.length)catalog.grants.shift();
+   const draft=JSON.stringify(catalog);if(draft.length>16000)throw error('Coding status is too large. Review it on the Mac.');
+   await rest('hq_device_synced_assignments','PATCH',{status:'review',draft,note:'Coding permissions and runtime receipt from Mac',updated_at:done()},'?id=eq.'+encodeURIComponent(task.id));
+  }catch(e){await rest('hq_device_synced_assignments','PATCH',{status:'blocked',note:clip(e.message,250),updated_at:done()},'?id=eq.'+encodeURIComponent(task.id));}
+ }
  async function reportJobs(){
   const rows=await rest('hq_device_synced_assignments','GET',null,
    '?select=*&status=in.(in_progress,blocked)&worker_device_id=eq.'+
     encodeURIComponent(creds.device_id)+'&limit=40');
   const snapshot=await bridge.status(),mappings=await lookup();
   for(const task of rows){
+   if(task.description?.startsWith(CODING_CONTROL_PREFIX)){
+    if(task.status==='in_progress'){const matched=mappings.find(m=>m.roleKey===task.employee_role&&m.companyName.toLowerCase()===task.company_label.toLowerCase()&&snapshot.bindings.some(b=>b.companyId===m.companyId&&b.employeeId===m.employeeId&&b.roleKey===m.roleKey))||codingStatusMapping(task,mappings,snapshot);if(matched)await codingCommand(task,matched,snapshot);}
+    continue;
+   }
    if(task.description?.startsWith(ACCESS_PREFIX)){
     if(task.status==='in_progress'){
      const matched=mappings.find(m=>m.roleKey===task.employee_role&&m.companyName.toLowerCase()===task.company_label.toLowerCase());
@@ -245,7 +278,7 @@ export function createMacSyncService({bridge,desktop=null,cloudRequest=request,s
    if(!job)continue;
    if(job.status==='review'){
      await rest('hq_device_synced_assignments','PATCH',{
-      status:'review',draft:clip(job.result,16000),note:'Mac Ollama draft ready for CEO approval',updated_at:done()
+      status:'review',draft:clip(job.result,16000),note:job.coding?'Mac coding changes and check evidence ready for CEO review':'Mac Ollama draft ready for CEO approval',updated_at:done()
      },'?id=eq.'+encodeURIComponent(task.id)+'&status=in.(in_progress,blocked)');
    }else if(['submitted','running'].includes(job.status)&&task.status==='blocked'){
      await rest('hq_device_synced_assignments','PATCH',{status:'in_progress',note:'Ollama drafting resumed after recovery',updated_at:done()},'?id=eq.'+encodeURIComponent(task.id)+'&status=eq.blocked');

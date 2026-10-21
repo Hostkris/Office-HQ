@@ -1,5 +1,85 @@
 # Agent Office HQ 🏢
 
+## Coding tasks with a real work loop
+
+Open **Coding tasks** in Connections & settings. The first worker supports a bounded
+JavaScript/Node repository task: inspect and search approved source, record a plan,
+edit a separate checkout, run approved checks, repair failures, and return a diff
+and acceptance evidence for independent CEO review.
+
+1. Update Office HQ on your Mac with launcher **1.0.4**. In Department activation,
+   authorize a Backend Engineer, Frontend Engineer or Systems Integration Engineer
+   and enable approved AI drafts. Coding work uses the same serialized native queue.
+2. On the Mac, expand **Set up model & repository permissions**. Enter the name of
+   an installed Ollama model (`ollama list`). Office HQ checks `/api/show` for tool
+   support, supported context and thinking controls. Choose a context that fits your
+   Mac; no larger model is downloaded automatically. This is a separate coding-model
+   setting; the existing chat/draft model keeps its configuration.
+3. Enter the absolute root folder of a repository already cloned on the Mac. List
+   exact readable and editable paths, and one to three check commands. Review the
+   repository, pinned commit, files and commands in the Office HQ permission card.
+   Only committed source is copied; uncommitted work stays in the original folder.
+4. Assign one focused change and up to six acceptance criteria. Review and allow
+   that exact task. The worker has 18 model turns, 65 tool calls, a 20-minute limit,
+   and at most two repair attempts after its first post-edit check. Checks time out
+   after two minutes. A model's written “done” reply cannot complete the task.
+5. Inspect the full diff on the Mac and the actual check results and evidence on
+   either device. A passing check is evidence, not a guarantee that every behavior
+   is correct. CEO approval does not commit, push, merge or publish the changes.
+   The result identifies the separate checkout for manual review and continuation.
+
+Supported checks are `npm test`, `npm run test/check/build/typecheck`, and
+`node --test` / `node --check` with explicit JavaScript file paths. Tests, scripts,
+package configuration and root repository instructions remain read-only in this
+first version. Dependencies are not installed in the new checkout. Begin with a
+small task whose approved checks work without additional setup. Check commands
+execute trusted repository code as your Mac user; the separate checkout and
+reduced environment are **not an OS sandbox**. Approve only repositories and
+commands you trust. No generic shell, account, credential or publishing tool is
+provided to the model.
+
+For phone control, sign into the existing device-sync account on both devices and
+use **Refresh Mac status** in Coding tasks to retrieve the Mac's repository grants.
+Company names must match; the coding role must already have a Mac sync mapping.
+Only the Mac can create a repository grant. The phone can approve a task, request
+status, stop work or revoke access. An offline Mac has not applied a queued action.
+Coding checks are never automatically replayed after a restart or uncertain result;
+review the partial checkout and create a fresh task. Revoking worker/dispatch or
+repository permission stops eligible running work and blocks further tool calls.
+
+### Optional OpenRouter Inkling engine
+
+The model in the supplied OpenRouter example is supported as a separate opt-in:
+`thinkingmachines/inkling:free`, pinned to `thinkingmachines/nvfp4`, streaming,
+provider fallbacks disabled, and prompt/completion price caps of zero. Current
+endpoint availability and tool support are checked; no paid model is substituted.
+Enter the key only in the Mac setup form. It is saved in a private mode-0600 file,
+never in browser storage, static assets, a cloud relay record or a model prompt.
+The Mac can remove the saved key from the same setup panel.
+
+The free endpoint logs prompts and outputs and prohibits confidential or personal
+data. Each cloud task therefore needs explicit public-data confirmation and a
+GitHub commit verifiable without authentication. Use Ollama for private work.
+Only one provider is used for an approved task; changing the engine requires a
+new task approval. The adapter handles SSE keepalives, fragmented tool calls,
+provider errors, aborts and final usage frames. Reasoning-token counts, cached
+prompt tokens, reported cost, wall time, model turns and check evidence are shown
+in actual results. Raw model reasoning is not displayed or persisted.
+
+Reference projects were inspected, not installed as autonomous services:
+[Claude Code Action](https://github.com/anthropics/claude-code-action) at `a5a423f`
+and [nanobot](https://github.com/HKUDS/nanobot) at `73a55e0b`. This first version
+uses Office HQ's own bounded tool loop with no additional runtime dependencies.
+Controlled integration tests exercise real Git checkouts, a failing test, a repair,
+a passing result, permission revocation, cloud gating, streaming and phone controls.
+They do not benchmark the owner's Mac or validate an unprovided OpenRouter key.
+
+Provider references: [Ollama tool calling](https://docs.ollama.com/capabilities/tool-calling),
+[Ollama model metadata](https://docs.ollama.com/api-reference/show-model-details),
+[Inkling free](https://openrouter.ai/thinkingmachines/inkling:free),
+[OpenRouter streaming](https://openrouter.ai/docs/api_reference/streaming) and
+[usage accounting](https://openrouter.ai/docs/cookbook/administration/usage-accounting).
+
 ## Agent website access
 
 [Permission card preview](docs/website-permission-card.jpg)
@@ -19,7 +99,7 @@ sites**, and **Allow for this chat** buttons.
   Passwords, cookies and authentication codes stay on the Mac; logins are never
   copied from Safari or sent through device sync. A permission is not a verified login.
 - Use **Start approved task** after sign-in. Browser work needs Playwright Chromium
-  plus a vision model. The 1.0.3 Mac launcher offers separate optional installation
+  plus a vision model. The 1.0.4 Mac launcher offers separate optional installation
   of Chromium and local `qwen2.5vl:7b` (several GB). Existing text draft workers keep
   their smaller model. Manual setup remains `npm install`, `npx playwright install
   chromium`, `ollama pull qwen2.5vl:7b`, then launch with
@@ -44,7 +124,7 @@ live owner credentials or real account changes.
 ## Department activation, team reports, conversations and recovery
 
 Use the existing Office HQ app; this update preserves its companies, employees,
-local records, iPhone layout and public URLs. Update the Mac with the 1.0.3 launcher,
+local records, iPhone layout and public URLs. Update the Mac with the 1.0.4 launcher,
 quit an older running Office HQ server if prompted, then reopen Office HQ.app.
 
 1. Open **Department activation**, choose one of the 12 departments, review its

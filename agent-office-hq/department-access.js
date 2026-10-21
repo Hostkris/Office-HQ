@@ -38,7 +38,7 @@ function wizard(){
    '<p class="tiny muted">Connections are verified inside Secure Cloud HQ. Opening a link does not grant employee access.</p><div class="department-actions">'+btn('Next: AI workers →','next')+'</div>';
  }else if(step===2){
   const ready=engine?.connected===true;
-  const bound=engine?.bindings?.filter(b=>b.companyId===cid&&team(chosen).some(e=>e.id===b.employeeId&&(!b.roleKey||e.roleKey===b.roleKey))).length||0;
+  const bound=engine?.bindings?.filter(b=>b.companyId===cid&&team(chosen).some(e=>e.id===b.employeeId&&e.roleKey===b.roleKey)).length||0;
   body='<div class="department-step-top">'+btn('← Back','back')+'<span>Step 2 of 3</span></div>'+
    '<h3>Activate '+E(chosen)+' workers</h3><p class="muted">'+count+' active employees · '+(local?(engine===null?'Mac status not checked':ready?'Mac AI engine ready':'Mac AI engine unavailable'):'Open this step on your Mac')+'</p>'+
    '<p class="department-progress">'+bound+' of '+count+' workers authorized for local AI drafts</p>'+

@@ -40,7 +40,7 @@
      const result=await fetch(url.href,{cache:'no-store',signal:controller.signal});
      if(!result.ok)throw Error('Published app unavailable (HTTP '+result.status+')');
      const html=await result.text();
-     if(!html.includes('id="appRefreshBtn"')||!html.includes('src="refresh.js"')){
+     if(!html.includes('id="appRefreshBtn"')||!html.includes('src="refresh.js')){
        throw Error('The online app did not return the expected Office HQ page.');
      }
    }finally{clearTimeout(timer);}

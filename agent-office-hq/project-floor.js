@@ -252,16 +252,18 @@ function workstation(c,seat,person,focused,now,x=coords(seat).x,y=coords(seat).y
  if(!person){c.strokeStyle=sceneColor('#76a6a6');c.setLineDash([3,4]);c.strokeRect(-65,9,34,24);c.setLineDash([]);}
  c.restore();
 }
+// The small-project fallback uses the exact same pixel renderer as Command
+// Center and Live RPG. Missing staff is never replaced with a made-up agent.
 function sprite(c,person,x,y,now,moving=false){
  const e=state().employees.find(a=>a.id===person.employeeId);if(!e)return;
- const idle=moving?0:(Math.sin(now/450+person.seat)*.7);
- c.save();c.translate(x,y+idle);
- c.fillStyle=sceneColor('#314b59');c.fillRect(-5,6,5,9);c.fillRect(2,6,5,9);
- c.fillStyle=e.outfit||'#69b9b3';c.fillRect(-8,-14,16,21);
- c.fillStyle=e.skin||'#b98764';c.fillRect(-7,-28,14,15);
- c.fillStyle=e.hair||'#1b2531';c.fillRect(-8,-31,16,6);
- c.fillStyle=sceneColor('#26333b');c.fillRect(-5,-19,2,2);c.fillRect(3,-19,2,2);
- c.fillStyle=e.skin||'#b98764';c.fillRect(-11,-10,3,12);c.fillRect(8,-10,3,12);
+ const life=window.OfficeHQOfficeLife;
+ if(life?.sprite){life.sprite(c,life.appearance(e),x,y,now,moving?'walk':'idle');return;}
+ // A minimal crisp pixel fallback if the shared scene script was not loaded.
+ c.save();c.translate(Math.round(x),Math.round(y));
+ c.fillStyle=e.hair||'#2d3540';c.fillRect(-12,-32,24,10);
+ c.fillStyle=e.skin||'#b98764';c.fillRect(-10,-22,20,14);
+ c.fillStyle=e.outfit||'#69b9b3';c.fillRect(-9,-8,18,19);
+ c.fillStyle='#283b47';c.fillRect(-6,11,4,12);c.fillRect(2,11,4,12);
  c.restore();
 }
 function label(c,text,x,y,color='#f0e1aa'){

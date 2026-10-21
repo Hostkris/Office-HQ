@@ -76,3 +76,14 @@
  .ceo-chat-buttons{gap:4px}
  .ceo-chat-buttons button{min-width:39px;padding:8px}
 }
+
+/* Desktop mirrors the iPhone Company Messages conversation instead of
+   stretching a message thread across the entire Mac display. */
+@media (min-width: 850px) {
+  .hq-message-inbox {width:min(100%,690px);margin-inline:auto}
+  .hq-message-inbox .ceo-chat {width:100%;max-width:100%;gap:11px}
+  .hq-message-inbox .ceo-chat-log {min-height:280px;max-height:52vh;padding:14px 8px}
+  .hq-message-inbox .ceo-chat-bubble {max-width:88%}
+  .hq-message-inbox .ceo-chat-compose {width:100%;box-sizing:border-box}
+  .hq-message-inbox .ceo-chat-jobs {width:100%}
+}

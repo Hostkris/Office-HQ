@@ -133,10 +133,10 @@ test('iPad Company Messages separates conversations from assignments without sub
  const {page,context,errors}=await mobilePage('iPad Pro 11');
  try{
   await page.goto(base+'/?test=conversation#/thread');
-  await page.locator('[data-ceo-chat-mode]').selectOption('conversation');
-  await page.locator('[data-ceo-chat-department]').waitFor();
-  await page.locator('[data-ceo-chat-input]').fill('What does the research team need from me to prepare a draft?');
-  assert.equal(await page.locator('[data-ceo-chat-action="send"]').isEnabled(),true);
+  await page.locator('#view [data-ceo-chat-mode]').selectOption('conversation');
+  await page.locator('#view [data-ceo-chat-department]').waitFor();
+  await page.locator('#view [data-ceo-chat-input]').fill('What does the research team need from me to prepare a draft?');
+  assert.equal(await page.locator('#view [data-ceo-chat-action="send"]').isEnabled(),true);
   assert.equal(await page.locator('[data-ceo-job]').count(),0,'composing a question must not create an assignment');
   assert.equal(await page.locator('[data-ceo-chat-action="approve"]').count(),0);
   assert.equal(errors.length,0,'page errors: '+errors.join('; '));

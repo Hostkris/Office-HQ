@@ -33,6 +33,6 @@ controlled. See the [workforce instructions](agent-office-hq/README.md).
 Open [Coding tasks](https://hostkris.github.io/Office-HQ/agent-office-hq/#/coding)
 for a separately approved repository snapshot, selected source files, exact checks,
 repair attempts and a diff with evidence for CEO review. Update the Mac launcher
-to 1.0.4 and configure an installed tool-capable Ollama model. Optional OpenRouter
-Inkling uses the supplied pinned free route, a Mac-only API key and explicit
-public-data consent. See the [setup and boundaries](agent-office-hq/README.md).
+to 1.0.4 and configure an installed tool-capable local Ollama model.
+The coding worker is local-only; no OpenRouter key or cloud coding engine is required.
+See the [setup and boundaries](agent-office-hq/README.md).

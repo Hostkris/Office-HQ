@@ -114,6 +114,7 @@ if(window.OfficeHQSecureChat?.render){
 }
 function redraw(){
  if(location.hash==='#/workflows')B.setView('workflows');
+if(location.hash==='#/thread')window.OfficeHQCompanyInbox?.refresh?.();
  else window.OfficeHQCompanyInbox?.refresh?.();
 }
 function start(description){
@@ -184,5 +185,6 @@ document.addEventListener('submit',event=>{
 window.OfficeHQDepartmentProjects={start,reconcile,render:form,verified,phone};
 setInterval(()=>{if(!document.hidden&&reconcile())redraw();},6500);
 if(location.hash==='#/workflows')B.setView('workflows');
+if(location.hash==='#/thread')window.OfficeHQCompanyInbox?.refresh?.();
 })();
 

@@ -7,7 +7,7 @@ JavaScript/Node repository task: inspect and search approved source, record a pl
 edit a separate checkout, run approved checks, repair failures, and return a diff
 and acceptance evidence for independent CEO review.
 
-1. Update Office HQ on your Mac with launcher **1.0.4**. In Department activation,
+1. Update Office HQ on your Mac with launcher **1.0.5**. In Department activation,
    authorize a Backend Engineer, Frontend Engineer or Systems Integration Engineer
    and enable approved AI drafts. Coding work uses the same serialized native queue.
 2. On the Mac, expand **Set up model & repository permissions**. Enter the name of
@@ -47,38 +47,22 @@ Coding checks are never automatically replayed after a restart or uncertain resu
 review the partial checkout and create a fresh task. Revoking worker/dispatch or
 repository permission stops eligible running work and blocks further tool calls.
 
-### Optional OpenRouter Inkling engine
+### Local Ollama coding engine
 
-The model in the supplied OpenRouter example is supported as a separate opt-in:
-`thinkingmachines/inkling:free`, pinned to `thinkingmachines/nvfp4`, streaming,
-provider fallbacks disabled, and prompt/completion price caps of zero. Current
-endpoint availability and tool support are checked; no paid model is substituted.
-Enter the key only in the Mac setup form. It is saved in a private mode-0600 file,
-never in browser storage, static assets, a cloud relay record or a model prompt.
-The Mac can remove the saved key from the same setup panel.
+Coding tasks use a separately approved local Ollama model on the Mac. The model
+must be installed and support tool calling. No OpenRouter, Inkling or third-party
+cloud coding endpoint is used. Existing saved cloud-provider settings are reset
+to local Ollama on the first run of the updated Mac worker, and the worker deletes
+the legacy locally saved OpenRouter credential file.
 
-The free endpoint logs prompts and outputs and prohibits confidential or personal
-data. Each cloud task therefore needs explicit public-data confirmation and a
-GitHub commit verifiable without authentication. Use Ollama for private work.
-Only one provider is used for an approved task; changing the engine requires a
-new task approval. The adapter handles SSE keepalives, fragmented tool calls,
-provider errors, aborts and final usage frames. Reasoning-token counts, cached
-prompt tokens, reported cost, wall time, model turns and check evidence are shown
-in actual results. Raw model reasoning is not displayed or persisted.
+Each task is limited to an approved repository commit, explicit read/edit files,
+and the exact owner-approved check commands. Check commands run as your Mac user,
+not in an OS sandbox. Every change remains in a separate checkout until the
+owner reviews the actual diff and passing check evidence. No automatic commit,
+push or publication takes place.
 
-Reference projects were inspected, not installed as autonomous services:
-[Claude Code Action](https://github.com/anthropics/claude-code-action) at `a5a423f`
-and [nanobot](https://github.com/HKUDS/nanobot) at `73a55e0b`. This first version
-uses Office HQ's own bounded tool loop with no additional runtime dependencies.
-Controlled integration tests exercise real Git checkouts, a failing test, a repair,
-a passing result, permission revocation, cloud gating, streaming and phone controls.
-They do not benchmark the owner's Mac or validate an unprovided OpenRouter key.
-
-Provider references: [Ollama tool calling](https://docs.ollama.com/capabilities/tool-calling),
-[Ollama model metadata](https://docs.ollama.com/api-reference/show-model-details),
-[Inkling free](https://openrouter.ai/thinkingmachines/inkling:free),
-[OpenRouter streaming](https://openrouter.ai/docs/api_reference/streaming) and
-[usage accounting](https://openrouter.ai/docs/cookbook/administration/usage-accounting).
+Provider reference: [Ollama tool calling](https://docs.ollama.com/capabilities/tool-calling)
+and [Ollama model metadata](https://docs.ollama.com/api-reference/show-model-details).
 
 ## Agent website access
 
@@ -99,7 +83,7 @@ sites**, and **Allow for this chat** buttons.
   Passwords, cookies and authentication codes stay on the Mac; logins are never
   copied from Safari or sent through device sync. A permission is not a verified login.
 - Use **Start approved task** after sign-in. Browser work needs Playwright Chromium
-  plus a vision model. The 1.0.4 Mac launcher offers separate optional installation
+  plus a vision model. The 1.0.5 Mac launcher offers separate optional installation
   of Chromium and local `qwen2.5vl:7b` (several GB). Existing text draft workers keep
   their smaller model. Manual setup remains `npm install`, `npx playwright install
   chromium`, `ollama pull qwen2.5vl:7b`, then launch with
@@ -124,7 +108,7 @@ live owner credentials or real account changes.
 ## Department activation, team reports, conversations and recovery
 
 Use the existing Office HQ app; this update preserves its companies, employees,
-local records, iPhone layout and public URLs. Update the Mac with the 1.0.4 launcher,
+local records, iPhone layout and public URLs. Update the Mac with the 1.0.5 launcher,
 quit an older running Office HQ server if prompted, then reopen Office HQ.app.
 
 1. Open **Department activation**, choose one of the 12 departments, review its

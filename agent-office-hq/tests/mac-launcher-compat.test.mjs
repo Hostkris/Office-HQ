@@ -19,6 +19,8 @@ test('legacy OpenMausBot worker no longer prevents independent Ollama server sta
  assert.match(server,/from ['"]\.\/native-engine\/bridge\.mjs['"]/);
  assert.match(installer,/openmaus\/workforce-engine\.mjs/);
  assert.match(installer,/BACKUP.*dirname.*item/);
+ assert.doesNotMatch(installer,/coding-worker\.mjs native-engine\/openrouter-provider\.mjs/);
+ assert.match(installer,/mv "\$WEB\/native-engine\/openrouter-provider\.mjs" "\$BACKUP\/native-engine\/openrouter-provider\.mjs"/);
 });
 
 test('runtime import succeeds when the old 1.2 Mac bridge does not export localCli',async()=>{

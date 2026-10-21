@@ -59,35 +59,27 @@ test('revocation during model inference stops a pending edit before it can run',
   const g=await grant(),result=run(g);await started;await worker.action({action:'revoke',companyId:'co',grantId:g.id,ownerConfirmed:true});release();await assert.rejects(result,/revoked/);assert.equal((await worker.status('co')).results.length,0);
  },{model:async()=>{enter();await held;return reply([call('record_plan',{steps:['Read','Edit']}),call('read_file',{path:'add.mjs'}),call('edit_file',{path:'add.mjs',oldText:'a - b',newText:'a + b'})]);}});
 });
-test('free cloud tasks require explicit data confirmation and a publicly verifiable repository snapshot',async()=>{
- await fixture(async({worker,grant,storage})=>{
-  const g=await grant(),config=JSON.parse(await readFile(join(storage,'coding.json'),'utf8'));config.config.provider='openrouter';await writeFile(join(storage,'coding.json'),JSON.stringify(config));
-  // Use a fresh worker so the persisted provider is loaded exactly as after restart.
-  const cloud=createCodingWorker({storage,authorize:async()=>true});
-  const payload={grantId:g.id,instruction:'Fix the public addition fixture.',criteria:['Addition test passes.'],provider:'openrouter'};
-  await assert.rejects(cloud.validate(payload,ctx),/Confirm this task/);await assert.rejects(cloud.validate({...payload,publicDataConfirmed:true},ctx),/public GitHub/);cloud.shutdown();
+test('removed cloud coding engine cannot be configured or dispatched',async()=>{
+ await fixture(async({worker,grant})=>{
+  const g=await grant();
+  await assert.rejects(worker.action({action:'configure',provider:'openrouter',model:'fixture-coder',ownerConfirmed:true}),/Only local Ollama/);
+  await assert.rejects(worker.validate({grantId:g.id,instruction:'Fix the existing arithmetic regression.',criteria:['Adding one and two returns three.'],provider:'openrouter'},ctx),/Only local Ollama/);
  });
 });
-test('OpenRouter uses the same real file/check gate, keeps the API key private and records streamed reasoning usage',async()=>{
- await fixture(async({grant,storage,git})=>{
-  git('remote','add','origin','https://github.com/example/public.git');const g=await grant();let turn=0;const key='fixture-openrouter-key-1234567890';
-  const request=async(url,opts)=>{
-   if(url.endsWith('/key'))return {ok:true,json:async()=>({data:{}})};
-   if(url.endsWith('/endpoints'))return {ok:true,json:async()=>({data:{endpoints:[{tag:'thinkingmachines/nvfp4',pricing:{prompt:'0',completion:'0'},supported_parameters:['tools']}]}})};
-   if(url.startsWith('https://api.github.com/'))return {ok:true,json:async()=>url.includes('/commits/')?{sha:g.baseCommit}:{private:false}};
-   if(url.endsWith('/chat/completions')){
-    assert.equal(opts.headers.Authorization,'Bearer '+key);const body=JSON.parse(opts.body);assert.equal(body.provider.allow_fallbacks,false);
-    const calls=turn++===0?[call('record_plan',{steps:['Inspect addition.','Fix the operation and check the result.']}),call('read_file',{path:'add.mjs'}),call('edit_file',{path:'add.mjs',oldText:'a - b',newText:'a + b'})]:[call('finish_task',{summary:'Corrected addition and verified the existing test.',evidence:[{criterion:1,evidence:'node --test add.test.mjs exited 0 with the assertion satisfied.'}]})];
-    const frames='data: '+JSON.stringify({model:'thinkingmachines/inkling:free',choices:[{index:0,delta:{tool_calls:calls.map((c,index)=>({index,id:'round'+turn+'call'+index,function:{name:c.function.name,arguments:JSON.stringify(c.function.arguments)}}))},finish_reason:'tool_calls'}],usage:{prompt_tokens:100,completion_tokens:40,completion_tokens_details:{reasoning_tokens:20},cost:0}})+'\n\ndata: [DONE]\n\n';
-    return {ok:true,body:new ReadableStream({start(c){c.enqueue(new TextEncoder().encode(frames));c.close();}})};
-   }throw Error('Unexpected provider request');
-  };
-  const cloud=createCodingWorker({storage,authorize:async()=>true,request});
-  await assert.rejects(cloud.action({action:'configure',provider:'openrouter',apiKey:key,ownerConfirmed:true}),/Acknowledge/);
-  await cloud.action({action:'configure',provider:'openrouter',apiKey:key,publicDataConfirmed:true,ownerConfirmed:true});
-  const snapshot=await cloud.status('co');assert.doesNotMatch(JSON.stringify(snapshot),new RegExp(key));assert.equal((await stat(join(storage,'openrouter-credential.json'))).mode&0o777,0o600);
-  const result=await cloud.run({id:'cloud-run',...ctx,payload:{grantId:g.id,instruction:'Fix addition in this public fixture.',criteria:['Adding one and two returns three.'],provider:'openrouter',publicDataConfirmed:true}});
-  assert.equal(result.evidence.metrics.reasoningTokens,40);assert.equal(result.evidence.metrics.reportedCost,0);assert.match(result.result,/PASS/);assert.doesNotMatch(result.result,new RegExp(key));
-  await cloud.action({action:'remove-openrouter-key',ownerConfirmed:true});assert.equal(JSON.parse(await readFile(join(storage,'openrouter-credential.json'),'utf8')).apiKey,'');assert.equal((await cloud.status('co')).ready,false);cloud.shutdown();
+test('Mac upgrade resets a legacy cloud selection and deletes its saved credential',async()=>{
+ await fixture(async({grant,storage})=>{
+  await grant();
+  const statePath=join(storage,'coding.json'),state=JSON.parse(await readFile(statePath,'utf8'));
+  state.config={provider:'openrouter',model:'thinkingmachines/inkling:free',numCtx:16384,thinking:'auto'};
+  await writeFile(statePath,JSON.stringify(state));
+  const legacy=join(storage,'openrouter-credential.json');
+  await writeFile(legacy,JSON.stringify({apiKey:'a-fixture-key-never-sent'}),{mode:0o600});
+  const upgraded=createCodingWorker({storage,authorize:async()=>true,request:async()=>{throw Error('No cloud request should occur.');}});
+  const status=await upgraded.status('co');
+  assert.equal(status.localOnly,true);
+  assert.deepEqual(status.config,{provider:'ollama',model:'',numCtx:8192,thinking:'auto'});
+  assert.equal(JSON.parse(await readFile(statePath,'utf8')).config.provider,'ollama');
+  await assert.rejects(stat(legacy),{code:'ENOENT'});
+  upgraded.shutdown();
  });
 });

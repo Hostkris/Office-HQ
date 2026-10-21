@@ -105,7 +105,7 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/b
       desktop-workstations.js openmausbot.js workforce-runtime.js research-center.js \
       ios-workstations.js refresh.js theme.js styles.css sw.js icon.svg \
       manifest.webmanifest \
-      native-engine/bridge.mjs native-engine/coding-worker.mjs native-engine/openrouter-provider.mjs device-sync/mac-worker.mjs \
+      native-engine/bridge.mjs native-engine/coding-worker.mjs device-sync/mac-worker.mjs \
       native-engine/office-brain.mjs native-engine/web-research.mjs \
       openmaus/bridge.mjs openmaus/workforce-engine.mjs openmaus/team.mjs \
       research/reach-bridge.mjs research/public-tools.mjs openmaus/essential-workforce.json; do
@@ -114,6 +114,11 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/b
       if [ -f "$WEB/$item" ]; then cp -p "$WEB/$item" "$BACKUP/$item"; fi
       cp "$SOURCE/$item" "$WEB/$item"
     done
+    # Archive the retired cloud adapter so the updated app cannot load it.
+    if [ -f "$WEB/native-engine/openrouter-provider.mjs" ]; then
+      mkdir -p "$BACKUP/native-engine"
+      mv "$WEB/native-engine/openrouter-provider.mjs" "$BACKUP/native-engine/openrouter-provider.mjs"
+    fi
     UPDATED_CODE=1
     say "Application code updated. Previous versions saved in $BACKUP"
   fi

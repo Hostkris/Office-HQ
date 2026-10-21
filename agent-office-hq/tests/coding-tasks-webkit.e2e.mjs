@@ -7,10 +7,10 @@ import {join,basename} from 'node:path';
 import {webkit,devices} from 'playwright';
 const root=fileURLToPath(new URL('..',import.meta.url));let browser;
 test.before(async()=>{browser=await webkit.launch({headless:true});});test.after(async()=>{await browser?.close();});
-async function fixture({mobile=false,cloud=false}={}){
+async function fixture({mobile=false}={}){
  const origin=mobile?'https://office-hq.test':'http://127.0.0.1:3000',context=await browser.newContext({...mobile?devices['iPhone 13']:{viewport:{width:1280,height:900}},serviceWorkers:'block'}),page=await context.newPage(),errors=[],posts=[];
  page.on('pageerror',e=>errors.push(e.message));
- const config={provider:cloud?'openrouter':'ollama',model:cloud?'thinkingmachines/inkling:free':'fixture-coder',numCtx:8192};
+ const config={provider:'ollama',model:'fixture-coder',numCtx:8192};
  const grant=companyId=>({id:'grant-one',companyId,employeeId:'mac-fixture-worker',roleKey:'backend_engineer',repository:'example/public',baseCommit:'a'.repeat(40),readPaths:['app.mjs','app.test.mjs'],editPaths:['app.mjs'],checks:[{command:'node --test app.test.mjs'}],active:true});
  await page.route('**/*',async route=>{
   const req=route.request(),u=new URL(req.url());if(u.origin!==origin)return route.abort();
@@ -36,15 +36,17 @@ test('Mac task consent shows Office HQ and exact checks; Deny starts no task and
 test('Mac Allow submits exactly one scoped coding envelope and requires a real result before review',async()=>{
  const {page,context,errors,posts}=await fixture();try{
   await fill(page);await page.getByRole('button',{name:'Allow for this task',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
-  assert.equal(posts.length,1);assert.equal(posts[0].action,'send');assert.equal(posts[0].ownerConfirmed,true);const payload=JSON.parse(posts[0].description.slice('OFFICE_HQ_CODING_V1:'.length));assert.equal(payload.grantId,'grant-one');assert.equal(payload.provider,'ollama');assert.equal(payload.publicDataConfirmed,false);await page.locator('#codingRuns').getByText('queued',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Inspect full diff',exact:true}).count(),0);assert.deepEqual(errors,[]);
+  assert.equal(posts.length,1);assert.equal(posts[0].action,'send');assert.equal(posts[0].ownerConfirmed,true);const payload=JSON.parse(posts[0].description.slice('OFFICE_HQ_CODING_V1:'.length));assert.equal(payload.grantId,'grant-one');assert.equal(payload.provider,'ollama');assert.equal(Object.hasOwn(payload,'publicDataConfirmed'),false);await page.locator('#codingRuns').getByText('queued',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Inspect full diff',exact:true}).count(),0);assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
-test('iPhone sends a cloud task only after explicit public-data confirmation and keeps API keys off the phone',async()=>{
- const {page,context,errors}=await fixture({mobile:true,cloud:true});try{
-  assert.equal(await page.locator('[name="apiKey"]').count(),0);await fill(page);const dialog=page.getByRole('dialog'),box=await dialog.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=390);
-  await dialog.getByRole('button',{name:'Allow for this task',exact:true}).click();await page.locator('#codingPermissionError').getByText(/Confirm this task contains no confidential/).waitFor();assert.equal(await page.evaluate(()=>window.fixtureCommands.length),0);
-  await page.locator('#codingCloudConsent').check();await dialog.getByRole('button',{name:'Allow for this task',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
-  const sent=await page.evaluate(()=>window.fixtureCommands.map(t=>t.description));assert.equal(sent.length,1);const data=JSON.parse(sent[0].slice('OFFICE_HQ_CODING_V1:'.length));assert.equal(data.provider,'openrouter');assert.equal(data.publicDataConfirmed,true);assert.doesNotMatch(sent[0],/apiKey|sk-or-/);assert.deepEqual(errors,[]);
+test('iPhone dispatch uses local Ollama only, without a cloud key or consent prompt',async()=>{
+ const {page,context,errors}=await fixture({mobile:true});try{
+  assert.equal(await page.locator('[name="apiKey"],#codingOpenRouterForm,#codingCloudConsent').count(),0);
+  await fill(page);const dialog=page.getByRole('dialog'),box=await dialog.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=390);
+  await dialog.getByRole('button',{name:'Allow for this task',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+  const sent=await page.evaluate(()=>window.fixtureCommands.map(t=>t.description));assert.equal(sent.length,1);
+  const data=JSON.parse(sent[0].slice('OFFICE_HQ_CODING_V1:'.length));assert.equal(data.provider,'ollama');
+  assert.equal(Object.hasOwn(data,'publicDataConfirmed'),false);assert.doesNotMatch(sent[0],/apiKey|sk-or-/);assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
 test('iPhone catalog refresh is a typed owner control, and old receipts cannot restore a revoked grant',async()=>{

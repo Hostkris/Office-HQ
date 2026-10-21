@@ -81,3 +81,39 @@ continues while its Node process is alive; a sleeping/closed Mac cannot execute.
 These controls remain single-owner, local-first software. Device task/result sync
 is not remote desktop access and does not synchronize every browser preference,
 whole company directory, private website session or third-party credential.
+
+
+## Website permission cards and Mac browser enforcement
+
+`website-access.js` / `.css` provide the reference-style owner consent card and
+company-scoped account/agent controls. `desktop/permissions.mjs` validates public
+HTTPS origins, names isolated account profiles, records immutable task/worker/site
+requests, and issues separate grants per specialist and origin. The 39 AI roles
+retain unique catalog mandates; CEO and overlapping specialist identities are
+rejected. Relevant-site grants persist until revoked. Chat grants cover the first
+origin, expire within 24 hours and end on chat close or runtime restart.
+
+The loopback-only `desktop/runner.mjs` owns visible persistent Chromium profiles.
+It rechecks company, employee, role, site and active grant after model decisions
+and before browser actions. Revocation cancels pending work. New origins pause
+before the click and create another permission request. Ordinary external writes
+require a target-bound, single-use approval ID; observe mode cannot escalate to
+write approval. Authentication and money/security operations remain manual.
+Browser/model factories are injectable only through module construction for
+isolated tests; no HTTP endpoint can replace them.
+
+`OFFICE_HQ_WEBSITE_ACCESS_V1:` records reuse the existing Supabase owner-RLS device
+queue without new tables or service credentials. The Mac resolves phone role keys
+to existing company/employee bindings, rejects unapproved specialists, and routes
+control envelopes directly to the desktop service, never through the draft model.
+Claimed commands return actual permission matrices and recent browser-job receipts
+within the existing 16 KB result limit. A separate approval ID prevents a delayed
+phone decision from approving a newer browser action. The static client marks
+access pending until the Mac receipt, and cannot transfer cookies or activate a
+local browser while the Mac is offline. The Mac 1.0.3 installer separately offers
+Chromium and a local vision model; installing them creates no website grants.
+
+The desktop service trusts the signed-in OS owner and same-origin localhost UI;
+it is not a hostile multi-user agent sandbox. Role prompts and action gates do
+not guarantee that arbitrary third-party sites support automation. Frontend grants
+alone are never proof of a signed-in account or completed browser job.

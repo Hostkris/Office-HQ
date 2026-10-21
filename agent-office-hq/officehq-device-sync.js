@@ -11,6 +11,7 @@ const KEY='sb_publishable_c3owfootc_qRwCN7v3Q24Q_GKB8PIjK';
 const SKEY='office_hq_device_sync_session_v1';
 const DKEY='office_hq_device_sync_id_v1';
 const STALE=90000;
+const ACCESS_PREFIX='OFFICE_HQ_WEBSITE_ACCESS_V1:';
 const TEAM_PREFIX='OFFICE_HQ_TEAM_V1:';
 function teamEnvelope(raw){
  if(typeof raw!=='string'||!raw.startsWith(TEAM_PREFIX))return null;
@@ -194,11 +195,18 @@ async function downloadTasks(){
    if(!company||!employee)continue; // Never invent employee or company mappings.
    t={id:r.client_task_key,companyId:company.id,ownerId:employee.id,
     scope:B.roleFor(employee)?.scope||'',title:r.title,description:envelope?.description||r.description,
-    departmentProjectId:envelope?.meta.id||null,ceoConversation:r.description?.startsWith('OFFICE_HQ_CONVERSATION_V1:')===true,
+    websiteAccessCommand:r.description?.startsWith(ACCESS_PREFIX)===true,departmentProjectId:envelope?.meta.id||null,ceoConversation:r.description?.startsWith('OFFICE_HQ_CONVERSATION_V1:')===true,
     delegatedBy:'owner',createdAt:r.created_at,updatedAt:r.updated_at,status:r.status,
     priority:'Medium',due:'',output:r.draft||'',requiresApproval:true,approvalId:null,
     cloudSynced:true,cloudSyncId:r.id};
    s.tasks.unshift(t);window.OfficeHQFloor?.onTaskAssigned(t);touched=true;
+  }
+  if(r.description?.startsWith(ACCESS_PREFIX)){
+   t.websiteAccessCommand=true;
+   if(r.status==='review'&&r.draft){t.output=r.draft;t.status='done';t.updatedAt=r.updated_at;t.cloudReceiptAt=r.updated_at;touched=true;await rest('hq_device_synced_assignments','PATCH',{status:'done',note:'Owner received website access receipt',updated_at:new Date().toISOString()},'?id=eq.'+encodeURIComponent(r.id)+'&status=eq.review','return=minimal');}
+   else if(r.status==='done'&&r.draft){t.output=r.draft;t.status='done';t.cloudReceiptAt=r.updated_at;touched=true;}
+   else if(r.status==='blocked'){t.status='blocked';t.runError=r.note;touched=true;}
+   continue;
   }
   if(envelope){
    s.enterprise??={};s.enterprise.departmentProjects??=[];const m=envelope.meta;
@@ -347,7 +355,7 @@ document.addEventListener('change',ev=>{
 });
 window.addEventListener('pageshow',()=>{void refresh();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});
-window.OfficeHQDeviceSync={markup,draw,refresh,snapshot:()=>({...status}),verified,
+window.OfficeHQDeviceSync={markup,draw,refresh,signedIn:()=>!!auth?.access_token,snapshot:()=>({...status}),verified,
  pushTask:task=>{if(auth&&task?.delegatedBy==='owner')void uploadTask(task).catch(e=>notice(String(e.message).slice(0,140)));}};
 const boot=()=>{employeeOptions();draw();void refresh();setInterval(()=>{if(!document.hidden)void refresh();},12000);};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});

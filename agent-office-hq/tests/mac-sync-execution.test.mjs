@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {mkdtemp,rm,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {createDesktopService} from '../desktop/runner.mjs';
+import {ACCESS_PREFIX} from '../desktop/permissions.mjs';
 import {createMacSyncService} from '../device-sync/mac-worker.mjs';
 function model(){
  const state={connected:true,dispatchEnabled:true,bindings:[],runs:[]},actions=[];
@@ -29,8 +31,9 @@ async function fixture(fn){
   }
   return rows.filter(r=>url.searchParams.get('status')==='eq.queued'?r.status==='queued':['in_progress','blocked'].includes(r.status));
  };
- const service=createMacSyncService({bridge,cloudRequest:request,storage,startPolling:false});
- try{await fn({service,bridge,rows,writes,storage});}finally{await rm(storage,{recursive:true,force:true});}
+ const desktop=createDesktopService({root:storage});
+ const service=createMacSyncService({bridge,desktop,cloudRequest:request,storage,startPolling:false});
+ try{await fn({service,desktop,bridge,rows,writes,storage});}finally{await desktop.shutdown();await rm(storage,{recursive:true,force:true});}
 }
 const department={companyId:'co1',companyName:'First company',department:'Marketing',employees:[{employeeId:'e1',employeeName:'Researcher',roleKey:'research'}],ownerConfirmed:true};
 const task=(id,extra={})=>({id,client_task_key:'task-'+id,source_device_id:'ios-source1',company_label:'First company',employee_role:'research',employee_label:'Researcher',owner_confirmed:true,title:'Research a campaign',description:'Prepare a source-labeled draft.',status:'queued',...extra});
@@ -77,5 +80,26 @@ test('recoverable cloud job resumes under its retained approval and its later re
   r.canResume=true;await service.tick();assert.equal(rows[0].status,'in_progress');assert.equal(rows[0].note,'Ollama drafting resumed after recovery');
   r.status='review';r.result='Recovered actual draft';await service.tick();assert.equal(rows[0].draft,'Recovered actual draft');
   assert.equal(bridge.actions.filter(p=>p.action==='resume').length,1);
+ });
+});
+
+const permissionCommand=(id,body)=>task(id,{title:'Website access',created_at:new Date().toISOString(),description:ACCESS_PREFIX+JSON.stringify({ownerConfirmed:true,...body})});
+test('phone access decisions reach the real permission store even when the drafting model is offline',async()=>{
+ await fixture(async({service,desktop,bridge,rows})=>{
+  await prepare(service);bridge.state.connected=false;bridge.state.dispatchEnabled=false;
+  rows.push(permissionCommand('access',{kind:'decide',requestKey:'phone-request1',conversationId:'chat1',url:'https://github.com/',accountLabel:'Work',roles:['research'],prompt:'Review the account and summarize the project.',mode:'observe',decision:'chat'}));
+  await service.tick();assert.equal(rows[0].status,'review');
+  const receipt=JSON.parse(rows[0].draft);assert.equal(receipt.request.status,'allowed');assert.equal(receipt.matrix[0].length,1);
+  const status=await desktop.status('co1');assert.equal(status.websiteAccess.grants.filter(g=>g.active).length,1);assert.equal(status.websiteAccess.grants[0].employeeId,'e1');
+  assert.equal(bridge.actions.filter(a=>a.action==='send').length,0,'control records must never go to the text model');
+  bridge.state.bindings=[]; // The owner must still be able to revoke after removing a draft-worker binding.
+  rows.push(permissionCommand('revoke',{kind:'revoke',requestId:receipt.request.id}));await service.tick();assert.equal(rows[1].status,'review');
+  assert.equal((await desktop.status('co1')).websiteAccess.grants.filter(g=>g.active).length,0);
+ });
+});
+test('a phone request cannot add a specialist who has no Mac binding',async()=>{
+ await fixture(async({service,desktop,rows})=>{
+  await prepare(service);rows.push(permissionCommand('bad-access',{kind:'decide',requestKey:'phone-request2',conversationId:'chat2',url:'https://github.com/',roles:['research','social'],prompt:'Review the account and summarize the project.',decision:'relevant'}));
+  await service.tick();assert.equal(rows[0].status,'blocked');assert.match(rows[0].note,/Authorize every selected/);assert.equal((await desktop.status('co1')).websiteAccess.grants.length,0);
  });
 });

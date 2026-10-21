@@ -1,9 +1,50 @@
 # Agent Office HQ 🏢
 
+## Agent website access
+
+[Permission card preview](docs/website-permission-card.jpg)
+
+Open **Agent website access** in the sidebar or Department activation. Enter a
+public HTTPS website, name the account profile, describe the task, and select
+individual specialists or all 39 agents. The permission card follows the supplied
+reference: an Office HQ header and globe, white rounded panel, and **Deny**, **Allow all relevant
+sites**, and **Allow for this chat** buttons.
+
+- **Deny** creates no grant. **Allow for this chat** grants the first listed website
+  for this conversation, ending when you end the chat, after 24 hours, or when the
+  Mac browser service restarts. **Allow all relevant sites** grants only the exact
+  website origins explicitly listed, until revoked. Each agent keeps its role scope.
+- Use **Open account & sign in** to log into your own account in its visible Mac
+  browser. Named profiles isolate Work and Personal accounts for the same website.
+  Passwords, cookies and authentication codes stay on the Mac; logins are never
+  copied from Safari or sent through device sync. A permission is not a verified login.
+- Use **Start approved task** after sign-in. Browser work needs Playwright Chromium
+  plus a vision model. The 1.0.3 Mac launcher offers separate optional installation
+  of Chromium and local `qwen2.5vl:7b` (several GB). Existing text draft workers keep
+  their smaller model. Manual setup remains `npm install`, `npx playwright install
+  chromium`, `ollama pull qwen2.5vl:7b`, then launch with
+  `OFFICE_HQ_AI_BACKEND=ollama OLLAMA_MODEL=qwen2.5vl:7b npm run dev`.
+- Phone decisions and commands travel through the existing authenticated owner-only
+  device queue. Select workers already authorized on the Mac. The phone displays
+  **Waiting for Mac confirmation** until an actual permission receipt arrives.
+  Refresh a request to check its current permissions and recent browser results.
+  Revocations sent while the Mac is offline take effect after it receives them.
+- Browser workers pause for sign-in, new websites and account changes. Exact
+  one-click approvals cannot be reused after the target or approval record changes.
+  Revoke a selected agent or the whole request, or end the access conversation.
+  Money movement, account-security changes and authentication remain manual.
+
+Custom HTTPS destinations are supported, but individual websites may block browser
+control or require verification. Static GitHub Pages cannot run the browser by
+itself; the updated, awake Mac and its configured model perform the real work.
+Validation uses isolated accounts and controlled model/browser responses, never
+live owner credentials or real account changes.
+
+
 ## Department activation, team reports, conversations and recovery
 
 Use the existing Office HQ app; this update preserves its companies, employees,
-local records, iPhone layout and public URLs. Update the Mac with the 1.0.2 launcher,
+local records, iPhone layout and public URLs. Update the Mac with the 1.0.3 launcher,
 quit an older running Office HQ server if prompted, then reopen Office HQ.app.
 
 1. Open **Department activation**, choose one of the 12 departments, review its

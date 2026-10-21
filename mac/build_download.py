@@ -32,8 +32,8 @@ def main():
         "CFBundleInfoDictionaryVersion": "6.0",
         "CFBundleName": "Office HQ",
         "CFBundlePackageType": "APPL",
-        "CFBundleShortVersionString": "1.0.2",
-        "CFBundleVersion": "3",
+        "CFBundleShortVersionString": "1.0.3",
+        "CFBundleVersion": "4",
         "LSMinimumSystemVersion": "14.0",
         "NSHighResolutionCapable": True,
         "LSUIElement": False,
@@ -65,7 +65,11 @@ The Mac sync engine connects to your existing private Office HQ cloud
 account only AFTER you sign in under Company Messages. Sign in on your
 iPhone/iPad with the same account to begin automatic assignment sync.
 Authorize each Mac AI specialist separately to prepare draft-only work.
-It never grants website sign-ins, emailing, publishing or money actions.
+Optional browser setup installs Chromium and qwen2.5vl:7b with separate consent.
+Use Agent website access to select sites, named accounts, and individual or all
+agents. Sign in directly on each website on the Mac. Permission cards gate
+access, and account changes stop for separate one-click approval. Money and
+account-security actions are not delegated.
 
 Your company records are stored separately on each device unless
 you configure authenticated sync.

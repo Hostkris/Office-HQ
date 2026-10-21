@@ -7,7 +7,7 @@ JavaScript/Node repository task: inspect and search approved source, record a pl
 edit a separate checkout, run approved checks, repair failures, and return a diff
 and acceptance evidence for independent CEO review.
 
-1. Update Office HQ on your Mac with launcher **1.0.4**. In Department activation,
+1. Update Office HQ on your Mac with launcher **1.0.5**. In Department activation,
    authorize a Backend Engineer, Frontend Engineer or Systems Integration Engineer
    and enable approved AI drafts. Coding work uses the same serialized native queue.
 2. On the Mac, expand **Set up model & repository permissions**. Enter the name of
@@ -83,7 +83,7 @@ sites**, and **Allow for this chat** buttons.
   Passwords, cookies and authentication codes stay on the Mac; logins are never
   copied from Safari or sent through device sync. A permission is not a verified login.
 - Use **Start approved task** after sign-in. Browser work needs Playwright Chromium
-  plus a vision model. The 1.0.4 Mac launcher offers separate optional installation
+  plus a vision model. The 1.0.5 Mac launcher offers separate optional installation
   of Chromium and local `qwen2.5vl:7b` (several GB). Existing text draft workers keep
   their smaller model. Manual setup remains `npm install`, `npx playwright install
   chromium`, `ollama pull qwen2.5vl:7b`, then launch with
@@ -108,7 +108,7 @@ live owner credentials or real account changes.
 ## Department activation, team reports, conversations and recovery
 
 Use the existing Office HQ app; this update preserves its companies, employees,
-local records, iPhone layout and public URLs. Update the Mac with the 1.0.4 launcher,
+local records, iPhone layout and public URLs. Update the Mac with the 1.0.5 launcher,
 quit an older running Office HQ server if prompted, then reopen Office HQ.app.
 
 1. Open **Department activation**, choose one of the 12 departments, review its

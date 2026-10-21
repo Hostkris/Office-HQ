@@ -47,38 +47,22 @@ Coding checks are never automatically replayed after a restart or uncertain resu
 review the partial checkout and create a fresh task. Revoking worker/dispatch or
 repository permission stops eligible running work and blocks further tool calls.
 
-### Optional OpenRouter Inkling engine
+### Local Ollama coding engine
 
-The model in the supplied OpenRouter example is supported as a separate opt-in:
-`thinkingmachines/inkling:free`, pinned to `thinkingmachines/nvfp4`, streaming,
-provider fallbacks disabled, and prompt/completion price caps of zero. Current
-endpoint availability and tool support are checked; no paid model is substituted.
-Enter the key only in the Mac setup form. It is saved in a private mode-0600 file,
-never in browser storage, static assets, a cloud relay record or a model prompt.
-The Mac can remove the saved key from the same setup panel.
+Coding tasks use a separately approved local Ollama model on the Mac. The model
+must be installed and support tool calling. No OpenRouter, Inkling or third-party
+cloud coding endpoint is used. Existing saved cloud-provider settings are reset
+to local Ollama on the first run of the updated Mac worker, and the worker deletes
+the legacy locally saved OpenRouter credential file.
 
-The free endpoint logs prompts and outputs and prohibits confidential or personal
-data. Each cloud task therefore needs explicit public-data confirmation and a
-GitHub commit verifiable without authentication. Use Ollama for private work.
-Only one provider is used for an approved task; changing the engine requires a
-new task approval. The adapter handles SSE keepalives, fragmented tool calls,
-provider errors, aborts and final usage frames. Reasoning-token counts, cached
-prompt tokens, reported cost, wall time, model turns and check evidence are shown
-in actual results. Raw model reasoning is not displayed or persisted.
+Each task is limited to an approved repository commit, explicit read/edit files,
+and the exact owner-approved check commands. Check commands run as your Mac user,
+not in an OS sandbox. Every change remains in a separate checkout until the
+owner reviews the actual diff and passing check evidence. No automatic commit,
+push or publication takes place.
 
-Reference projects were inspected, not installed as autonomous services:
-[Claude Code Action](https://github.com/anthropics/claude-code-action) at `a5a423f`
-and [nanobot](https://github.com/HKUDS/nanobot) at `73a55e0b`. This first version
-uses Office HQ's own bounded tool loop with no additional runtime dependencies.
-Controlled integration tests exercise real Git checkouts, a failing test, a repair,
-a passing result, permission revocation, cloud gating, streaming and phone controls.
-They do not benchmark the owner's Mac or validate an unprovided OpenRouter key.
-
-Provider references: [Ollama tool calling](https://docs.ollama.com/capabilities/tool-calling),
-[Ollama model metadata](https://docs.ollama.com/api-reference/show-model-details),
-[Inkling free](https://openrouter.ai/thinkingmachines/inkling:free),
-[OpenRouter streaming](https://openrouter.ai/docs/api_reference/streaming) and
-[usage accounting](https://openrouter.ai/docs/cookbook/administration/usage-accounting).
+Provider reference: [Ollama tool calling](https://docs.ollama.com/capabilities/tool-calling)
+and [Ollama model metadata](https://docs.ollama.com/api-reference/show-model-details).
 
 ## Agent website access
 

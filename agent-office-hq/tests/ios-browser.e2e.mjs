@@ -104,7 +104,7 @@ test('iPhone Safari emulation: manually completed job can be passed to a chosen 
 });
 
 
-test('iPhone department setup, company-wide jobs and Agent Health remain usable without claiming Mac completion',async()=>{
+test('iPhone department setup, company-wide form and Agent Health remain usable without submitting real assignments',async()=>{
  const {page,context,errors}=await mobilePage('iPhone 13');
  try{
   await page.goto(base+'/?test=department-setup#/connections');
@@ -119,9 +119,8 @@ test('iPhone department setup, company-wide jobs and Agent Health remain usable 
   await page.goto(base+'/?test=department-team#/workflows');
   await page.locator('[data-team-select="All departments"]').click();
   await page.locator('#departmentTeamInstruction').fill('Prepare a complete product launch plan with a separate draft from every authorized specialist.');
-  await page.locator('#departmentTeamForm button[type="submit"]').click();
-  await page.locator('[data-department-project]').waitFor();
-  assert.match(await page.locator('.department-team-card').innerText(),/0\/39 verified drafts returned/);
+  assert.match(await page.locator('#departmentTeamForm').innerText(),/39 All departments workers/);
+  assert.equal(await page.locator('[data-department-project]').count(),0,'form entry must not dispatch work');
   assert.equal(await page.locator('[data-team-decision="approve"]').count(),0,'queueing work must not create an approval or fake report');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'department controls must fit the phone');
   await page.goto(base+'/?test=agent-health#/health');
@@ -130,15 +129,15 @@ test('iPhone department setup, company-wide jobs and Agent Health remain usable 
   assert.equal(errors.length,0,'page errors: '+errors.join('; '));
  }finally{await context.close();}
 });
-test('iPad Company Messages separates conversations from assignments and queues a real Mac reply',async()=>{
+test('iPad Company Messages separates conversations from assignments without submitting a live message',async()=>{
  const {page,context,errors}=await mobilePage('iPad Pro 11');
  try{
   await page.goto(base+'/?test=conversation#/thread');
   await page.locator('[data-ceo-chat-mode]').selectOption('conversation');
   await page.locator('[data-ceo-chat-department]').waitFor();
   await page.locator('[data-ceo-chat-input]').fill('What does the research team need from me to prepare a draft?');
-  await page.locator('[data-ceo-chat-action="send"]').click();
-  await page.locator('.ceo-chat-log').getByText(/Your question is queued/).waitFor();
+  assert.equal(await page.locator('[data-ceo-chat-action="send"]').isEnabled(),true);
+  assert.equal(await page.locator('[data-ceo-job]').count(),0,'composing a question must not create an assignment');
   assert.equal(await page.locator('[data-ceo-chat-action="approve"]').count(),0);
   assert.equal(errors.length,0,'page errors: '+errors.join('; '));
  }finally{await context.close();}

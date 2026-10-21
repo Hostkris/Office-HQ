@@ -76,3 +76,24 @@ test('RPG characters use stable varied skin, hair and outfit colors, without cha
  const custom=o.life.appearance({id:'custom',name:'Edited worker',skin:'#abc123',hair:'#000000',outfit:'#ffffff',appearanceLocked:true});
  assert.equal(custom.skin,'#abc123','explicit owner appearance settings remain untouched');
 });
+
+test('mini pixel renderer paints unique recognizable people, preserves owner colors and animates a real pose',()=>{
+ const o=run(),a=o.life.appearance({id:'agent8',name:'Alex'}),b=o.life.appearance({id:'agent9',name:'Bea'});
+ assert.equal(o.life.style,'original-mini-pixel');
+ const colors=[],shapes=[];
+ const c={save(){},restore(){},translate(){},fillRect(x,y,w,h){colors.push(this.fillStyle);shapes.push([x,y,w,h]);},set fillStyle(v){this._fill=v;},get fillStyle(){return this._fill;}};
+ const unique=()=>{colors.length=0;shapes.length=0;};
+ o.life.sprite(c,a,100,100,1000,'idle');assert.ok(shapes.length>28,'mini pixel details, not a five-rectangle block');
+ assert.ok(colors.includes(a.skin)&&colors.includes(a.hair)&&colors.includes(a.outfit));
+ assert.ok(shapes.every(([x,y,w,h])=>[x,y,w,h].every(Number.isInteger)),'2px pixel-grid aligned');
+ const idle=shapes.map(v=>v.join(',')).join('|');unique();
+ o.life.sprite(c,a,100,100,1300,'walk');const walking=shapes.map(v=>v.join(',')).join('|');
+ assert.notEqual(idle,walking,'walking changes individual boot/arm animation');
+ unique();o.life.sprite(c,b,100,100,1000,'idle');
+ assert.ok(colors.includes(b.skin)&&colors.includes(b.hair)&&colors.includes(b.outfit));
+ unique();
+ const custom={id:'locked',skin:'#aabbcc',hair:'#223344',outfit:'#445566',appearanceLocked:true,hairStyle:'long'};
+ o.life.sprite(c,custom,50,50,2000,'work');
+ assert.ok(colors.includes(custom.skin)&&colors.includes(custom.hair)&&colors.includes(custom.outfit),'existing custom colors survive');
+ assert.equal(custom.hairStyle,'long');
+});

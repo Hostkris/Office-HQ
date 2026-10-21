@@ -23,7 +23,7 @@ Open **Department activation** to authorize a department's individual Mac AI
 specialists and their phone-sync mappings. Use **Department teams** for one
 combined report across one or all 12 departments, **Ask / chat** in Company
 Messages for local AI conversations, and **Agent Health → Fix It** to check and
-resume eligible interrupted drafts. The Mac launcher is version 1.0.4. Your Mac
+resume eligible interrupted drafts. The Mac launcher is version 1.0.5. Your Mac
 must run the update and remain awake; outside account access is separately
 controlled. See the [workforce instructions](agent-office-hq/README.md).
 
@@ -33,6 +33,6 @@ controlled. See the [workforce instructions](agent-office-hq/README.md).
 Open [Coding tasks](https://hostkris.github.io/Office-HQ/agent-office-hq/#/coding)
 for a separately approved repository snapshot, selected source files, exact checks,
 repair attempts and a diff with evidence for CEO review. Update the Mac launcher
-to 1.0.4 and configure an installed tool-capable local Ollama model.
+to 1.0.5 and configure an installed tool-capable local Ollama model.
 The coding worker is local-only; no OpenRouter key or cloud coding engine is required.
 See the [setup and boundaries](agent-office-hq/README.md).

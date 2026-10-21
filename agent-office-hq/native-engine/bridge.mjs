@@ -99,11 +99,13 @@ export function createOpenMausBridge({publicTools=null}={}){
    if(!binding)throw err('Employee has not been authorized.',403);
    if(s.runs.some(r=>r.officeTaskId===body.officeTaskId&&['submitted','running','review'].includes(r.status)))
      throw err('This task was already assigned.',409);
+   if(binding.roleKey&&body.roleKey&&binding.roleKey!==body.roleKey)throw err('Bound specialist role does not match requested job.',403);
+   const roleKey=binding.roleKey||((body.roleKey&&valid(body.roleKey))?body.roleKey:'');
    const title=short(body.title,140).trim(),description=short(body.description,4000).trim();
    if(title.length<3||description.length<8)throw err('Provide clear task instructions.');
    const now=timestamp(),id=randomUUID();
    s.runs.push({id,threadId:randomUUID(),companyId:body.companyId,employeeId:body.employeeId,
-     officeTaskId:body.officeTaskId,employeeName:binding.employeeName,roleKey:binding.roleKey||'',department:binding.department,
+     officeTaskId:body.officeTaskId,employeeName:binding.employeeName,roleKey,department:binding.department,
      botName:binding.botName,title,description,status:'submitted',result:'',reason:'',
      thought:'Submitted to local AI',createdAt:now,updatedAt:now});
    s.runs=s.runs.slice(-250);await persist(s);

@@ -89,12 +89,16 @@ async function decide(choice){
 }
 function receipts(){
  let changed=false;
- for(const t of B.getState().tasks.filter(t=>t.websiteAccessCommand)){
+ for(const t of B.getState().tasks.filter(t=>t.websiteAccessCommand).slice().sort((a,b)=>Date.parse(a.createdAt)-Date.parse(b.createdAt))){
   const version=t.output||t.runError;if(!version||receiptSeen.get(t.id)===version)continue;receiptSeen.set(t.id,version);
   let command;try{command=JSON.parse(t.description.slice(PREFIX.length));}catch{continue;}
   const r=state().requests.find(r=>r.clientRequestId===command.requestKey||r.macRequestId===command.requestId||r.id===command.requestId);
-  if(t.status==='blocked'){if(r){r.status=r.status==='queued'?'blocked':r.status;r.error=t.runError;}feedback=t.runError||'The Mac could not apply this request.';changed=true;continue;}
+  const commandAt=Date.parse(t.createdAt)||0;if(r&&commandAt<(r.lastReceiptCommandAt||0))continue;
+  if(t.status==='blocked'){if(r)r.lastReceiptCommandAt=commandAt;if(r){r.status=r.status==='queued'?'blocked':r.status;r.error=t.runError;}feedback=t.runError||'The Mac could not apply this request.';changed=true;continue;}
   let result;try{result=JSON.parse(t.output);}catch{continue;}
+  const appliedAt=Date.parse(result.appliedAt||t.cloudReceiptAt||t.createdAt)||0;
+  if(r&&appliedAt<(r.lastReceiptAt||0))continue;
+  if(r){r.lastReceiptAt=appliedAt;r.lastReceiptCommandAt=commandAt;}
   if(r&&result.request){r.macRequestId=result.request.id;r.status=result.request.status;r.decision=result.request.decision;r.error='';
    state().grants=state().grants.filter(g=>g.requestId!==r.macRequestId);
    for(let a=0;a<result.accounts.length;a++)for(let w=0;w<result.roles.length;w++){
@@ -103,7 +107,7 @@ function receipts(){
     state().grants.push({...person,id:grantId,companyId:r.companyId,requestId:r.macRequestId,site:result.accounts[a].id,origin:result.accounts[a].origin,accountLabel:r.accountLabel,mode:r.mode,duration:r.decision,conversationId:r.conversationId,expiresAt:r.decision==='chat'?result.request.expiresAt:null,active:true});
    }
   }
-  if(result.jobs)state().jobs=result.jobs.map(j=>({...j,companyId:t.companyId}));changed=true;
+  if(result.jobs&&appliedAt>=(state().lastJobsReceiptAt||0)){state().lastJobsReceiptAt=appliedAt;state().jobs=result.jobs.map(j=>({...j,companyId:t.companyId}));}changed=true;
  }
  if(changed)B.save();return changed;
 }

@@ -184,7 +184,7 @@ export function createMacSyncService({bridge,desktop=null,cloudRequest=request,s
    // Compact matrix fits the owner-only relay's 16 KB receipt for all 39 agents.
    const workers=request?.workers||[],accounts=request?.accounts||[];
    const matrix=accounts.map(a=>workers.map(w=>access.grants.find(g=>g.requestId===requestId&&g.site===a.id&&g.roleKey===w.roleKey&&g.active)?.id?.replace(/-/g,'')||null));
-   const receipt={compactIds:true,kind:command.kind,requestKey:command.requestKey||request?.clientRequestId,...result,websiteAccess:undefined,
+   const receipt={appliedAt:done(),compactIds:true,kind:command.kind,requestKey:command.requestKey||request?.clientRequestId,...result,websiteAccess:undefined,
      request:request?{id:request.id,status:request.status,decision:request.decision,mode:request.mode,conversationId:request.conversationId,expiresAt:request.expiresAt}:null,
      accounts:accounts.map(a=>({id:a.id,origin:a.origin})),roles:workers.map(w=>w.roleKey),matrix,
      jobs:state.jobs.filter(j=>!command.jobId||j.id===command.jobId).slice(0,5).map(j=>({id:j.id,grantId:j.grantId,roleKey:j.roleKey,employeeName:j.employeeName,site:j.site,status:j.status,thought:j.thought,summary:j.summary,approval:j.approval}))};

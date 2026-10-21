@@ -67,7 +67,12 @@ test('iPad: selecting all agents queues the exact reviewed websites and waits fo
   const active=await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.websiteAccess.grants);assert.equal(active.length,78);assert.match(active[0].id,/^[a-f0-9]{8}-/);
   await page.locator('#webAccessJobs').getByRole('button',{name:'Resume',exact:true}).click();
   const resumed=await page.evaluate(()=>{const t=window.fixtureCommands.at(-1),s=window.OfficeHQBridge.getState();return {command:JSON.parse(t.description.slice('OFFICE_HQ_WEBSITE_ACCESS_V1:'.length)),role:s.employees.find(e=>e.id===t.ownerId).roleKey};});
-  assert.equal(resumed.command.kind,'resume');assert.equal(resumed.role,'research','browser commands must use the matching specialist mapping');assert.deepEqual(outbound,[]);assert.deepEqual(errors,[]);
+  assert.equal(resumed.command.kind,'resume');assert.equal(resumed.role,'research','browser commands must use the matching specialist mapping');
+  await page.locator('#webAccessRequests').getByRole('button',{name:'Revoke this request',exact:true}).click();
+  await page.evaluate(async()=>{const old=JSON.parse(window.fixtureCommands[0].output),t=window.fixtureCommands.at(-1);t.output=JSON.stringify({...old,kind:'revoke',appliedAt:new Date(Date.now()+10).toISOString(),matrix:old.matrix.map(row=>row.map(()=>null)),jobs:[]});t.status='done';await window.OfficeHQWebsiteAccess.refresh();});
+  assert.equal(await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.websiteAccess.grants.length),0);
+  await page.reload();await page.getByRole('heading',{name:'Agent website access',exact:true}).waitFor();await page.evaluate(()=>window.OfficeHQWebsiteAccess.refresh());
+  assert.equal(await page.evaluate(()=>window.OfficeHQBridge.getState().enterprise.websiteAccess.grants.length),0,'older grant receipts must not restore revoked permissions after reload');assert.deepEqual(outbound,[]);assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
 test('closing an undecided request preserves it and never silently grants account access',async()=>{

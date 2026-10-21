@@ -68,29 +68,9 @@
       const otherApprovals=approvalItems().filter(a=>a.kind!=='department-project'&&(!a.taskId||!S().tasks.some(t=>t.id===a.taskId&&t.ceoSecureDesk)));
       return `<div class="ops-thread-list" aria-live="polite">${window.OfficeHQDeviceSync?.markup(false)||''}${window.OfficeHQSecureChat.render()}<section class="ceo-chat-legacy" aria-label="Employee messages and other requests"><h3>Other CEO approval requests (${otherApprovals.length})</h3>${otherApprovals.map(approvalCard).join('')||'<p class="muted">No other requests waiting.</p>'}<h3>Employee updates</h3>${recentMessages()}<div class="ops-actions">${button('clear-messages','Clear internal messages')}</div></section></div>`;
     }
-    // OFFICEHQ_VOICE_THREAD_PATCH_v2 — shared Mac and iOS inbox, approvals and microphone.
-    return `<div class="ops-thread-list" aria-live="polite">
-      ${window.OfficeHQDeviceSync?.markup(false)||''}
-      <section class="hq-voice-composer" aria-label="Voice or typed assignments">
-        <h3>🎙 Give your employees an assignment</h3>
-        <p class="small muted">Speak or type. Office HQ chooses a specialist from your active company employees.</p>
-        <label class="tiny">Your assignment</label>
-        <textarea rows="3" data-voice-text maxlength="2200" placeholder="For example: Check important emails, draft responses, and bring me anything needing approval."></textarea>
-        <label class="tiny">Employee receiving the assignment</label>
-        <select data-voice-worker><option value="">Speak or type to choose a specialist</option></select>
-        <p class="tiny muted" role="status" data-voice-status>Tap the microphone and give your instruction. Or use keyboard Dictation and tap Assign task.</p>
-        <label class="hq-voice-option"><input type="checkbox" data-voice-run checked> Start a local AI draft if this employee is already authorized on the Mac</label>
-        <div class="hq-voice-actions">
-          <button class="btn btn-primary" type="button" data-voice-action="listen" aria-pressed="false">🎙 Speak assignment</button>
-          <button class="btn btn-sm" type="button" data-voice-action="assign">Assign task →</button>
-        </div>
-      </section>
-      <h3>Needs your approval (${approvalItems().length})</h3>
-      ${approvalItems().map(approvalCard).join('')||'<p class="muted">No requests waiting for your decision.</p>'}
-      <div class="ops-thread-heading"><h3 class="ops-section-head">Employee messages, questions and results</h3></div>
-      ${recentMessages()}
-      <p class="tiny muted">Internal app messages are not SMS. External email needs an authorized provider connection. Different devices keep separate local records until secure sync is configured.</p>
-    </div>`;
+    // The same conversation layout is used by Safari and the local Mac server.
+    // Missing secure-chat assets must never revive the retired assignment form.
+    return '<div class="ops-thread-list"><section class="card ceo-chat" role="alert"><h2>Company Messages is updating</h2><p>The secure text thread did not load. Reopen Office HQ after updating the Mac files; your existing messages and tasks are preserved.</p><button class="btn btn-primary" data-view="thread">Retry company messages</button></section><section class="ceo-chat-legacy"><h3>Requests awaiting review ('+approvalItems().length+')</h3>'+approvalItems().map(approvalCard).join('')+recentMessages()+'</section></div>';
   }
 
   function updateDrawer(){const c=$('#opsDrawerContent');if(c)c.innerHTML=threadInner();badge();window.OfficeHQDeviceSync?.draw();}

@@ -54,7 +54,7 @@ async function runtime(fn,choice=()=>({action:'finish',note:'Verified fixture re
  const root=await mkdtemp(join(tmpdir(),'hq-web-permissions-'));const clicks=[],page={url:()=> 'https://github.com/Hostkris/',isClosed:()=>false,
   frames:()=>[],evaluate:async()=>target,mouse:{click:async(...v)=>clicks.push(v),wheel:async()=>{}},keyboard:{type:async()=>{}}};
  const service=createDesktopService({root,browserFactory:async()=>({page,context:{close:async()=>{}}}),decisionProvider:choice});
- try{await service.init();await fn({service,clicks,page,root});}finally{await service.shutdown();await rm(root,{recursive:true,force:true});}
+ try{await service.init();await fn({service,clicks,page,root});}finally{await service.shutdown();await rm(root,{recursive:true,force:true,maxRetries:8,retryDelay:40});}
 }
 async function authorize(service,extra={}){const {request:r}=await service.action({action:'request-access',...request(extra)});const result=await service.action({action:'decide-access',companyId:r.companyId,requestId:r.id,decision:'chat',ownerConfirmed:true});return result.websiteAccess.grants.find(g=>g.requestId===r.id);}
 async function until(check){for(let i=0;i<100;i++){if(await check())return;await sleep(10);}throw Error('Fixture did not reach expected state');}

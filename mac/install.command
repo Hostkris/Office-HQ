@@ -80,7 +80,7 @@ fi
 
 # Refresh the application code from the owner's GitHub repository on repeat
 # installs, but only after consent, and back up prior working files.
-if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/bridge.mjs" ]; then
+if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ]; then
   if /usr/bin/osascript -e 'display dialog "Office HQ will update its app code from your own GitHub repository. Existing application files will be backed up and company records preserved. Continue?" buttons {"Keep Current", "Update Office HQ"} default button "Update Office HQ" with title "Office HQ · Mac Update"' >/dev/null 2>&1; then
     curl -fL --retry 3 --connect-timeout 20 \
       'https://codeload.github.com/Hostkris/Office-HQ/zip/refs/heads/main' \
@@ -94,7 +94,7 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/b
     mkdir -p "$BACKUP"
     # Update the COMPLETE approved browser app and local engine modules, not
     # only the pre-chat assets. Never copy .env, credentials or local records.
-    for item in \
+    FILES=(
       server.mjs index.html cloud.html cloud.js mac.html mac-share.js \
       assignment-library.js workforce-lean.js app.js office-features.js \
       officehq-voice.js officehq-voice.css ceo-secure-chat.js ceo-secure-chat.css \
@@ -108,8 +108,13 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/b
       native-engine/bridge.mjs native-engine/coding-worker.mjs device-sync/mac-worker.mjs \
       native-engine/office-brain.mjs native-engine/web-research.mjs \
       openmaus/bridge.mjs openmaus/workforce-engine.mjs openmaus/team.mjs \
-      research/reach-bridge.mjs research/public-tools.mjs openmaus/essential-workforce.json; do
-      [ -f "$SOURCE/$item" ] || failed "Latest GitHub release is missing $item. Existing files were not intentionally deleted."
+      research/reach-bridge.mjs research/public-tools.mjs openmaus/essential-workforce.json
+    )
+    # Verify all update assets BEFORE overwriting a single existing file.
+    for item in "${FILES[@]}"; do
+      [ -f "$SOURCE/$item" ] || failed "Latest GitHub release is missing $item. Existing files were not modified."
+    done
+    for item in "${FILES[@]}"; do
       mkdir -p "$BACKUP/$(dirname "$item")" "$WEB/$(dirname "$item")"
       if [ -f "$WEB/$item" ]; then cp -p "$WEB/$item" "$BACKUP/$item"; fi
       cp "$SOURCE/$item" "$WEB/$item"
@@ -173,7 +178,9 @@ fi
 
 # Browser control is a separate opt-in from the smaller text-only draft engine.
 # No browser profile or website account is authorized by this setup step.
-if [ ! -f "$BASE/browser-access-setup-decided" ]; then
+# Reoffer optional browser runtime setup after a user-approved Mac update even if
+# it was deferred previously. Never install browser or model without consent.
+if [ ! -f "$BASE/browser-access-enabled" ] && { [ "$UPDATED_CODE" -eq 1 ] || [ ! -f "$BASE/browser-access-setup-decided" ]; }; then
   if /usr/bin/osascript -e 'display dialog "Enable agent browser tasks? This installs Chromium and a local vision model (several gigabytes). Account access still requires your permission in Office HQ, and you sign in yourself. Browser screenshots stay with the local model." buttons {"Later", "Enable Browser Tasks"} default button "Enable Browser Tasks" with title "Office HQ · Agent Browser"' >/dev/null 2>&1; then
     export PATH="$(dirname "$NODE"):$PATH"
     NPM_CLI="$(dirname "$NODE")/../lib/node_modules/npm/bin/npm-cli.js"
@@ -198,15 +205,33 @@ if [ ! -f "$BASE/browser-access-setup-decided" ]; then
 fi
 
 
+# Validate the same shared browser modules that render on iPhone/iPad.
+for module in app.js office-features.js ceo-secure-chat.js website-access.js coding-tasks.js officehq-device-sync.js server.mjs; do
+  "$NODE" --check "$WEB/$module" >/dev/null || failed "Updated Office HQ module failed syntax validation: $module"
+done
+
 if curl -fsS --connect-timeout 2 --max-time 3 "$URL" 2>/dev/null | grep -q 'Agent Office HQ'; then
-  if ! curl -fsS --max-time 4 'http://127.0.0.1:3000/api/device-sync/status' 2>/dev/null | grep -q '"paired"'; then
-    failed 'An older Office HQ server is still running on port 3000. Quit that Mac server and reopen Office HQ.app to activate the updated Ollama and sync engine.'
-  fi
   if [ "$UPDATED_CODE" -eq 1 ]; then
-    failed 'The updated files are installed and backed up, but the previous Office HQ server is still running on port 3000. Quit that old Office HQ process, then reopen Office HQ.app to activate the new version. No running process was terminated automatically.'
+    # Stop ONLY a local Office HQ process with the expected web directory as cwd.
+    # An unrelated server on port 3000 must never be interrupted.
+    ACTIVE_PID="$(lsof -nP -tiTCP:3000 -sTCP:LISTEN 2>/dev/null | head -n 1 || true)"
+    if [ -z "$ACTIVE_PID" ] || ! lsof -a -p "$ACTIVE_PID" -d cwd -Fn 2>/dev/null | grep -Fxq "n$WEB"; then
+      failed 'Port 3000 still serves a previous/unknown process. Close the old Office HQ server, then reopen Office HQ.app. The new files are safely backed up.'
+    fi
+    say 'Restarting the verified local Office HQ server to activate the update...'
+    kill -TERM "$ACTIVE_PID" || failed 'Could not stop the old Office HQ server safely.'
+    for i in $(seq 1 20); do
+      if ! kill -0 "$ACTIVE_PID" 2>/dev/null; then break; fi
+      sleep 1
+    done
+    if kill -0 "$ACTIVE_PID" 2>/dev/null; then
+      failed 'Old Office HQ process did not close. Quit it before reopening Office HQ.app.'
+    fi
+  else
+    say 'Your synced Office HQ Mac server is already running.'
   fi
-  say 'Your synced Office HQ Mac server is already running.'
-else
+fi
+if ! curl -fsS --connect-timeout 2 --max-time 3 "$URL" 2>/dev/null | grep -q 'Agent Office HQ'; then
   if curl -fsS --connect-timeout 2 --max-time 3 "$URL" >/dev/null 2>&1; then
     failed 'Another app uses port 3000. It was not interrupted.'
   fi
@@ -230,9 +255,17 @@ else
   done
   [ "$OK" = 1 ] || failed "Mac server did not start. See $LOG/officehq.log"
 fi
+# Verify the actual Mac HTTP server exposes all three requested screens.
+for module in website-access.js coding-tasks.js ceo-secure-chat.js; do
+  curl -fsS --connect-timeout 2 --max-time 6 "$URL$module" -o "$TEMP/$module" ||
+    failed "Mac health check could not load $module."
+  cmp -s "$TEMP/$module" "$WEB/$module" ||
+    failed "Mac is serving outdated $module. Close the old server and reopen Office HQ."
+done
+say 'Mac screen and module health checks passed.'
 say 'Success. Opening Office HQ on this Mac.'
 say 'This installs the web app server. Optional local AI runtime requires separate consent/setup.'
 say 'Mac and iOS records will not sync without a separate secure connection.'
-open "http://127.0.0.1:3000/#/thread"
+open "http://127.0.0.1:3000/?hq_update=$(date +%s)#/thread"
 printf '\nYou may close Terminal; Office HQ stays running while the Mac is on.\n'
 

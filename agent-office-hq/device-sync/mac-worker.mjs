@@ -140,7 +140,7 @@ export function createMacSyncService({bridge}={}){
    if(!claimed?.length)continue;
    try{
     const run=await bridge.action({action:'send',companyId:matched.companyId,employeeId:matched.employeeId,
-      officeTaskId:task.client_task_key,title:task.title,description:task.description,ownerConfirmed:true});
+      officeTaskId:task.client_task_key,roleKey:matched.roleKey,title:task.title,description:task.description,ownerConfirmed:true});
     const updates={note:'Ollama drafting started',updated_at:done()};
     await rest('hq_device_synced_assignments','PATCH',updates,'?id=eq.'+encodeURIComponent(task.id));
    }catch(e){

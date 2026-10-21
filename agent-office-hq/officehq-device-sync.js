@@ -11,6 +11,14 @@ const KEY='sb_publishable_c3owfootc_qRwCN7v3Q24Q_GKB8PIjK';
 const SKEY='office_hq_device_sync_session_v1';
 const DKEY='office_hq_device_sync_id_v1';
 const STALE=90000;
+const TEAM_PREFIX='OFFICE_HQ_TEAM_V1:';
+function teamEnvelope(raw){
+ if(typeof raw!=='string'||!raw.startsWith(TEAM_PREFIX))return null;
+ try{const end=raw.indexOf('\n'),m=JSON.parse(raw.slice(TEAM_PREFIX.length,end));
+  if(!/^[-\w.]{1,100}$/.test(m.id)||typeof m.department!=='string'||typeof m.title!=='string'||!Number.isInteger(m.expectedTaskCount)||m.expectedTaskCount<1||m.expectedTaskCount>39)return null;
+  return {meta:m,description:raw.slice(end+1)};
+ }catch{return null;}
+}
 const local=()=>['127.0.0.1','localhost'].includes(location.hostname);
 const TYPE=local()?'mac':'ios';
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -148,11 +156,14 @@ async function uploadTask(t){
  const s=getBody(),employee=s.employees.find(x=>x.id===t.ownerId),
    company=s.companies.find(x=>x.id===t.companyId);
  if(!employee||!company||!B.roleFor(employee))return;
+ const project=t.departmentProjectId&&s.enterprise?.departmentProjects?.find(p=>p.id===t.departmentProjectId&&p.companyId===t.companyId);
+ let description=t.description.slice(0,4000);
+ if(project){const envelope=TEAM_PREFIX+JSON.stringify({id:project.id,department:project.department,title:project.title.slice(0,100),instruction:project.instruction.slice(0,1000),expectedTaskCount:project.expectedTaskCount||project.taskIds.length})+'\n';description=envelope+description.slice(0,4000-envelope.length);}
  const payload={
   owner_id:auth.owner_id,client_task_key:String(t.id).slice(0,100),source_device_id:id,
   company_label:company.name.slice(0,150),employee_role:employee.roleKey.slice(0,100),
   employee_label:employee.name.slice(0,160),title:t.title.slice(0,140),
-  description:t.description.slice(0,4000),owner_confirmed:true,status:'queued'
+  description,owner_confirmed:true,status:'queued'
  };
  // Do not overwrite a draft or human decision from the other device.
  const rows=await rest('hq_device_synced_assignments','POST',[payload],
@@ -174,6 +185,7 @@ async function downloadTasks(){
   '?select=*&order=updated_at.desc&limit=100');
  const s=getBody();let touched=false;
  for(const r of rows){
+  const envelope=teamEnvelope(r.description);
   let t=s.tasks.find(x=>x.id===r.client_task_key);
   if(!t){
    if(r.source_device_id===id)continue;
@@ -181,33 +193,52 @@ async function downloadTasks(){
    const employee=company&&s.employees.find(e=>e.companyId===company.id&&e.roleKey===r.employee_role);
    if(!company||!employee)continue; // Never invent employee or company mappings.
    t={id:r.client_task_key,companyId:company.id,ownerId:employee.id,
-    scope:B.roleFor(employee)?.scope||'',title:r.title,description:r.description,
+    scope:B.roleFor(employee)?.scope||'',title:r.title,description:envelope?.description||r.description,
+    departmentProjectId:envelope?.meta.id||null,ceoConversation:r.description?.startsWith('OFFICE_HQ_CONVERSATION_V1:')===true,
     delegatedBy:'owner',createdAt:r.created_at,updatedAt:r.updated_at,status:r.status,
     priority:'Medium',due:'',output:r.draft||'',requiresApproval:true,approvalId:null,
     cloudSynced:true,cloudSyncId:r.id};
    s.tasks.unshift(t);window.OfficeHQFloor?.onTaskAssigned(t);touched=true;
   }
-  if(['done','blocked'].includes(t.status)&&r.status==='review'){
+  if(envelope){
+   s.enterprise??={};s.enterprise.departmentProjects??=[];const m=envelope.meta;
+   let p=s.enterprise.departmentProjects.find(p=>p.id===m.id&&p.companyId===t.companyId);
+   if(!p){p={...m,companyId:t.companyId,taskIds:[],status:'queued',packet:'',approvalId:null,createdAt:r.created_at,updatedAt:r.updated_at};s.enterprise.departmentProjects.push(p);touched=true;}
+   if(!p.taskIds.includes(t.id)){p.taskIds.push(t.id);touched=true;}
+   t.departmentProjectId=p.id;
+  }
+  const humanRejected=t.status==='blocked'&&(t.runError==='CEO requested changes on team report'||s.approvals.some(a=>a.taskId===t.id&&a.companyId===t.companyId&&a.status==='rejected'));
+  if((t.status==='done'||humanRejected)&&r.status==='review'){
    await rest('hq_device_synced_assignments','PATCH',{
-     status:t.status,updated_at:new Date().toISOString()
+     status:t.status,note:t.departmentProjectId?(t.status==='done'?'CEO approved team report':'CEO requested changes on team report'):'CEO reviewed this draft',updated_at:new Date().toISOString()
    },'?id=eq.'+encodeURIComponent(r.id)+'&status=eq.review','return=minimal');
+  }else if(r.status==='done'&&r.note==='CEO approved team report'&&t.departmentProjectId&&t.output){
+   t.status='done';t.cloudDecisionAt=r.updated_at;t.updatedAt=r.updated_at;touched=true;
+  }else if(r.status==='blocked'&&r.note==='CEO requested changes on team report'&&t.departmentProjectId){
+   t.status='blocked';t.runError=r.note;t.updatedAt=r.updated_at;touched=true;
   }else if(r.status==='review'&&r.draft&&t.cloudLastReview!==r.updated_at){
-   t.cloudLastReview=r.updated_at;t.output=r.draft;t.status='review';t.updatedAt=r.updated_at;
+   t.cloudLastReview=r.updated_at;t.output=r.draft;t.status='review';t.runError='';t.updatedAt=r.updated_at;
    window.OfficeHQFloor?.onTaskStatus?.(t);
    s.enterprise??={};s.enterprise.messages??=[];
    s.enterprise.messages.unshift({id:B.uid('sms'),author:'Mac Ollama · '+r.employee_label,
     body:'Synced draft is ready for CEO review: '+r.title,companyId:t.companyId,
     kind:'request',createdAt:new Date().toISOString(),read:false});
-   if(!s.approvals.some(a=>a.taskId===t.id&&a.status==='pending')){
+   if(!t.departmentProjectId&&!t.ceoConversation&&!s.approvals.some(a=>a.taskId===t.id&&a.status==='pending')){
     const a={id:B.uid('approve'),companyId:t.companyId,kind:'task',taskId:t.id,
      title:'Review synced draft: '+t.title,note:'Check this AI draft before approval.',
      requester:r.employee_label,status:'pending',createdAt:new Date().toISOString()};
     s.approvals.unshift(a);t.approvalId=a.id;
    }
+   if(t.ceoConversation){
+    s.enterprise.ceoSecureChat??={entries:[],jobs:[]};const chat=s.enterprise.ceoSecureChat;
+    if(!chat.jobs.some(j=>j.currentTaskIds?.includes(t.id))&&!chat.entries.some(m=>m.syncedConversationTaskId===t.id)){
+     chat.entries.push({id:B.uid('chat'),companyId:t.companyId,author:r.employee_label,body:r.draft,kind:'conversation',syncedConversationTaskId:t.id,at:new Date().toISOString()});t.status='done';
+    }
+   }
    touched=true;
-  }else if(r.status==='in_progress'&&r.note==='Ollama drafting started'&&t.status==='queued'){
+  }else if(!humanRejected&&r.status==='in_progress'&&['Ollama drafting started','Ollama drafting resumed after recovery'].includes(r.note)&&['queued','blocked'].includes(t.status)){
    // Queue claim alone is not proof of execution; wait for the Mac to confirm AI acceptance.
-   t.status='in_progress';t.updatedAt=r.updated_at;window.OfficeHQFloor?.onTaskStatus?.(t);touched=true;
+   t.status='in_progress';t.runError='';t.updatedAt=r.updated_at;window.OfficeHQFloor?.onTaskStatus?.(t);touched=true;
   }else if(r.status==='blocked'&&['queued','in_progress'].includes(t.status)){
    t.status='blocked';t.runError=String(r.note||'Mac agent could not finish').slice(0,250);
    t.updatedAt=r.updated_at;window.OfficeHQFloor?.onTaskStatus?.(t);touched=true;

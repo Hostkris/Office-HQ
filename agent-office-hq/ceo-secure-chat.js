@@ -136,7 +136,29 @@
     log(cid,'Office HQ Assistant','Routing to '+assigned(job)+'. You can review and request changes in this same conversation.', 'progress',job.id);
     queue(job,false);
   }
-  let replyTargetJobId='';
+  let replyTargetJobId='',composeMode='assignment',chatDepartment='';
+  function conversation(instruction,cid){
+    const people=B.getState().employees.filter(e=>e.active&&e.companyId===cid&&e.roleKey!=='ceo');
+    const person=chatDepartment?people.find(e=>B.roleFor(e)?.dept===chatDepartment):people.find(e=>e.roleKey==='exec_assistant');
+    if(!person){B.toast('Activate a worker in this department first.','error');return;}
+    const history=db().entries.filter(m=>m.companyId===cid&&m.kind==='conversation').slice(-6).map(m=>({role:m.author==='You · CEO'?'user':'assistant',content:m.body.slice(0,300)}));
+    const job={id:B.uid('ceojob'),companyId:cid,kind:'conversation',instruction,employeeIds:[person.id],taskIds:[],currentTaskIds:[],status:'queued',createdAt:now(),updatedAt:now()};
+    const task=taskFor(job,person,instruction);task.ceoConversation=true;task.requiresApproval=false;
+    task.description='OFFICE_HQ_CONVERSATION_V1:'+JSON.stringify({message:instruction.slice(0,1600),history});
+    job.taskIds=[task.id];job.currentTaskIds=[task.id];B.getState().tasks.unshift(task);db().jobs.push(job);
+    log(cid,'You · CEO',instruction,'conversation',job.id);
+    log(cid,'Office HQ Assistant','Your question is queued for '+person.name+' on the authorized Mac AI engine.','notice',job.id);
+    B.save();window.OfficeHQDeviceSync?.pushTask?.(task);refresh();void attemptDispatch(job,[task]);
+  }
+  function collectReplies(){
+    for(const job of db().jobs.filter(j=>j.kind==='conversation'&&j.status!=='answered')){
+      const task=B.getState().tasks.find(t=>t.id===job.currentTaskIds[0]);
+      if(task?.status==='review'&&task.output&&(task.cloudLastReview||task.nativeVerifiedRunId)){
+        log(job.companyId,B.getEmployee(task.ownerId)?.name||'Mac AI assistant',task.output,'conversation',job.id);
+        task.status='done';task.updatedAt=now();job.status='answered';job.updatedAt=now();B.save();
+      }
+    }
+  }
   function send(){
     const box=document.querySelector('[data-ceo-chat-input]:focus')||document.querySelector('#officePhoneDrawer:not([hidden]) [data-ceo-chat-input]')||document.querySelector('[data-ceo-chat-input]');
     const cid=companyId(),text=box?.value.trim();
@@ -164,7 +186,7 @@
         log(cid,'Office HQ Assistant','Revision requested. I will keep the earlier draft for comparison and queue an updated draft.', 'progress',job.id);
         queue(job,true);
       }
-    }else intake(text,cid);
+    }else if(composeMode==='conversation')conversation(text,cid);else intake(text,cid);
     refresh();
   }
   function syncJobUpdates(){
@@ -190,7 +212,7 @@
   let localPollBusy=false;
   async function pollLocalRuns(){
     if(!['localhost','127.0.0.1'].includes(location.hostname)||document.hidden||localPollBusy)return;
-    const tasks=B.getState().tasks.filter(t=>t.ceoSecureDesk&&t.openMausRunId&&['queued','in_progress'].includes(t.status));
+    const tasks=B.getState().tasks.filter(t=>(t.ceoSecureDesk||t.departmentProjectId||t.ceoConversation)&&t.openMausRunId&&['queued','in_progress','blocked'].includes(t.status)&&t.runError!=='CEO requested changes on team report'&&!B.getState().approvals.some(a=>a.taskId===t.id&&a.status==='rejected'));
     if(!tasks.length)return;
     localPollBusy=true;
     try{
@@ -202,15 +224,15 @@
         if(!run)continue;
         const old=task.status;
         if(run.status==='review'&&run.result){
-          task.output=String(run.result).slice(0,16000);task.status='review';
-          if(!B.getState().approvals.some(a=>a.taskId===task.id&&a.status==='pending')){
+          task.output=String(run.result).slice(0,16000);task.status='review';task.nativeVerifiedRunId=run.id;task.runError='';
+          if(!task.departmentProjectId&&!task.ceoConversation&&!B.getState().approvals.some(a=>a.taskId===task.id&&a.status==='pending')){
             const a={id:B.uid('approve'),companyId:task.companyId,kind:'task',taskId:task.id,title:'Review draft: '+task.title,
               note:'Review the actual Mac AI draft before accepting it.',status:'pending',createdAt:now()};
             B.getState().approvals.unshift(a);task.approvalId=a.id;
           }
         }else if(['failed','stopped','paused'].includes(run.status)){
           task.status='blocked';task.runError=String(run.reason||run.thought||run.status).slice(0,250);
-        }else if(run.status==='running'||run.status==='submitted')task.status='in_progress';
+        }else if(run.status==='running'||run.status==='submitted'){task.status='in_progress';task.runError='';}
         if(task.status!==old){task.updatedAt=now();window.OfficeHQFloor?.onTaskStatus?.(task);changed=true;}
       }
       if(changed){B.save();refresh();}
@@ -229,7 +251,7 @@
     const hasVerifiedWork=tasks.some(t=>t.status==='in_progress'&&(mac?!!t.openMausRunId:!!t.cloudSynced&&paired));
     const hasUnverifiedWork=tasks.some(t=>t.status==='in_progress')&&!hasVerifiedWork;
     const fmt=job.status==='needs-answer'?'Needs your answer':job.status==='held'?'On hold':job.status==='approved'?'Approved':job.status==='denied'?'Denied':allReady?'Draft ready for review':previews.length?'Some drafts ready; waiting for team':hasVerifiedWork?'Agent working':hasUnverifiedWork?'Mac connection lost — status unverified':tasks.some(t=>t.status==='blocked')?'Agent needs attention':'Queued — waiting for an authorized agent';
-    let html='<section class="ceo-job" data-ceo-job="'+E(job.id)+'"><div class="ceo-job-head"><strong>Assignment</strong><span>'+E(fmt)+'</span></div>';
+    let html='<section class="ceo-job" data-ceo-job="'+E(job.id)+'"><div class="ceo-job-head"><strong>'+E(job.kind==='conversation'?'Question':'Assignment')+'</strong><span>'+E(fmt)+'</span></div>';
     html+='<p class="ceo-job-people">'+E(assigned(job))+'</p>';
     if(previews.length){
       for(const task of previews)html+='<details class="ceo-preview"><summary>Preview: '+E(B.getEmployee(task.ownerId)?.name||'Employee')+'</summary><pre>'+E(task.output.slice(0,14000))+'</pre></details>';
@@ -246,20 +268,22 @@
     html+='</section>';return html;
   }
   function render(){
-    syncJobUpdates();
+    collectReplies();syncJobUpdates();
     const cid=companyId();const data=db(),entries=data.entries.filter(m=>m.companyId===cid).slice(-65);
-    const jobs=active(cid).slice(0,8);
+    const jobs=active(cid).filter(j=>j.status!=='answered').slice(0,8);
     const stamp=x=>{try{return new Date(x).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}catch{return ''}};
     let html='<section class="ceo-chat"><div class="ceo-chat-title"><strong>Company Messages</strong><small>CEO Secure Desk · Internal conversation</small></div>';
     html+='<div class="ceo-chat-log" role="log" aria-live="polite">';
     if(!entries.length)html+='<p class="ceo-chat-empty">Message your Office HQ assistant. It will choose the best available specialist or team, ask for missing details, and show real drafts for review.</p>';
     for(const item of entries){
-      html+='<div class="ceo-chat-bubble '+(item.kind==='own'?'sent':'received')+'"><div class="ceo-chat-name">'+E(item.author)+'</div><p>'+E(item.body)+'</p><time>'+E(stamp(item.at))+'</time></div>';
+      html+='<div class="ceo-chat-bubble '+(item.author==='You · CEO'?'sent':'received')+'"><div class="ceo-chat-name">'+E(item.author)+'</div><p>'+E(item.body)+'</p><time>'+E(stamp(item.at))+'</time></div>';
     }
     html+='</div><div class="ceo-chat-jobs">'+jobs.map(card).join('')+'</div>';
+    const departments=[...new Set((B.getRoles?.()||[]).map(r=>r.dept))];
+    html+='<div class="ceo-chat-mode"><label>Message type</label><select data-ceo-chat-mode aria-label="Message type"><option value="assignment"'+(composeMode==='assignment'?' selected':'')+'>Assign task</option><option value="conversation"'+(composeMode==='conversation'?' selected':'')+'>Ask / chat</option></select>'+(composeMode==='conversation'?'<select data-ceo-chat-department aria-label="Chat with department"><option value="">Executive Assistant</option>'+departments.map(d=>'<option value="'+E(d)+'"'+(chatDepartment===d?' selected':'')+'>'+E(d)+'</option>').join('')+'</select>':'')+'</div>';
     html+='<div class="ceo-chat-compose"><textarea data-ceo-chat-input rows="2" maxlength="2200" placeholder="'+(replyTargetJobId?'Reply with the details or changes…':'Message Office HQ…')+'" data-reply-job="'+E(replyTargetJobId)+'"></textarea>';
     html+='<div class="ceo-chat-buttons"><button type="button" data-ceo-chat-action="mic" aria-label="Dictate a message">🎙</button><button type="button" class="ceo-chat-send" data-ceo-chat-action="send">Send ➤</button></div></div>';
-    html+='<p class="ceo-chat-note">Internal messages are not SMS. Jobs require authorized agent engines; external posts, payments and account access remain separately controlled.</p></section>';
+    html+='<p class="ceo-chat-note">Ask / chat uses your authorized Mac AI. Internal messages are not SMS. Jobs require authorized agent engines; external posts, payments and account access remain separately controlled.</p></section>';
     return html;
   }
   function refresh(){window.OfficeHQCompanyInbox?.refresh?.();}
@@ -329,11 +353,16 @@
     const job=db().jobs.find(j=>j.id===button.dataset.job&&j.companyId===companyId());
     if(job)decision(job,op);
   });
+  document.addEventListener('change',ev=>{
+    if(ev.target.matches?.('[data-ceo-chat-mode]')){composeMode=ev.target.value==='conversation'?'conversation':'assignment';refresh();}
+    if(ev.target.matches?.('[data-ceo-chat-department]')){chatDepartment=ev.target.value;refresh();}
+  });
   document.addEventListener('keydown',ev=>{
     if(ev.target.matches?.('[data-ceo-chat-input]')&&ev.key==='Enter'&&!ev.shiftKey){
       ev.preventDefault();send();
     }
   });
-  window.OfficeHQSecureChat={render,route,pollLocalRuns,syncJobUpdates};
+  window.OfficeHQSecureChat={render,route,pollLocalRuns,syncJobUpdates,dispatchTasks:attemptDispatch};
   queueMicrotask(()=>{if(location.hash==='#/thread')refresh();});
 })();
+

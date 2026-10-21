@@ -102,6 +102,44 @@ export function createWorkforceEngine({root,invoke=localCli,allowSend=process.en
    return {provisioned:installed===40,installed,required:40,
      note:installed===40?'Forty role bots exist. Inspect their effective Access settings before binding.':'OpenMausBot has not confirmed all forty role bots; inspect its dashboard.'};
  });
+
+ if(body.action==='bind-department')return lock(async()=>{
+   if(body.ownerConfirmed!==true)throw fail('CEO confirmation is required.',403);
+   if(!safeId(body.companyId))throw fail('Invalid company identifier.');
+   const department=clip(body.department,60),members=body.employees;
+   if(!roles.some(r=>r.department===department)||!Array.isArray(members)||!members.length||members.length>40)
+     throw fail('Choose an existing department with eligible employees.');
+   const uniqueIds=new Set(),uniqueRoles=new Set();
+   const team=members.map(person=>{
+     if(!person||!safeId(person.employeeId))throw fail('Invalid employee identifier.');
+     const role=roleFor(person.roleKey);
+     if(!role||role.department!==department)throw fail('Employee role is outside this department.',403);
+     const employeeName=clip(person.employeeName,100);
+     if(employeeName.length<2||uniqueIds.has(person.employeeId)||uniqueRoles.has(role.key))
+       throw fail('Each department employee and exclusive role must appear once.');
+     uniqueIds.add(person.employeeId);uniqueRoles.add(role.key);
+     return {companyId:body.companyId,employeeId:person.employeeId,employeeName,roleKey:role.key,
+       botName:botName(body.companyId,role.key),policy:POLICY};
+   });
+   // All roles must be installed and every mapping validated before any state is committed.
+   const installed=await available();
+   if(team.some(p=>!installed.has(p.botName)))
+     throw fail('An AI bot in this department has not yet been installed on the Mac.',409);
+   const s=await load();
+   for(const person of team){
+     if(s.bindings.some(b=>b.botName===person.botName&&
+       (b.companyId!==person.companyId||b.employeeId!==person.employeeId)))
+       throw fail('A department bot is already paired with another employee.',409);
+     if(s.bindings.some(b=>b.companyId===person.companyId&&b.employeeId===person.employeeId&&b.roleKey!==person.roleKey))
+       throw fail('An employee is already paired with a different specialty.',409);
+   }
+   for(const person of team){
+     s.bindings=s.bindings.filter(b=>!(b.companyId===person.companyId&&b.employeeId===person.employeeId));
+     s.bindings.push(person);
+   }
+   await save(s);
+   return {bound:team.length,department,note:team.length+' restricted AI worker runtime bindings verified and saved for '+department+'. External service OAuth and live task sending remain separately controlled.'};
+ });
  if(body.action==='bind')return lock(async()=>{
    if(body.ownerConfirmed!==true)throw fail('Explicit owner approval is required.',403);
    validate(body);const role=requireRole(body),employeeName=clip(body.employeeName,100);
@@ -210,3 +248,4 @@ export function createWorkforceEngine({root,invoke=localCli,allowSend=process.en
  }
  return {status,action};
 }
+

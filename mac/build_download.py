@@ -32,8 +32,8 @@ def main():
         "CFBundleInfoDictionaryVersion": "6.0",
         "CFBundleName": "Office HQ",
         "CFBundlePackageType": "APPL",
-        "CFBundleShortVersionString": "1.0.1",
-        "CFBundleVersion": "2",
+        "CFBundleShortVersionString": "1.0.2",
+        "CFBundleVersion": "3",
         "LSMinimumSystemVersion": "14.0",
         "NSHighResolutionCapable": True,
         "LSUIElement": False,
@@ -83,3 +83,4 @@ you configure authenticated sync.
 
 if __name__ == "__main__":
     main()
+

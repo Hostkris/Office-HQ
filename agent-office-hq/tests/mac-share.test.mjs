@@ -55,7 +55,7 @@ test('Mac update refreshes new CEO chat and browser assets while retaining backu
  assert.match(macSetup,/ceo-secure-chat\.js ceo-secure-chat\.css/);
  assert.match(macSetup,/workforce-lean\.js/);
  assert.match(macSetup,/mac\.html mac-share\.js/);
- assert.match(macSetup,/native-engine\/bridge\.mjs device-sync\/mac-worker\.mjs/);
+ assert.match(macSetup,/native-engine\/bridge\.mjs.*device-sync\/mac-worker\.mjs/);
  assert.match(macSetup,/cp -p "\$WEB\/\$item" "\$BACKUP\/\$item"/);
  assert.match(macSetup,/Update Office HQ/);
  assert.match(macSetup,/UPDATED_CODE=1/);
@@ -72,3 +72,4 @@ test('Mac ZIP launcher preserves existing install and uses official SHA-verified
  assert.match(macSetup,/127\.0\.0\.1:3000/);
  assert.doesNotMatch(macSetup,/sudo |rm -rf "\$TARGET"|curl .*\| bash/);
 });
+

@@ -100,12 +100,14 @@ if [ "$NEW_INSTALL" -eq 0 ] && [ -f "$WEB/server.mjs" ] && [ -f "$WEB/openmaus/b
       officehq-voice.js officehq-voice.css ceo-secure-chat.js ceo-secure-chat.css \
       officehq-device-sync.js officehq-sync.css project-floor.js office-life.js \
       department-offices.js deliverables.js integration-center.js \
+      department-access.js department-projects.js department-ui.css agent-health.js \
       desktop-workstations.js openmausbot.js workforce-runtime.js research-center.js \
       ios-workstations.js refresh.js theme.js styles.css sw.js icon.svg \
       manifest.webmanifest \
       native-engine/bridge.mjs device-sync/mac-worker.mjs \
+      native-engine/office-brain.mjs native-engine/web-research.mjs \
       openmaus/bridge.mjs openmaus/workforce-engine.mjs openmaus/team.mjs \
-      research/reach-bridge.mjs; do
+      research/reach-bridge.mjs research/public-tools.mjs openmaus/essential-workforce.json; do
       [ -f "$SOURCE/$item" ] || failed "Latest GitHub release is missing $item. Existing files were not intentionally deleted."
       mkdir -p "$BACKUP/$(dirname "$item")" "$WEB/$(dirname "$item")"
       if [ -f "$WEB/$item" ]; then cp -p "$WEB/$item" "$BACKUP/$item"; fi
@@ -197,3 +199,4 @@ say 'This installs the web app server. Optional local AI runtime requires separa
 say 'Mac and iOS records will not sync without a separate secure connection.'
 open "http://127.0.0.1:3000/#/thread"
 printf '\nYou may close Terminal; Office HQ stays running while the Mac is on.\n'
+

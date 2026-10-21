@@ -1,5 +1,53 @@
 # Agent Office HQ 🏢
 
+## Department activation, team reports, conversations and recovery
+
+Use the existing Office HQ app; this update preserves its companies, employees,
+local records, iPhone layout and public URLs. Update the Mac with the 1.0.2 launcher,
+quit an older running Office HQ server if prompted, then reopen Office HQ.app.
+
+1. Open **Department activation**, choose one of the 12 departments, review its
+   account connection links, then authorize its active specialists on the Mac.
+   That one explicit decision creates separate specialist bindings and paired-device
+   mappings for this company. The human CEO is excluded. **Enable approved AI drafts**
+   separately. Revoke the department from the same screen to stop its active drafts.
+2. Sign into the same secure device-sync account on Mac and iPhone/iPad in
+   **Company Messages**. Company names must match and be unique. Phone assignments
+   are queued in the existing owner-only cloud table; the running Mac polls every
+   12 seconds. Keep the phone web app open for updates and the Mac awake for work.
+3. Open **Department teams**, select one department or **All departments**, and
+   describe the goal. Each active specialist gets its own scope-limited draft task;
+   the 40-position roster has 39 AI specialists plus the human CEO. Ollama processes
+   one draft at a time. Both devices reconstruct team progress from task metadata.
+4. Only after **every specialist returns an actual draft** does a combined report
+   appear in Company Messages with one CEO approval. Read it, approve, or request
+   changes. Decisions and results sync through the same private queue. This report
+   combines separate contributions; it does not claim that agents independently
+   debated, sent messages, published content or changed outside accounts.
+5. Use **Ask / chat** in Company Messages to speak with the Executive Assistant or
+   a department's available specialist. These are real local Ollama responses,
+   relayed through the authorized worker when sent from a phone. Queued questions
+   are clearly labeled while the Mac or worker is unavailable.
+6. Open **Agent Health** for the actual model check, local dispatch state, sync
+   indicator, blocked task errors and native run history. **Fix It** checks model
+   availability and resumes eligible interrupted drafts under their original
+   approval. The running Mac also checks these automatically. There are at most
+   two retries; revoked permissions, stopped jobs, non-transient failures and
+   completed work cannot restart. Recovery does not install software, sign in,
+   change permissions or run arbitrary repair commands.
+
+The three approved public GET tools remain connected to the same per-worker
+permission checks. Gmail, social, payment and other private account actions still
+need their own configured connectors and explicit authorization; department
+activation does not silently grant them. No new cloud schema or service key is
+needed by this update.
+
+Validation includes native execution, team aggregation, revocation, recovery,
+Mac/phone queue transitions, browser packaging and WebKit interface tests. Model
+and cloud integration tests use controlled responses; physical-device execution
+still requires the owner's running, updated and authorized Mac.
+
+
 
 ## Independent Ollama Mac engine and paired iOS assignments (October 2026)
 
@@ -225,3 +273,4 @@ The script `npm run build` copies only `index.html`, `app.js`, `styles.css`, `sw
 - No payments, supplier orders, email sending, ad purchases, transfers or other external actions occur from this version.
 
 For the future authenticated multi-agent service architecture, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). If you make the GitHub repository public, the code is visible; without a separately chosen license, it isn't automatically offered for unrestricted reuse.
+

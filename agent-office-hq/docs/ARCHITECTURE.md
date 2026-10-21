@@ -48,3 +48,36 @@ For a secure production build, enforce all rules **server-side**, never just in 
 | `npm run dev` on your computer | Serve frontend and optional AI drafting through a private Node service | Run a production multi-tenant system or third-party operations |
 
 Start with a small number of real data integrations and robust approval checkpoints before broadening the workforce.
+
+
+## Authorized native team pipeline
+
+`department-access.js` calls the loopback device-sync department-grant action.
+The native bridge validates every essential role before atomically writing a batch,
+excludes the human CEO, rejects duplicate specialist bindings, and records a
+separate company/employee/role identity for each grant. Sync mappings retain the
+company label without sharing credentials or outside account authorization.
+
+`department-projects.js` creates independent scoped tasks, preserves the expected
+team size, collects only native/cloud runtime outputs, and opens one aggregate
+review. Task descriptions carry bounded team metadata so a second device can
+reconstruct the same group without changing the database schema. Owner decisions
+travel through the existing authenticated owner-RLS queue. No report can be
+approved from partial contributions or from a mere submission receipt.
+
+The independent native engine serializes inference jobs, checks the bound role
+again before executing, retains job receipts, and preserves approved instructions
+across restarts. It receives separately authorized public API evidence from
+`research/public-tools.mjs`. Conversation messages use an explicit envelope through
+that same bound queue and the local `office-brain.mjs` inference service.
+
+`agent-health.js` displays real model/queue diagnostics. The Mac worker and Fix It
+may resume the same transiently failed or restart-paused run after checking model,
+dispatch permission, original approval, current worker binding and a two-retry cap.
+A stopped or revoked run stays stopped. Local browser-origin receipts are adopted
+for device-sync reporting without creating a second native job. The Mac worker
+continues while its Node process is alive; a sleeping/closed Mac cannot execute.
+
+These controls remain single-owner, local-first software. Device task/result sync
+is not remote desktop access and does not synchronize every browser preference,
+whole company directory, private website session or third-party credential.

@@ -32,8 +32,8 @@ def main():
         "CFBundleInfoDictionaryVersion": "6.0",
         "CFBundleName": "Office HQ",
         "CFBundlePackageType": "APPL",
-        "CFBundleShortVersionString": "1.0.4",
-        "CFBundleVersion": "5",
+        "CFBundleShortVersionString": "1.0.5",
+        "CFBundleVersion": "6",
         "LSMinimumSystemVersion": "14.0",
         "NSHighResolutionCapable": True,
         "LSUIElement": False,
@@ -73,9 +73,8 @@ account-security actions are not delegated.
 
 Coding tasks supports a separately approved repository snapshot, selected source
 files and exact Node/npm checks. The local tool-capable Ollama model must be
-configured on the Mac. Optional OpenRouter Inkling is cloud-hosted, requires your
-API key, and is limited to public tasks containing no confidential or personal
-data. Its provider logs prompts and outputs. No publishing happens automatically.
+configured on the Mac. Coding tasks use local Ollama only; no cloud provider
+key is required. No publishing happens automatically.
 
 Your company records are stored separately on each device unless
 you configure authenticated sync.
